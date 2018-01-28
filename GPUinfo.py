@@ -1,4 +1,4 @@
- sudo docker ps --no-trunc --format "table {{.ID}}|{{.Names}}"                                                                                                                   
+# sudo docker ps --no-trunc --format "table {{.ID}}|{{.Names}}"                                                                                                                   
 
 import csv 
 from pprint import pprint
