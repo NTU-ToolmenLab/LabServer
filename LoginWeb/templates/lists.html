@@ -10,13 +10,18 @@
       <div class="col-8">
         {% for data in container_list %}
           <div class="card mb-3">
-            <div class="card-header">
-              {{ data.name }}
-            </div>
+            <div class="card-header"> {{ data.name }} </div>
             <div class="card-body">
               <h5 class="card-title"> {{ data.id }} </h5>
               <p class="card-text"> {{ data.comment }} </p>
-              <a href="{{ data.url }}" class="btn btn-primary">Start</a>
+              <button type="button" class="btn btn-outline-primary"
+                      onclick="send('{{data.id}}', 'Resume')">Resume</button>
+              <button type="button" class="btn btn-outline-warning"
+                      onclick="send('{{data.id}}', 'Restart')">Restart</button>
+              <button type="button" class="btn btn-outline-danger"
+                      onclick="send('{{data.id}}', 'Reset')">Reset</button>
+              <button type="button" class="btn btn-outline-danger"
+                      onclick="send('{{data.id}}', 'Remove')">Remove</button>
             </div>
             <div class="card-footer text-muted"> {{ data.time }} </div>
           </div>
@@ -26,4 +31,13 @@
   </div>
 
 </body>
+<script>
+  function send(id, method) {
+    var request = new XMLHttpRequest();
+    request.open('POST', "{{ url_for('apis') }}", true);
+    request.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
+    request.send(JSON.stringify({"id": id, "method": method}));
+  }
+
+</script>
 </html>
