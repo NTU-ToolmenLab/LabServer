@@ -6,13 +6,14 @@ app = Flask(__name__)
 nowUser = ContainerServer.User("name")
 
 @app.route('/')
-def hello_world():
-    return 'Hello World'
+def Login():
+    return render_template('Login.html')
 
 @app.route('/lists')
 def lists():
     lists = nowUser.list()
     return render_template('lists.html', container_list = lists)
+
 
 @app.route('/apis', methods=['POST'])
 def apis():
