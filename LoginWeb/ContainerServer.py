@@ -6,7 +6,7 @@ class User:
     def __init__(self, name):
         self.name = name
 
-    def list(self):
+    def lists(self):
         print("list")
         return [{"id":"id0", "name": self.name + "_" + "name0", "time": time.strftime("%c"), "url":"http://google.com"},
                 {"id":"id1", "name": self.name + "_" + "name1", "time": time.strftime("%c"), "url":"http://github.com"}]

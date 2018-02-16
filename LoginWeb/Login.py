@@ -1,30 +1,34 @@
 import flask_login
+from ContainerServer import *
 
 login_manager = flask_login.LoginManager()
 
-users = {'test': {'password': 'test'}}
+users = {'linnil1': {'password': 'test'}}
 
-class User(flask_login.UserMixin):
+class LoginUser(flask_login.UserMixin):
     def __init__(self, name):
         self.id = name
+        self.user = User(name)
 
 @login_manager.user_loader
 def user_loader(name):
     if name not in users:
         return None
 
-    return User(name)
+    return LoginUser(name)
 
 
 def requestParse(request):
-    print(request.form)
     name = request.form.get('userName')
-    print(name)
     user = user_loader(name)
     if not user:
-        return
+        return None
     # DO NOT ever store passwords in plaintext and always compare password
     # hashes using constant-time comparison!
     is_authenticated = request.form['userPassword'] == users[name]['password']
-    return user, is_authenticated
 
+    if not is_authenticated:
+        return None
+
+    flask_login.login_user(user)
+    return user
