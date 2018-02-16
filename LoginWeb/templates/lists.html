@@ -5,6 +5,13 @@
 </head>
 <body>
 
+  <nav class="navbar navbar-light bg-light justify-content-between">
+    <a class="navbar-brand">Navbar</a>
+    <form class="form-inline" action="{{ url_for('Logout') }}">
+      <button class="btn btn-primary btn-md" type="submit">logout</button>
+    </form>
+  </nav>
+
   <div class="container">
     <div class="row justify-content-center">
       <div class="col-8">

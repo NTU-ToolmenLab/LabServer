@@ -8,18 +8,18 @@
 
 <div class="container">
   <div class="row justify-content-center">
-    <div class="col-3 login-container">
+    <div class="col-5 login-container">
       <div class="form-login">
-      <h4>Welcome to Lab304</h4>
-      <input type="text" id="userName" class="form-control input-sm chat-input" placeholder="username" />
-      </br>
-      <input type="text" id="userPassword" class="form-control input-sm chat-input" placeholder="password" />
-      </br>
-      <div class="wrapper">
-      <span class="group-btn">     
-          <a href="#" class="btn btn-primary btn-md">login <i class="fa fa-sign-in"></i></a>
-      </span>
-      </div>
+        <h4>Welcome to Lab304 !</h4>
+        <form action="{{ url_for('Login') }}" method="post">
+          <input type="text" name="userName"     class="form-control input-sm chat-input" placeholder="username"/></br>
+          <input type="text" name="userPassword" class="form-control input-sm chat-input" placeholder="password"/></br>
+          <div class="wrapper">
+            <span class="group-btn">
+              <input type="submit" value="login" class="btn btn-primary btn-md"/>
+            </span>
+          </div>
+        </form>
       </div>
     </div>
   </div>
@@ -34,20 +34,21 @@ body {
 }
 
 .login-container {
-    padding: 25px;
-    position: fixed;
+  max-width: 35em;
+  padding: 25px;
+  position: fixed;
 }
 
 .form-login {
-    background-color: #EDEDED;
-    padding-top: 10px;
-    padding-bottom: 20px;
-    padding-left: 20px;
-    padding-right: 20px;
-    border-radius: 15px;
-    border-color:#d2d2d2;
-    border-width: 5px;
-    box-shadow:0 1px 0 #cfcfcf;
+  background-color: #EDEDED;
+  padding-top: 10px;
+  padding-bottom: 20px;
+  padding-left: 20px;
+  padding-right: 20px;
+  border-radius: 15px;
+  border-color:#d2d2d2;
+  border-width: 5px;
+  box-shadow:0 1px 0 #cfcfcf;
 }
 
 h4 { 
@@ -58,11 +59,11 @@ h4 {
 }
 
 .form-control {
-    border-radius: 10px;
+  border-radius: 10px;
 }
 
 .wrapper {
-    text-align: center;
+  text-align: center;
 }
 </style>
 
