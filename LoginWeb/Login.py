@@ -26,10 +26,8 @@ def requestParse(request):
     user = user_loader(request.form.get('userName'))
     if not user:
         return None
-    # DO NOT ever store passwords in plaintext and always compare password
-    # hashes using constant-time comparison!
-    is_authenticated = user.checkPassword(request.form['userPassword'])
 
+    is_authenticated = user.checkPassword(request.form['userPassword'])
     if not is_authenticated:
         return None
 

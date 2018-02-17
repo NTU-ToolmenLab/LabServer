@@ -118,3 +118,6 @@ Session.vim
 *~
 # Auto-generated tag files
 tags
+
+# my file
+database.db

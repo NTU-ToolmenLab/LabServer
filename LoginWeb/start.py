@@ -1,5 +1,6 @@
-from flask import Flask, redirect, url_for, request, render_template
+from flask import Flask, redirect, url_for, request, render_template, session
 import json
+from datetime import timedelta
 
 app = Flask(__name__)
 app.secret_key = 'super secret string'  # Change this!
@@ -8,6 +9,7 @@ from dbOp  import *
 from Login import *
 
 login_manager.init_app(app)
+login_manager.login_view = 'Login'
 bcrypt.init_app(app)
 
 @app.route('/', methods=['GET', 'POST'])
@@ -21,7 +23,7 @@ def Login():
         if requestParse(request):
             return redirect(url_for('Lists'))
         else:
-            return redirect(url_for('Login'))
+            return render_template('Login.html', error="Fail to Login")
 
 @app.route("/logout")
 @flask_login.login_required
@@ -52,6 +54,13 @@ def apis():
         print("Error")
         pass # unknown
     return redirect(url_for('Lists'))
+
+"""
+@app.before_request
+def before_request():
+    # app.permanent_session_lifetime = timedelta(days=1)
+    app.permanent_session_lifetime = timedelta(seconds=10)
+"""
 
 # one time
 def init_db():
