@@ -1,10 +1,14 @@
 from flask import Flask, redirect, url_for, request, render_template
-from Login import *
 import json
 
 app = Flask(__name__)
 app.secret_key = 'super secret string'  # Change this!
+
+from dbOp  import *
+from Login import *
+
 login_manager.init_app(app)
+bcrypt.init_app(app)
 
 @app.route('/', methods=['GET', 'POST'])
 def Login():
@@ -31,7 +35,6 @@ def Lists():
     lists = flask_login.current_user.user.lists()
     return render_template('lists.html', container_list = lists)
 
-
 @app.route('/apis', methods=['POST'])
 @flask_login.login_required
 def apis():
@@ -49,6 +52,22 @@ def apis():
         print("Error")
         pass # unknown
     return redirect(url_for('Lists'))
+
+# one time
+def init_db():
+    with app.app_context():
+        db = get_db()
+        with app.open_resource('schema_login.sql', mode='r') as f:
+            db.cursor().executescript(f.read())
+        db.commit()
+
+def add_user():
+    with app.app_context():
+        cur = get_db()
+        password = bcrypt.generate_password_hash('test')
+        cur.execute("INSERT INTO login (name, pass) VALUES (?, ?)", ("linnil1", password))
+        cur.commit()
+        cur.close()
 
 if __name__=='__main__':
     app.run()
