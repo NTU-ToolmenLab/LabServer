@@ -1,6 +1,6 @@
 import sqlite3
 import flask
-from start import app
+from .start import app
 
 DATABASE = 'database.db'
 

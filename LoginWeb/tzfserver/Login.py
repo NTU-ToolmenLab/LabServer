@@ -1,8 +1,8 @@
 import flask
 import flask_login
 import flask_bcrypt
-from ContainerServer import *
-from start import query_db
+from .ContainerServer import *
+from .start import query_db
 
 login_manager = flask_login.LoginManager()
 bcrypt = flask_bcrypt.Bcrypt()

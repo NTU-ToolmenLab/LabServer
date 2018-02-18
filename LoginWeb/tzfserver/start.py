@@ -5,8 +5,8 @@ from datetime import timedelta
 app = Flask(__name__)
 app.secret_key = 'super secret string'  # Change this!
 
-from dbOp  import *
-from Login import *
+from .dbOp  import *
+from .Login import *
 
 login_manager.init_app(app)
 login_manager.login_view = 'Login'

@@ -1,0 +1,3 @@
+graft tzfserver/templates
+graft tzfserver/static
+include tzfserver/schema_login.sql
