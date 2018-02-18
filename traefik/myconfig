@@ -1,0 +1,43 @@
+{
+  "frontends": {
+    "frontend_vnc": {
+      "routes": {
+        "vnc": {
+          "rule": "PathPrefixStrip:/vnc"
+        }
+      },
+      "backend": "backend_vnc"
+    },
+    "frontend_login": {
+      "backend": "backend_login"
+    }
+  },
+  "backends": {
+    "backend_vnc": {
+      "loadBalancer": {
+        "method": "drr"
+      },
+      "circuitBreaker": {
+        "expression": "NetworkErrorRatio() > 0.5"
+      },
+      "servers": {
+        "server1": {
+          "url": "http://127.0.0.1:6080"
+        }
+      }
+    },
+    "backend_login": {
+      "loadBalancer": {
+        "method": "drr"
+      },
+      "circuitBreaker": {
+        "expression": "NetworkErrorRatio() > 0.5"
+      },
+      "servers": {
+        "server1": {
+          "url": "http://127.0.0.1:5000"
+        }
+      }
+    }
+  }
+}
