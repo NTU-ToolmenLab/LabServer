@@ -22,3 +22,12 @@ services:
       - "traefik.enable=true"
       - "traefik.backend=tzfserver"
 
+  vnc:
+    image: docker-novnc
+    volumes:
+      - ./my_vnc:/app/my_vnc
+    labels:
+      - "traefik.frontend.rule=Host:127.0.0.1;PathPrefixStrip:/vnc"
+      - "traefik.port=6080"
+      - "traefik.enable=true"
+      - "traefik.backend=vnc"

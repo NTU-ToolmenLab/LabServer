@@ -64,19 +64,12 @@ def before_request():
 
 # one time
 def init_db():
+    """ usage: import start; start.init_db(); """
     with app.app_context():
         db = get_db()
         with app.open_resource('schema_login.sql', mode='r') as f:
             db.cursor().executescript(f.read())
         db.commit()
-
-def add_user():
-    with app.app_context():
-        cur = get_db()
-        password = bcrypt.generate_password_hash('test')
-        cur.execute("INSERT INTO login (name, pass) VALUES (?, ?)", ("linnil1", password))
-        cur.commit()
-        cur.close()
 
 if __name__=='__main__':
     app.run()

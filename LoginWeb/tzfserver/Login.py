@@ -1,8 +1,9 @@
 import flask
 import flask_login
 import flask_bcrypt
+from getpass import getpass
 from .ContainerServer import *
-from .start import query_db
+from .start import query_db, get_db
 
 login_manager = flask_login.LoginManager()
 bcrypt = flask_bcrypt.Bcrypt()
@@ -36,3 +37,21 @@ def requestParse(request):
 
 # users = {'linnil1': {'password': bcrypt.generate_password_hash('test')}}
 # print(users)
+
+def add_user(app):
+    """ usage: import start; start.add_user(start.app); """
+    # input
+    print("Username ")
+    name = input()
+    assert(not query_db('SELECT * FROM login WHERE name = ?', [name], one=True))
+    passwd = getpass()
+    passwd1 = getpass("Password Again: ")
+    assert(passwd == passwd1 and len(passwd) < 6)
+    password = bcrypt.generate_password_hash(passwd)
+
+    # insert it
+    with app.app_context():
+        cur = get_db()
+        cur.execute("INSERT INTO login (name, pass) VALUES (?, ?)", (name, password))
+        cur.commit()
+        cur.close()
