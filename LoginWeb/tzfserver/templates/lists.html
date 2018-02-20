@@ -21,14 +21,19 @@
             <div class="card-body">
               <h5 class="card-title"> {{ data.id }} </h5>
               <p class="card-text"> {{ data.comment }} </p>
-              <button type="button" class="btn btn-outline-primary"
-                      onclick="send('{{data.id}}', 'Resume')" >Resume </button>
-              <button type="button" class="btn btn-outline-warning"
-                      onclick="send('{{data.id}}', 'Restart')">Restart</button>
-              <button type="button" class="btn btn-outline-danger"
-                      onclick="send('{{data.id}}', 'Reset')"  >Reset  </button>
-              <button type="button" class="btn btn-outline-danger"
-                      onclick="send('{{data.id}}', 'Remove')" >Remove </button>
+
+              <div class="btn-group" role="group">
+                <form action="{{ url_for('Resume') }}" method="post">
+                  <input type="hidden" name="id"     value="{{data.id}}"/>
+                  <input type="submit" value="Resume" class="btn btn-outline-primary"/>
+                </form>
+                <button type="button" class="btn btn-outline-warning"
+                        onclick="send('{{data.id}}', 'Restart')">Restart</button>
+                <button type="button" class="btn btn-outline-danger"
+                        onclick="send('{{data.id}}', 'Reset')"  >Reset  </button>
+                <button type="button" class="btn btn-outline-danger"
+                        onclick="send('{{data.id}}', 'Remove')" >Remove </button>
+                </div>
             </div>
             <div class="card-footer text-muted"> {{ data.time }} </div>
           </div>

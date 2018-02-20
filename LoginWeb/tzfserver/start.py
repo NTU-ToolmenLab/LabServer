@@ -55,6 +55,14 @@ def apis():
         pass # unknown
     return redirect(url_for('Lists'))
 
+@app.route("/resume", methods=['POST'])
+@flask_login.login_required
+def Resume():
+    cid = request.form.get('id')
+    nowUser = flask_login.current_user.user
+    token = nowUser.resume(cid)
+    return redirect("/vnc/?token=" + token)
+
 """
 @app.before_request
 def before_request():
