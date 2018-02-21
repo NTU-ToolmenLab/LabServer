@@ -1,4 +1,4 @@
-from .start import query_db, get_db
+from .start import set_db, query_db
 import time
 class UserError:
     pass
@@ -10,10 +10,7 @@ class User:
 
     def getToken(self, queryStr, queryObj):
         qdata = query_db(queryStr, queryObj, one=True)
-        if not qdata:
-            raise UserError
-        kdata = ["tokenname", "tokenip", "name", "boxid", "boxname", "time"]
-        return dict(zip(kdata, qdata))
+        return qdata
 
     def lists(self):
         print("list")
@@ -28,9 +25,12 @@ class User:
         return True
 
     def resume(self, containerID):
-        ddata = self.getToken("SELECT * FROM tokens WHERE name = ? AND boxid = ?", (self.name, containerID))
+        ddata = self.getToken("SELECT * FROM tokens WHERE name = ? AND boxid = ?",
+                              (self.name, containerID))
+        set_db("UPDATE tokens SET time = ? WHERE boxid = ?", (str(time.time()), containerID))
+        mytoken = ddata["tokenname"]
         print("resume", ddata)
-        return ddata["tokenname"]
+        return mytoken
 
     def remove(self, containerID):
         print("remove", containerID)
@@ -43,10 +43,6 @@ class User:
     def add(self):
         """ INSERT INTO tokens (tokenname, tokenip, name, boxid, boxname, time) VALUES (?,?,?,?,?,?) """
         packed = [self.name + "_0", "172.25.0.5:5900", self.name, "id", "name_id", str(time.time())]
-        with app.app_context():
-            cur = get_db()
-            cur.execute("INSERT INTO tokens (tokenname, tokenip, name, boxid, boxname, time) VALUES (?,?,?,?,?,?)", packed)
-            cur.commit()
-            cur.close()
+        set_db("INSERT INTO tokens (tokenname, tokenip, name, boxid, boxname, time) VALUES (?,?,?,?,?,?)", packed)
         print("add", packed)
         return packed[0]

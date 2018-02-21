@@ -3,15 +3,15 @@ import flask_login
 import flask_bcrypt
 from getpass import getpass
 from .ContainerServer import *
-from .start import query_db, get_db
+from .start import set_db, get_db
 
 login_manager = flask_login.LoginManager()
 bcrypt = flask_bcrypt.Bcrypt()
 
 class LoginUser(flask_login.UserMixin):
     def __init__(self, u):
-        self.id = u[0]
-        self.password = u[1]
+        self.id = u['name']
+        self.password = u['pass']
         self.user = User(self.id)
     def checkPassword(self, password):
         return bcrypt.check_password_hash(self.password, password)
@@ -50,8 +50,4 @@ def add_user(app):
     password = bcrypt.generate_password_hash(passwd)
 
     # insert it
-    with app.app_context():
-        cur = get_db()
-        cur.execute("INSERT INTO login (name, pass) VALUES (?, ?)", (name, password))
-        cur.commit()
-        cur.close()
+    set_db("INSERT INTO login (name, pass) VALUES (?, ?)", (name, password))
