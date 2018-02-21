@@ -122,3 +122,5 @@ tags
 # my file
 database.db
 LoginWeb/log
+host.cert
+host.key

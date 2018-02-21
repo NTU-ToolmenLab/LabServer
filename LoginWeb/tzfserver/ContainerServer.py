@@ -15,7 +15,7 @@ class User:
         return qdata
 
     def lists(self):
-        print("list")
+        print("list", self.name)
         ddata = self.getToken("SELECT * FROM tokens WHERE name = ?", (self.name,))
         return [{"id"  : ddata['boxid'],
                  "name": ddata['boxname'],
@@ -31,7 +31,7 @@ class User:
                               (self.name, containerID))
         set_db("UPDATE tokens SET time = ? WHERE boxid = ?", (str(time.time()), containerID))
         mytoken = ddata["tokenname"]
-        print("resume", ddata)
+        print("resume", dict(ddata))
         return mytoken
 
     def remove(self, containerID):

@@ -61,7 +61,10 @@ def Resume():
     cid = request.form.get('id')
     nowUser = flask_login.current_user.user
     token = nowUser.resume(cid)
-    return redirect("/vnc/?token=" + token)
+    # https://github.com/containous/traefik/issues/1957
+    # BUG: solution: hard code beacuse of the bug
+    # return redirect("/vnc/?tokeon=" + token)k
+    return redirect("https://" + request.host + "/vnc/?token=" + token)
 
 """
 @app.before_request

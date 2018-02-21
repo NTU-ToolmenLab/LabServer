@@ -1,10 +1,17 @@
-# Entrypoints definition
-#
-# Optional
-# Default:
-# [entryPoints]
-#    [entryPoints.http]
-#    address = ":80"
+# https://docs.traefik.io/user-guide/docker-and-lets-encrypt/
+defaultEntryPoints = ["https","http"]
+
+[entryPoints]
+  [entryPoints.http]
+  address = ":80"
+    [entryPoints.http.redirect]
+    entryPoint = "https"
+  [entryPoints.https]
+  address = ":443"
+    [entryPoints.https.tls]
+      [[entryPoints.https.tls.certificates]]
+      certFile = "host.cert"
+      keyFile = "host.key"
 
 [api]
   # Name of the related entry point

@@ -3,10 +3,12 @@ version: '3'
 services:
   traefik:
     image: traefik
-    # command: --logLevel=DEBUG
+    # command: --logLevel=INFO
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./traefik/traefik.toml:/etc/traefik/traefik.toml:ro
+      - ./traefik/host.cert:/host.cert
+      - ./traefik/host.key:/host.key
     ports:
      - "80:80"
      - "443:443"
@@ -17,6 +19,10 @@ services:
   tzfserver:
     image: tzfserver
     command: "gunicorn tzfserver:app -b 0.0.0.0:5000 --access-logfile /app/LoginWeb/log"
+    # command: "flask run -h 0.0.0.0"
+    # environment:
+    #  - FLASK_DEBUG=1
+    #  - FLASK_APP=tzfserver
     volumes:
       - ./LoginWeb:/app/LoginWeb
       - ./LoginWeb/database.db:/app/database.db
