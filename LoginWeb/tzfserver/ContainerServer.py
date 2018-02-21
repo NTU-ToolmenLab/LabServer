@@ -10,6 +10,8 @@ class User:
 
     def getToken(self, queryStr, queryObj):
         qdata = query_db(queryStr, queryObj, one=True)
+        if not qdata:
+            raise UserError
         return qdata
 
     def lists(self):

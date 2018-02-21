@@ -3,6 +3,7 @@ version: '3'
 services:
   traefik:
     image: traefik
+    # command: --logLevel=DEBUG
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./traefik/traefik.toml:/etc/traefik/traefik.toml:ro
@@ -10,9 +11,12 @@ services:
      - "80:80"
      - "443:443"
      - "8080:8080"
+    networks:
+      - mynet
 
   tzfserver:
     image: tzfserver
+    command: "gunicorn tzfserver:app -b 0.0.0.0:5000 --access-logfile /app/LoginWeb/log"
     volumes:
       - ./LoginWeb:/app/LoginWeb
       - ./LoginWeb/database.db:/app/database.db
@@ -21,13 +25,33 @@ services:
       - "traefik.port=5000"
       - "traefik.enable=true"
       - "traefik.backend=tzfserver"
+    networks:
+      - mynet
 
   vnc:
-    image: docker-novnc
+    image: docker-vnc
     volumes:
       - ./my_vnc:/app/my_vnc
+      - ./LoginWeb/database.db:/app/database.db
     labels:
       - "traefik.frontend.rule=Host:127.0.0.1;PathPrefixStrip:/vnc"
       - "traefik.port=6080"
       - "traefik.enable=true"
       - "traefik.backend=vnc"
+    networks:
+      - mynet
+
+  dock:
+    image: docker-firefox
+    command: "x11vnc -forever -usepw -create"
+    networks:
+      mynet:
+        ipv4_address: 172.25.0.5
+
+networks:
+  mynet:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.25.0.0/24
