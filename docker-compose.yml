@@ -35,6 +35,17 @@ services:
     networks:
       - mynet
 
+  dockerserver:
+    image: dockerserver
+    command: "gunicorn -b unix:///app/sock/DockerServer.sock DockerServer:app --reload"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/DockerServer:/app/sock
+    labels:
+      - "traefik.enable=false"
+    networks:
+      - mynet
+
   vnc:
     image: docker-vnc
     volumes:
