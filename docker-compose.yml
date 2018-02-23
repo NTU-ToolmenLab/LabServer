@@ -21,11 +21,12 @@ services:
     command: "gunicorn tzfserver:app -b 0.0.0.0:5000 --access-logfile /app/LoginWeb/log"
     # command: "flask run -h 0.0.0.0"
     # environment:
-    #  - FLASK_DEBUG=1
-    #  - FLASK_APP=tzfserver
+    #   - FLASK_DEBUG=1
+    #   - FLASK_APP=tzfserver
     volumes:
       - ./LoginWeb:/app/LoginWeb
       - ./LoginWeb/database.db:/app/database.db
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     labels:
       - "traefik.frontend.rule=Host:127.0.0.1"
       - "traefik.port=5000"
@@ -51,8 +52,7 @@ services:
     image: docker-firefox
     command: "x11vnc -forever -usepw -create"
     networks:
-      mynet:
-        ipv4_address: 172.25.0.5
+      - mynet
 
 networks:
   mynet:

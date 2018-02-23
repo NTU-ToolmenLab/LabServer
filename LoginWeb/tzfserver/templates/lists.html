@@ -19,7 +19,7 @@
           <div class="card my-3">
             <div class="card-header"> {{ data.name }} </div>
             <div class="card-body">
-              <h5 class="card-title"> {{ data.id }} </h5>
+              <!-- h5 class="card-title"> {{ data.id[:10] }} </h5 -->
               <p class="card-text"> {{ data.comment }} </p>
 
               <div class="btn-group" role="group">
@@ -35,7 +35,7 @@
                         onclick="send('{{data.id}}', 'Remove')" >Remove </button>
                 </div>
             </div>
-            <div class="card-footer text-muted"> {{ data.time }} </div>
+            <div class="card-footer text-muted"> {{ data.id[:10] }} </div>
           </div>
         {% endfor %}
       </div>
