@@ -15,6 +15,9 @@ class LoginUser(flask_login.UserMixin):
         self.user = User(self.id)
     def checkPassword(self, password):
         return bcrypt.check_password_hash(self.password, password)
+    def setPassword(self, password):
+        set_db('UPDATE login SET pass = ? WHERE name = ?',
+               (bcrypt.generate_password_hash(password), self.id))
 
 @login_manager.user_loader
 def user_loader(name):
@@ -34,6 +37,14 @@ def requestParse(request):
 
     flask_login.login_user(user)
     return user
+
+def setPW(user, oldone, newone):
+    if not user.checkPassword(oldone):
+        return "Wrong password"
+    # if len(newone) < 8:
+    #    return "Password should be more than 8 characters"
+    user.setPassword(newone)
+    return "ok"
 
 # users = {'linnil1': {'password': bcrypt.generate_password_hash('test')}}
 # print(users)

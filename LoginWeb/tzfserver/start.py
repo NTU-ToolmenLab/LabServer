@@ -20,7 +20,11 @@ def Login():
             return render_template('Login.html')
     else:
         if requestParse(request):
-            return redirect(url_for('Lists'))
+            if request.form['userPassword'] == 'test': # change it
+                # You can ignore change password. fine
+                return redirect(url_for("ChangePassword"))
+            else:
+                return redirect(url_for('Lists'))
         else:
             return render_template('Login.html', error="Fail to Login")
 
@@ -39,7 +43,6 @@ def Lists():
 @app.route('/apis', methods=['POST'])
 @flask_login.login_required
 def apis():
-    app.logger.info(request.form)
     data = request.form
     nowUser = flask_login.current_user.user
     if data.get('method') == 'Stop':
@@ -63,6 +66,24 @@ def Resume():
     # BUG: solution: hard code beacuse of the bug
     # return redirect("/vnc/?tokeon=" + token)k
     return redirect("https://" + request.host + "/vnc/?token=" + token)
+
+@app.route("/changepw", methods=['GET', 'POST'])
+@flask_login.login_required
+def ChangePassword():
+    if request.method == 'GET':
+        return render_template('changePassword.html')
+    nowUser = flask_login.current_user
+    oldone = request.form.get("opw")
+    newone = request.form.get("npw")
+    if newone != request.form.get("npw1"):
+        return render_template('changePassword.html', error="confirm password error")
+
+    rep = setPW(nowUser, oldone, newone)
+    if rep != "ok":
+        return render_template('changePassword.html', error=rep)
+
+    return redirect(url_for('Lists'))
+
 
 """
 @app.before_request
