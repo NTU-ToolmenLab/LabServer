@@ -6,10 +6,11 @@ CREATE TABLE login (
 
 DROP TABLE IF EXISTS tokens;
 CREATE TABLE tokens (
-  tokenname TEXT PRIMARY KEY,
-  tokenip   TEXT NOT NULL,
-  name      TEXT NOT NULL,
-  boxid     TEXT NOT NULL,
-  boxname   TEXT NOT NULL,
-  time      NUMERIC NOT NULL
+  tokenname   TEXT PRIMARY KEY,
+  user        TEXT NOT NULL,
+  tokenip     TEXT,
+  tokenstatus TEXT,
+  boxid       TEXT,
+  boxname     TEXT NOT NULL,
+  boxstatus   TEXT
 );

@@ -1,5 +1,4 @@
 from flask import Flask, redirect, url_for, request, render_template, session, abort
-import json
 from datetime import timedelta
 
 app = Flask(__name__)
@@ -40,11 +39,12 @@ def Lists():
 @app.route('/apis', methods=['POST'])
 @flask_login.login_required
 def apis():
-    data = request.get_json()
+    app.logger.info(request.form)
+    data = request.form
     nowUser = flask_login.current_user.user
-    if data['method'] == 'Stop':
+    if data.get('method') == 'Stop':
         nowUser.stop(data['id'])
-    elif data['method'] == 'Restart':
+    elif data.get('method') == 'Restart':
         nowUser.restart(data['id'])
     # elif data['method'] == 'Reset':
     #    nowUser.reset(data['id'])

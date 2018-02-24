@@ -31,6 +31,7 @@ def search():
     return jsonify({
         'id': container.id,
         'name': container.name,
+        'status': container.status,
         'ip': list(container.attrs['NetworkSettings']['Networks'].items())[0][1]['IPAddress']
     })
 

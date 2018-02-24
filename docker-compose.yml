@@ -39,6 +39,7 @@ services:
     image: dockerserver
     command: "gunicorn -b unix:///app/sock/DockerServer.sock DockerServer:app --reload"
     volumes:
+      - ./DockerServer:/app/DockerServer
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /var/run/DockerServer:/app/sock
     labels:

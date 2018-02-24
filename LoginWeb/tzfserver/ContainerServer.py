@@ -5,6 +5,19 @@ from requests_unixsocket import post
 class UserError:
     pass
 
+"""
+# database
+CREATE TABLE tokens (
+  tokenname   TEXT PRIMARY KEY,
+  user        TEXT NOT NULL,
+  tokenip     TEXT,
+  tokenstatus TEXT,
+  boxid       TEXT,
+  boxname     TEXT NOT NULL,
+  boxstatus   TEXT
+);
+"""
+
 class User:
     def __init__(self, name):
         self.name = name
@@ -16,7 +29,7 @@ class User:
         return qdata
 
     def checkID(self, containerID):
-        ddata = self.getToken("SELECT * FROM tokens WHERE name = ? AND boxid = ?",
+        ddata = self.getToken("SELECT * FROM tokens WHERE user = ? AND boxid = ?",
                               (self.name, containerID))
         if not ddata:
             raise UserError
@@ -24,13 +37,22 @@ class User:
 
     def lists(self):
         print("list", self.name)
-        ddata = self.getToken("SELECT * FROM tokens WHERE name = ?", (self.name,), one=False)
-        return [{"id"  : d['boxid'],
-                 "name": d['boxname'],
-                 "time": d['time'] } for d in ddata]
+        ddata = self.getToken("SELECT * FROM tokens WHERE user = ?", (self.name,), one=False)
+
+        list_box = []
+        for d in ddata:
+            cont = post(self.sock + "/search", data={'key': d['boxname']}).json()
+            if cont.get('error'):
+                raise UserError
+            set_db("UPDATE tokens SET boxid = ?, boxstatus = ? WHERE boxname = ?",
+                   (cont['id'], cont['status'], d['boxname']))
+            list_box.append({"id"  :   cont['id'],
+                             "name":   cont['name'],
+                             "status": cont['status']})
+        return list_box
 
     def resume(self, containerID):
-        ddata = checkID(containerID)
+        ddata = self.checkID(containerID)
         mytoken = ddata["tokenname"]
 
         rep = post(self.sock + "/start", data={'id': containerID}).json()
@@ -43,10 +65,9 @@ class User:
         if not cont['ip']:
             raise UserError
 
-        set_db("UPDATE tokens SET time = ?, tokenip = ? WHERE boxid = ?",
-               (str(time.time()),
-                cont['ip'],
-                containerID))
+        set_db("UPDATE tokens SET tokenstatus = ?, boxstatus = ?, tokenip = ? WHERE boxid = ?",
+               ("init", cont['status'],
+                cont['ip'], containerID))
         # my_vnc code should add 5900 by itself
         print("resume", dict(ddata))
         return mytoken
@@ -56,7 +77,7 @@ class User:
     #     return True
 
     def stop(self, containerID):
-        checkID(containerID)
+        self.checkID(containerID)
         rep = post(self.sock + "/stop", data={'id': containerID}).json()
         if rep.get('error'):
             raise UserError
@@ -64,7 +85,7 @@ class User:
         return True
 
     def restart(self, containerID):
-        checkID(containerID)
+        self.checkID(containerID)
         rep = post(self.sock + "/restart", data={'id': containerID}).json()
         if rep.get('error'):
             raise UserError
@@ -72,8 +93,8 @@ class User:
         return True
 
     def add(self):
-        """ INSERT INTO tokens (tokenname, tokenip, name, boxid, boxname, time) VALUES (?,?,?,?,?,?) """
-        packed = [self.name + "_0", "172.25.0.5:5900", self.name, "id", "name_id", str(time.time())]
-        set_db("INSERT INTO tokens (tokenname, tokenip, name, boxid, boxname, time) VALUES (?,?,?,?,?,?)", packed)
+        tokname = self.name
+        packed = [tokname, self.name, "labserver_" + tokname + "_1"] # docker compose naming
+        set_db("INSERT INTO tokens (tokenname, user, boxname) VALUES (?,?,?)", packed)
         print("add", packed)
         return packed[0]
