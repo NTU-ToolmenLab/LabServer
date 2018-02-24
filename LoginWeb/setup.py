@@ -8,6 +8,7 @@ setup(
         'flask',
         'flask-login',
         'flask-bcrypt',
+        'requests_unixsocket'
     ],
 )
 

@@ -1,4 +1,4 @@
-from flask import Flask, redirect, url_for, request, render_template, session
+from flask import Flask, redirect, url_for, request, render_template, session, abort
 import json
 from datetime import timedelta
 
@@ -42,16 +42,14 @@ def Lists():
 def apis():
     data = request.get_json()
     nowUser = flask_login.current_user.user
-    if data['method'] == 'Resume':
-        nowUser.resume(data['id'])
+    if data['method'] == 'Stop':
+        nowUser.stop(data['id'])
     elif data['method'] == 'Restart':
         nowUser.restart(data['id'])
-    elif data['method'] == 'Reset':
-        nowUser.reset(data['id'])
-    elif data['method'] == 'Remove':
-        nowUser.remove(data['id'])
+    # elif data['method'] == 'Reset':
+    #    nowUser.reset(data['id'])
     else:
-        print("Error")
+        abort(404)
         pass # unknown
     return redirect(url_for('Lists'))
 
