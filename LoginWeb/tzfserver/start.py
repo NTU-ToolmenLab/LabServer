@@ -101,5 +101,12 @@ def init_db():
             db.cursor().executescript(f.read())
         db.commit()
 
+# one time
+def add():
+    """ usage: from tzfserver import start; start.add()"""
+    # all import from Login
+    std_add_user()
+    std_add_token()
+
 if __name__=='__main__':
     app.run()

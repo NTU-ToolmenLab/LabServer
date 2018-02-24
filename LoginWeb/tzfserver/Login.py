@@ -41,24 +41,20 @@ def requestParse(request):
 def setPW(user, oldone, newone):
     if not user.checkPassword(oldone):
         return "Wrong password"
-    # if len(newone) < 8:
-    #    return "Password should be more than 8 characters"
+    if len(newone) < 8:
+       return "Password should be more than 8 characters"
     user.setPassword(newone)
     return "ok"
 
-# users = {'linnil1': {'password': bcrypt.generate_password_hash('test')}}
-# print(users)
-
-def add_user(app):
-    """ usage: import start; start.add_user(start.app); """
-    # input
+def std_add_user():
     print("Username ")
     name = input()
-    assert(not query_db('SELECT * FROM login WHERE name = ?', [name], one=True))
     passwd = getpass()
     passwd1 = getpass("Password Again: ")
     assert(passwd == passwd1 and len(passwd) < 6)
-    password = bcrypt.generate_password_hash(passwd)
+    add_user(name, passwd)
 
-    # insert it
+def add_user(name, passwd='test'): # change it
+    assert(not query_db('SELECT name FROM login WHERE name = ?', [name], one=True))
+    password = bcrypt.generate_password_hash(passwd)
     set_db("INSERT INTO login (name, pass) VALUES (?, ?)", (name, password))
