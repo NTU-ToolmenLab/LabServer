@@ -9,8 +9,6 @@ RUN chown -R user /app
 USER user
 WORKDIR /app
 
-WORKDIR /app
-
 # activate the flask environment
 EXPOSE 5000
 CMD ["gunicorn", "tzfserver:app", "-b", "0.0.0.0:5000"]

@@ -1,4 +1,5 @@
-from flask import Flask, redirect, url_for, request, render_template, session, abort
+from flask import Flask, redirect, request, render_template, session, abort
+from flask import url_for as flask_url
 from datetime import timedelta
 
 app = Flask(__name__)
@@ -10,6 +11,9 @@ from .Login import *
 login_manager.init_app(app)
 login_manager.login_view = 'Login'
 bcrypt.init_app(app)
+
+def url_for(a): # bugs, When you add pathstrip or use https withous 443
+    return "https://127.0.0.1:443" + flask_url(a)
 
 @app.route('/', methods=['GET', 'POST'])
 def Login():
@@ -64,7 +68,7 @@ def Resume():
     token = nowUser.resume(cid)
     # https://github.com/containous/traefik/issues/1957
     # BUG: solution: hard code beacuse of the bug
-    # return redirect("/vnc/?tokeon=" + token)k
+    # return redirect("/vnc/?tokeon=" + token)
     return redirect("https://" + request.host + "/vnc/?token=" + token)
 
 @app.route("/changepw", methods=['GET', 'POST'])
@@ -105,8 +109,8 @@ def init_db():
 def add():
     """ usage: from tzfserver import start; start.add()"""
     # all import from Login
-    std_add_user()
-    std_add_token()
+    name = std_add_user()
+    std_add_token(name)
 
 if __name__=='__main__':
     app.run()

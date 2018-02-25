@@ -1,0 +1,39 @@
+# sudo apt-get install python3-pip
+# sudo pip3 install virtualenv
+
+virtualenv env
+source env/bin/active
+
+cd LoginWeb
+vim tzfserver/start.py  # modify self.host if needed
+touch log
+chmod 666 log
+docker build . -t tzfserver
+pip3 install -e .
+python3 -c 'from tzfserver import start;start.init_db();'
+chmod 666 database.db
+vim tzfserver/start.py # modify secrect key and your url(this is bug I think)
+cd ..
+
+# copy my_vnc
+# ...
+
+cd DockerServer
+docker build . -t dockerserver
+cd ..
+
+cd traefik/
+docker pull traefik
+openssl genrsa 1024 > host.key
+chmod 400 host.key
+openssl req -new -x509 -nodes -sha1 -days 365 -key host.key -out host.cert
+cd ..
+
+# modify docker-compose for
+# 1. add user(only need to add network),
+# 2. change host
+vim docker-compose.yml
+python3 -c 'from tzfserver import start;start.add();'
+
+# if you change port for https
+# vim traefik/traefik.toml

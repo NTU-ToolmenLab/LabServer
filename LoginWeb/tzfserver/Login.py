@@ -51,10 +51,11 @@ def std_add_user():
     name = input()
     passwd = getpass()
     passwd1 = getpass("Password Again: ")
-    assert(passwd == passwd1 and len(passwd) < 6)
-    add_user(name, passwd)
+    assert(passwd == passwd1 and len(passwd) < 8)
+    return add_user(name, passwd)
 
 def add_user(name, passwd='test'): # change it
     assert(not query_db('SELECT name FROM login WHERE name = ?', [name], one=True))
     password = bcrypt.generate_password_hash(passwd)
     set_db("INSERT INTO login (name, pass) VALUES (?, ?)", (name, password))
+    return name
