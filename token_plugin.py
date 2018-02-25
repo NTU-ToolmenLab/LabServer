@@ -1,3 +1,4 @@
+import sqlite3
 class dbToken(BasePlugin):
     def lookup(self, token):
         db = sqlite3.connect(self.source)
