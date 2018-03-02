@@ -17,7 +17,7 @@ services:
       - mynet
 
   tzfserver:
-    image: tzfserver
+    image: linnil1/tzfserver
     command: "gunicorn tzfserver:app -b 0.0.0.0:5000 --access-logfile /app/LoginWeb/log --reload"
     # command: "flask run -h 0.0.0.0"
     # environment:
@@ -37,7 +37,7 @@ services:
       - mynet
 
   dockerserver:
-    image: dockerserver
+    image: linnil1/dockerserver
     command: "gunicorn -b unix:///app/sock/DockerServer.sock DockerServer:app --reload"
     volumes:
       - ./DockerServer:/app/DockerServer
@@ -49,7 +49,7 @@ services:
       - mynet
 
   vnc:
-    image: docker-vnc
+    image: linnil1/docker-vnc
     volumes:
       - ./my_vnc:/app/my_vnc
       - ./LoginWeb/database.db:/app/database.db
@@ -70,6 +70,9 @@ services:
 
 networks:
   mynet:
+    # external:
+    #   name: my-pre-existing-network
+    # and comment out below
     driver: bridge
     ipam:
       driver: default

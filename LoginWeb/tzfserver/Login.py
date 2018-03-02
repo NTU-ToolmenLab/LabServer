@@ -51,7 +51,7 @@ def std_add_user():
     name = input()
     passwd = getpass()
     passwd1 = getpass("Password Again: ")
-    assert(passwd == passwd1 and len(passwd) < 8)
+    assert(passwd == passwd1 and len(passwd) >= 8)
     return add_user(name, passwd)
 
 def add_user(name, passwd='test'): # change it

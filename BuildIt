@@ -9,10 +9,10 @@ cd LoginWeb
 vim tzfserver/start.py # modify secrect key and your url(this is bug I think)
 touch log
 chmod 666 log
-docker build . -t tzfserver
-pip3 install -e .
-python3 -c 'from tzfserver import start;start.init_db();'
+docker build . -t linnil1/tzfserver
+touch databse.db
 chmod 666 database.db # it should be more private
+docker run -it --rm -v $(pwd)/database.db:/app/database.db linnil1/tzfserver python3 -c 'from tzfserver import start;start.init_db();'
 cd ..
 
 # copy my_vnc
@@ -20,12 +20,12 @@ cd ..
 
 # Control docker to start or stop
 cd DockerServer
-docker build . -t dockerserver
+docker build . -t linnil1/dockerserver
 cd ..
 
 # build example docker-firefox-vnc
 cd UserDocker
-docker build . -t docker-firefox
+docker build . -t linnil1/docker-firefox
 cd ..
 
 # create encrypt files of traefik
@@ -39,5 +39,6 @@ cd ..
 # modify docker-compose for
 # 1. add user (only need to share network see docker-vnc for example),
 # 2. change host
+# 3. add docker network to extern ...
 vim docker-compose.yml
-python3 -c 'from tzfserver import start;start.add();'
+docker run -it --rm -v $(pwd):/app/LoginWeb -v $(pwd)/database.db:/app/database.db linnil1/tzfserver python3 -c 'from tzfserver import start;start.add();'

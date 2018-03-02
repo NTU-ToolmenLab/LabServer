@@ -92,15 +92,19 @@ class User:
         print("restart", containerID)
         return True
 
-def add_token(name, tokennames):
-    for tokenname in tokennames:
-        assert(not query_db('SELECT tokenname FROM tokens WHERE tokenname = ?',
-                            [tokenname], one=True))
-        # docker compose naming
-        set_db("INSERT INTO tokens (tokenname, user, boxname) VALUES (?,?,?)",
-               (tokenname, name, "labserver_" + tokenname + "_1"))
+def add_token(name, tokenname, realtoken=""):
+    # in this case realtoken = "labserver_" + tokenname + "_1"
+    if not realtoken:
+        realtoken = tokenname
+    assert(not query_db('SELECT tokenname FROM tokens WHERE tokenname = ?',
+                        [tokenname], one=True))
+    # docker compose naming
+    set_db("INSERT INTO tokens (tokenname, user, boxname) VALUES (?,?,?)",
+           (tokenname, name, realtoken))
 
 def std_add_token(user):
     print("tokenname ")
     tokenname = input()
-    add_token(user, [tokenname])
+    print("realtoken ")
+    realtoken = input()
+    add_token(user, tokenname, realtoken)

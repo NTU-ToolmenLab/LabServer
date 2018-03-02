@@ -8,6 +8,7 @@ RUN useradd -r user
 RUN chown -R user /app
 USER user
 WORKDIR /app
+RUN touch /app/database.db
 
 # activate the flask environment
 EXPOSE 5000
