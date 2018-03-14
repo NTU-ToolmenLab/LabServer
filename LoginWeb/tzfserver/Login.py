@@ -1,5 +1,6 @@
 import flask
 import flask_login
+import time
 import flask_bcrypt
 from getpass import getpass
 from .ContainerServer import *
@@ -12,12 +13,13 @@ class LoginUser(flask_login.UserMixin):
     def __init__(self, u):
         self.id = u['name']
         self.password = u['pass']
+        self.time = u['time']
         self.user = User(self.id)
     def checkPassword(self, password):
         return bcrypt.check_password_hash(self.password, password)
     def setPassword(self, password):
-        set_db('UPDATE login SET pass = ? WHERE name = ?',
-               (bcrypt.generate_password_hash(password), self.id))
+        set_db('UPDATE login SET pass = ?, time = ? WHERE name = ?',
+               (bcrypt.generate_password_hash(password), time.time(), self.id))
 
 @login_manager.user_loader
 def user_loader(name):
@@ -57,5 +59,5 @@ def std_add_user():
 def add_user(name, passwd='test'): # change it
     assert(not query_db('SELECT name FROM login WHERE name = ?', [name], one=True))
     password = bcrypt.generate_password_hash(passwd)
-    set_db("INSERT INTO login (name, pass) VALUES (?, ?)", (name, password))
+    set_db("INSERT INTO login (name, time, pass) VALUES (?, ?, ?)", (name, 0, password))
     return name

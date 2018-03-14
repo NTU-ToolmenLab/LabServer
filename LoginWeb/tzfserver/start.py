@@ -13,7 +13,7 @@ login_manager.login_view = 'Login'
 bcrypt.init_app(app)
 
 def url_for(a): # bugs, When you add pathstrip or use https withous 443
-    return "https://127.0.0.1:443" + flask_url(a)
+    return "http://127.0.0.1:5000" + flask_url(a)
 
 @app.route('/', methods=['GET', 'POST'])
 def Login():
@@ -23,8 +23,9 @@ def Login():
         else:
             return render_template('Login.html')
     else:
-        if requestParse(request):
-            if request.form['userPassword'] == 'test': # change it
+        user = requestParse(request)
+        if user:
+            if user.time < 1: # change it
                 # You can ignore change password. fine
                 return redirect(url_for("ChangePassword"))
             else:
