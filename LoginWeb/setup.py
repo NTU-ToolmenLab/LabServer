@@ -7,7 +7,8 @@ setup(
     install_requires=[
         'flask',
         'flask-login',
-        'flask-bcrypt',
+        'passlib',
+        'bcrypt',
         'requests_unixsocket'
     ],
 )

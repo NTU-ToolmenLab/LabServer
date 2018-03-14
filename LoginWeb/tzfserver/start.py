@@ -10,7 +10,6 @@ from .Login import *
 
 login_manager.init_app(app)
 login_manager.login_view = 'Login'
-bcrypt.init_app(app)
 
 def url_for(a): # bugs, When you add pathstrip or use https withous 443
     return "http://127.0.0.1:5000" + flask_url(a)

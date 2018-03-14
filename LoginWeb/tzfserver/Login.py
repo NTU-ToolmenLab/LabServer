@@ -1,13 +1,12 @@
 import flask
 import flask_login
 import time
-import flask_bcrypt
+import passlib.hash
 from getpass import getpass
 from .ContainerServer import *
 from .start import set_db, get_db
 
 login_manager = flask_login.LoginManager()
-bcrypt = flask_bcrypt.Bcrypt()
 
 class LoginUser(flask_login.UserMixin):
     def __init__(self, u):
@@ -16,10 +15,11 @@ class LoginUser(flask_login.UserMixin):
         self.time = u['time']
         self.user = User(self.id)
     def checkPassword(self, password):
-        return bcrypt.check_password_hash(self.password, password)
+        return passlib.hash.sha512_crypt.verify(password, self.password)
+
     def setPassword(self, password):
         set_db('UPDATE login SET pass = ?, time = ? WHERE name = ?',
-               (bcrypt.generate_password_hash(password), time.time(), self.id))
+               (passlib.hash.sha512_crypt.encrypt(password), time.time(), self.id))
 
 @login_manager.user_loader
 def user_loader(name):
@@ -58,6 +58,6 @@ def std_add_user():
 
 def add_user(name, passwd='test'): # change it
     assert(not query_db('SELECT name FROM login WHERE name = ?', [name], one=True))
-    password = bcrypt.generate_password_hash(passwd)
-    set_db("INSERT INTO login (name, time, pass) VALUES (?, ?, ?)", (name, 0, password))
+    password = passlib.hash.sha512_crypt.encrypt(passwd)
+    set_db("INSERT INTO login (name, pass, time) VALUES (?, ?, ?)", (name, password, 0))
     return name
