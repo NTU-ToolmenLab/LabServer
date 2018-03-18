@@ -32,4 +32,4 @@ def set_db(query, args):
         cur = get_db()
         cur.execute(query, args)
         cur.commit()
-        cur.close
+        cur.close()

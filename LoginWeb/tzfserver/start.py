@@ -88,6 +88,16 @@ def ChangePassword():
 
     return redirect(url_for('Lists'))
 
+@app.route("/vnctoken", methods=['GET'])
+@flask_login.login_required
+def vncToken():
+    nowUser = flask_login.current_user
+    token = request.args.get('token')
+    qdata = query_db("SELECT tokenstatus FROM tokens WHERE tokenname = ? AND user = ?", (token, nowUser.id), one=True)
+    if not qdata:
+        return ""
+    return qdata['tokenstatus'] + '|password'
+
 
 """
 @app.before_request

@@ -1,6 +1,8 @@
 from .start import set_db, query_db
 import time
 from requests_unixsocket import post
+import passlib.hash
+import time
 
 class UserError:
     pass
@@ -66,7 +68,7 @@ class User:
             raise UserError
 
         set_db("UPDATE tokens SET tokenstatus = ?, boxstatus = ?, tokenip = ? WHERE boxid = ?",
-               ("init", cont['status'],
+               ("init" + passlib.hash.hex_md5(str(time.time())), cont['status'],
                 cont['ip'], containerID))
         # my_vnc code should add 5900 by itself
         print("resume", dict(ddata))

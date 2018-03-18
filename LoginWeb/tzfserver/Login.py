@@ -18,8 +18,9 @@ class LoginUser(flask_login.UserMixin):
         return passlib.hash.sha512_crypt.verify(password, self.password)
 
     def setPassword(self, password):
+        self.password = passlib.hash.sha512_crypt.encrypt(password)
         set_db('UPDATE login SET pass = ?, time = ? WHERE name = ?',
-               (passlib.hash.sha512_crypt.encrypt(password), time.time(), self.id))
+               (self.password, time.time(), self.id))
 
 @login_manager.user_loader
 def user_loader(name):
