@@ -11,7 +11,7 @@ services:
     image: nginx
     restart: always
     ports:
-      - 443:443
+      - 8888:443
     external_links:
       - app
       - collabora
@@ -31,6 +31,6 @@ services:
     cap_add:
       - MKNOD
     environment:
-      - domain=xx.ntu.edu.tw
+      - domain=my.domain.ntu.edu.tw
     # volumes:
     #   - ./collabora:/etc/loolwsd
