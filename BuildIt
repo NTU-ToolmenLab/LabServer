@@ -36,6 +36,12 @@ chmod 400 host.key
 openssl req -new -x509 -nodes -sha1 -days 365 -key host.key -out host.cert
 cd ..
 
+# Build IDP
+cd IDP
+git clone https://github.com/IdentityPython/pysaml2.git
+docker build . -t linnil1/idp
+cd ..
+
 # modify docker-compose for
 # 1. add user (only need to share network see docker-vnc for example),
 # 2. change host

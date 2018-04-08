@@ -37,8 +37,8 @@ else:
     BASE = "http://%s:%s" % (HOST, PORT)
 
 # HTTPS cert information
-SERVER_CERT = "pki/mycert.pem"
-SERVER_KEY = "pki/mykey.pem"
+SERVER_CERT = "pki/host.cert"
+SERVER_KEY = "pki/host.key"
 CERT_CHAIN = ""
 SIGN_ALG = None
 DIGEST_ALG = None
@@ -110,8 +110,8 @@ CONFIG = {
         },
     },
     "debug": 1,
-    "key_file": full_path("pki/mykey.pem"),
-    "cert_file": full_path("pki/mycert.pem"),
+    "key_file": full_path(SERVER_KEY),
+    "cert_file": full_path(SERVER_CERT),
     "metadata": {
         "remote": [{
             "url": "https://my.domain.ntu.edu.tw:443/apps/user_saml/saml/metadata",

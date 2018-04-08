@@ -1048,7 +1048,7 @@ def application(environ, start_response):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-p', dest='path', help='Path to configuration file.', default='./idp_conf.py')
+    parser.add_argument('-p', dest='path', help='Path to configuration file.')
     parser.add_argument('-v', dest='valid',
                         help="How long, in days, the metadata is valid from "
                              "the time of creation")
@@ -1061,7 +1061,7 @@ if __name__ == '__main__':
     parser.add_argument('-s', dest='sign', action='store_true',
                         help="sign the metadata")
     parser.add_argument('-m', dest='mako_root', default="./")
-    parser.add_argument(dest="config")
+    parser.add_argument('--config', dest="config", default='idp_conf')
     args = parser.parse_args()
 
     CONFIG = importlib.import_module(args.config)

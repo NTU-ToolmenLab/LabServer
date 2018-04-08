@@ -68,6 +68,16 @@ services:
     networks:
       - mynet
 
+  idp:
+    image: linnil1/idp
+    command: "python idp.py"
+    volumes:
+      - ./IDP:/app/IDP
+    ports:
+      - "8088:8088"
+    networks:
+      - mynet
+
 networks:
   mynet:
     # external:
