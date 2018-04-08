@@ -534,7 +534,7 @@ def do_authentication(environ, start_response, authn_context, key,
 # -----------------------------------------------------------------------------
 
 def username_password_authn(environ, start_response, reference, key,
-                            redirect_uri, headers=None):
+                            redirect_uri, headers=None, iserror=False):
     """
     Display the login form
     """
@@ -548,8 +548,9 @@ def username_password_authn(environ, start_response, reference, key,
 
     argv = {
         "action": "/verify",
-        "login": "",
-        "password": "",
+        "userName": "",
+        "userPassword": "",
+        "error": iserror,
         "key": key,
         "authn_reference": reference,
         "redirect_uri": redirect_uri
@@ -561,8 +562,8 @@ def username_password_authn(environ, start_response, reference, key,
 def verify_username_and_password(dic):
     global PASSWD
     # verify username and password
-    if PASSWD[dic["login"][0]] == dic["password"][0]:
-        return True, dic["login"][0]
+    if PASSWD[dic["userName"][0]] == dic["userPassword"][0]:
+        return True, dic["userName"][0]
     else:
         return False, ""
 
@@ -579,7 +580,12 @@ def do_verify(environ, start_response, _):
         user = None
 
     if not _ok:
-        resp = Unauthorized("Unknown user or wrong password")
+        # resp = Unauthorized("Unknown user or wrong password")
+        return username_password_authn(environ, start_response,
+                   query['authn_reference'][0],
+                   query['key'][0],
+                   query['redirect_uri'][0],
+                   iserror="Unknown user or wrong password")
     else:
         uid = rndstr(24)
         IDP.cache.uid2user[uid] = user
@@ -797,7 +803,7 @@ class ATTR(Service):
         uid = name_id.text
         logger.debug("Local uid: %s", uid)
         # REMOVE EXTRA
-        identity = {}# EXTRA[uid]
+        identity = ""# EXTRA[uid]
 
         # Comes in over SOAP so only need to construct the response
         args = IDP.response_args(_query, [BINDING_SOAP])
@@ -1023,12 +1029,16 @@ def application(environ, start_response):
                 environ['myapp.url_args'] = path
 
             logger.debug("Callback: %s", callback)
-            if isinstance(callback, tuple):
-                cls = callback[0](environ, start_response, user)
-                func = getattr(cls, callback[1])
-
-                return func()
-            return callback(environ, start_response, user)
+            try:
+                if isinstance(callback, tuple):
+                    cls = callback[0](environ, start_response, user)
+                    func = getattr(cls, callback[1])
+                    return func()
+                return callback(environ, start_response, user)
+            except:
+                # redirect if error
+                resp = Redirect("https://my.domain.ntu.edu.tw:443")
+                return resp(environ, start_response)
 
     if re.search(r'static/.*', path) is not None:
         return staticfile(environ, start_response)

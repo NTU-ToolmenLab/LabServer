@@ -23,15 +23,19 @@
     ##<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN "
 ##"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>
-<head><title>IDP test login</title>
-    ${self.css()}
+<head>
+    ## ${self.css()}
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Lab 304</title>
 </head>
 <body>
-    ${pre()}
+##  ${pre()}
 ##        ${comps.dict_to_table(pageargs)}
 ##        <hr><hr>
 ${next.body()}
-${post()}
+## ${post()}
 </body>
 </html>
