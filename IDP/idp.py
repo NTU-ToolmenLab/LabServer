@@ -52,8 +52,6 @@ from saml2.s_utils import PolicyError
 from saml2.sigver import verify_redirect_signature
 from saml2.sigver import encrypt_cert_from_item
 
-from idp_user import USERS
-from idp_user import PASSWD
 from mako.lookup import TemplateLookup
 import saml2.xmldsig as ds
 
@@ -330,7 +328,7 @@ class SSO(Service):
             return resp(self.environ, self.start_response)
 
         if not _resp:
-            identity = USERS[self.user].copy()
+            identity = {'uid':self.user, 'quota':'128MB'}.copy()
             # identity["eduPersonTargetedID"] = get_eptid(IDP, query, session)
             logger.info("Identity: %s", identity)
 
@@ -547,23 +545,33 @@ def username_password_authn(environ, start_response, reference, key,
     resp = Response(**kwargs)
 
     argv = {
-        "action": "/verify",
+        # for traefik
+        "action": "/saml/verify",
         "userName": "",
         "userPassword": "",
         "error": iserror,
         "key": key,
         "authn_reference": reference,
-        "redirect_uri": redirect_uri
+        # for traefik
+        "redirect_uri": redirect_uri.replace("http","https").replace(":443",":443/saml")
     }
     logger.info("do_authentication argv: %s", argv)
     return resp(environ, start_response, **argv)
 
 
 def verify_username_and_password(dic):
-    global PASSWD
+    import sqlite3
+    import passlib.hash
+
+    db = sqlite3.connect("../database.db")
+    db.row_factory = sqlite3.Row
     # verify username and password
-    if PASSWD[dic["userName"][0]] == dic["userPassword"][0]:
-        return True, dic["userName"][0]
+
+    name = dic["userName"][0]
+    cur = db.execute('SELECT * FROM login WHERE name = ?', [name])
+    res = cur.fetchone()
+    if passlib.hash.sha512_crypt.verify(dic["userPassword"][0], res['pass']):
+        return True, name
     else:
         return False, ""
 

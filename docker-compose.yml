@@ -73,8 +73,12 @@ services:
     command: "python idp.py"
     volumes:
       - ./IDP:/app/IDP
-    ports:
-      - "8088:8088"
+      - ./LoginWeb/database.db:/app/database.db
+    labels:
+      - "traefik.frontend.rule=Host:my.domain.ntu.edu.tw;PathPrefixStrip:/saml/"
+      - "traefik.port=8088"
+      - "traefik.enable=true"
+      - "traefik.backend=idp"
     networks:
       - mynet
 

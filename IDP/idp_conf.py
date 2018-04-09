@@ -29,17 +29,14 @@ def full_path(local_file):
 HOST = '0.0.0.0'
 PORT = 8088
 
-HTTPS = True
-
-if HTTPS:
-    BASE = "https://%s:%s" % (HOST, PORT)
-else:
-    BASE = "http://%s:%s" % (HOST, PORT)
+# for traefik
+HTTPS = False
+BASE = "https://%s:%s" % (HOST, PORT)
 
 # HTTPS cert information
 SERVER_CERT = "pki/host.cert"
 SERVER_KEY = "pki/host.key"
-CERT_CHAIN = ""
+CERT_CHAIN = "pki/host.chain"
 SIGN_ALG = None
 DIGEST_ALG = None
 #SIGN_ALG = ds.SIG_RSA_SHA512
@@ -68,7 +65,7 @@ CONFIG = {
             },
         },
         "idp": {
-            "name": "Rolands IdP",
+            "name": "My pyIdP",
             "endpoints": {
                 "single_sign_on_service": [
                     ("%s/sso/redirect" % BASE, BINDING_HTTP_REDIRECT),
@@ -118,23 +115,6 @@ CONFIG = {
             "cert":"pki/mycert.pem"
         }]
     },
-    "organization": {
-        "display_name": "Rolands Identiteter",
-        "name": "Rolands Identiteter",
-        "url": "http://www.example.com",
-    },
-    "contact_person": [
-        {
-            "contact_type": "technical",
-            "given_name": "Roland",
-            "sur_name": "Hedberg",
-            "email_address": "technical@example.com"
-        }, {
-            "contact_type": "support",
-            "given_name": "Support",
-            "email_address": "support@example.com"
-        },
-    ],
     # This database holds the map between a subject's local identifier and
     # the identifier returned to a SP
     "xmlsec_binary": xmlsec_path,
