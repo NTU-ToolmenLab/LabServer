@@ -88,6 +88,16 @@ def Login():
         if len(errors) == 0:
             if url is not None:
                 return redirect(url)
+    elif 'slo' in request.args:
+        name_id = None
+        session_index = None
+        if 'samlNameId' in session:
+            name_id = session['samlNameId']
+        if 'samlSessionIndex' in session:
+            session_index = session['samlSessionIndex']
+        return redirect(auth.logout(
+            name_id=name_id, session_index=session_index,
+            return_to=url_for('Login')))
 
     return render_template('Login.html')
 
@@ -106,18 +116,6 @@ def metadata():
         resp = make_response(', '.join(errors), 500)
     return resp
 
-@app.route("/logout")
-@isLogin
-def Logout(_):
-    name_id = None
-    session_index = None
-    if 'samlNameId' in session:
-        name_id = session['samlNameId']
-    if 'samlSessionIndex' in session:
-        session_index = session['samlSessionIndex']
-    auth.logout(name_id=name_id, session_index=session_index)
-    return redirect(url_for("Login"))
-
 @app.route('/lists')
 @isLogin
 def Lists(nowUser):
@@ -127,6 +125,7 @@ def Lists(nowUser):
 @app.route('/apis', methods=['POST'])
 @isLogin
 def apis(nowUser):
+    nowUser = nowUser.user
     data = request.form
     if data.get('method') == 'Stop':
         nowUser.stop(data['id'])
@@ -143,7 +142,7 @@ def apis(nowUser):
 @isLogin
 def Resume(nowUser):
     cid = request.form.get('id')
-    token = nowUser.resume(cid)
+    token = nowUser.user.resume(cid)
     # https://github.com/containous/traefik/issues/1957
     # BUG: solution: hard code beacuse of the bug
     # return redirect("/vnc/?tokeon=" + token)
@@ -154,9 +153,6 @@ def Resume(nowUser):
 def ChangePassword(nowUser):
     if request.method == 'GET':
         return render_template('changePassword.html')
-    nowUser = getUser()
-    if not nowUser:
-        return ""
     oldone = request.form.get("opw")
     newone = request.form.get("npw")
     if newone != request.form.get("npw1"):

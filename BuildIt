@@ -4,16 +4,27 @@ sudo pip3 install virtualenv
 virtualenv env
 source env/bin/active
 
+# create encrypt files of traefik
+cd traefik/
+docker pull traefik
+openssl genrsa 1024 > host.key
+chmod 400 host.key
+openssl req -new -x509 -nodes -sha1 -days 365 -key host.key -out host.cert
+cd ..
+
 # build LoginWeb
 cd LoginWeb
 vim tzfserver/start.py # modify secrect key and your url(this is bug I think)
 touch log
-chmod 666 log
 docker build . -t linnil1/tzfserver
 touch databse.db
-chmod 666 database.db # it should be more private
 docker run -it --rm -v $(pwd)/database.db:/app/database.db linnil1/tzfserver python3 -c 'from tzfserver import start;start.init_db();'
-cd ..
+# build saml
+cd saml
+vim settings.json
+cp ../../traefik/host.cert certs/sp.crt
+cp ../../traefik/host.key certs/sp.key
+cd ../..
 
 # copy my_vnc
 # ...
@@ -28,29 +39,22 @@ cd UserDocker
 docker build . -t linnil1/docker-firefox
 cd ..
 
-# create encrypt files of traefik
-cd traefik/
-docker pull traefik
-openssl genrsa 1024 > host.key
-chmod 400 host.key
-openssl req -new -x509 -nodes -sha1 -days 365 -key host.key -out host.cert
-cd ..
-
-# Build IDP
-cd IDP
-git clone https://github.com/IdentityPython/pysaml2.git
-docker build . -t linnil1/idp
-cd ..
-
-set sp
-saml setting
-curl metadata > ff
-
-
-
 # modify docker-compose for
 # 1. add user (only need to share network see docker-vnc for example),
 # 2. change host
 # 3. add docker network to extern ...
 vim docker-compose.yml
 docker run -it --rm -v $(pwd):/app/LoginWeb -v $(pwd)/database.db:/app/database.db linnil1/tzfserver python3 -c 'from tzfserver import start;start.add();'
+
+# Build IDP
+cd IDP
+# you can see some difference of my version
+# https://gist.github.com/linnil1/b782dc567b1f404efcdb71a643ddc7e4
+git clone https://github.com/IdentityPython/pysaml2.git
+docker build . -t linnil1/idp
+cp ../traefik/host.cert sp.crt
+cp ../traefik/host.key  sp.key
+docker compose up tzfserver
+curl -k https://my.domain.ntu.edu.tw:443/metadata/ > metadata_tzf.xml
+docker compose stop tzfserver
+cd ..

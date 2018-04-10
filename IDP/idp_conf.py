@@ -36,7 +36,6 @@ BASE = "https://%s:%s" % (HOST, PORT)
 # HTTPS cert information
 SERVER_CERT = "pki/host.cert"
 SERVER_KEY = "pki/host.key"
-CERT_CHAIN = "pki/host.chain"
 SIGN_ALG = None
 DIGEST_ALG = None
 #SIGN_ALG = ds.SIG_RSA_SHA512
@@ -96,7 +95,7 @@ CONFIG = {
             },
             "policy": {
                 "default": {
-                    "lifetime": {"minutes": 1},
+                    "lifetime": {"minutes": 1440},
                     "attribute_restrictions": None, # means all I have
                     #"name_form": NAME_FORMAT_URI,
                 },
@@ -110,10 +109,6 @@ CONFIG = {
     "key_file": full_path(SERVER_KEY),
     "cert_file": full_path(SERVER_CERT),
     "metadata": {
-        "remote": [{
-            "url": "https://my.domain.ntu.edu.tw:443/apps/user_saml/saml/metadata",
-            "cert":"pki/mycert.pem"
-        }],
         "local":["metadata_tzf.xml"]
     },
     # This database holds the map between a subject's local identifier and
