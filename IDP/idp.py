@@ -227,6 +227,8 @@ class Service(object):
         ruri = geturl(self.environ, query=False)
 
         kwargs = dict(authn_context=requested_authn_context, key=key, redirect_uri=ruri)
+        # Oh no, hacking
+        kwargs['authn_context'] = None
         # Clear cookie, if it already exists
         kaka = delete_cookie(self.environ, "idpauthn")
         if kaka:
@@ -520,7 +522,6 @@ def do_authentication(environ, start_response, authn_context, key,
     auth_info = AUTHN_BROKER.pick(authn_context)
 
     if len(auth_info):
-
         method, reference = auth_info[0]
         logger.debug("Authn chosen: %s (ref=%s)", method, reference)
         return method(environ, start_response, reference, key, redirect_uri, headers)
@@ -1045,7 +1046,7 @@ def application(environ, start_response):
                 return callback(environ, start_response, user)
             except:
                 # redirect if error
-                resp = Redirect("https://my.domain.ntu.edu.tw:443")
+                resp = ServiceError("Server Error")
                 return resp(environ, start_response)
 
     if re.search(r'static/.*', path) is not None:

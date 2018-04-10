@@ -68,7 +68,7 @@ class User:
             raise UserError
 
         set_db("UPDATE tokens SET tokenstatus = ?, boxstatus = ?, tokenip = ? WHERE boxid = ?",
-               ("init" + passlib.hash.hex_md5(str(time.time())), cont['status'],
+               ("init" + passlib.hash.hex_md5.encrypt(str(time.time())), cont['status'],
                 cont['ip'], containerID))
         # my_vnc code should add 5900 by itself
         print("resume", dict(ddata))

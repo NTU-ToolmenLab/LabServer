@@ -65,7 +65,7 @@ CONFIG = {
             },
         },
         "idp": {
-            "name": "My pyIdP",
+            "name": "My pyIDP",
             "endpoints": {
                 "single_sign_on_service": [
                     ("%s/sso/redirect" % BASE, BINDING_HTTP_REDIRECT),
@@ -96,7 +96,7 @@ CONFIG = {
             },
             "policy": {
                 "default": {
-                    "lifetime": {"minutes": 15},
+                    "lifetime": {"minutes": 1},
                     "attribute_restrictions": None, # means all I have
                     #"name_form": NAME_FORMAT_URI,
                 },
@@ -113,7 +113,8 @@ CONFIG = {
         "remote": [{
             "url": "https://my.domain.ntu.edu.tw:443/apps/user_saml/saml/metadata",
             "cert":"pki/mycert.pem"
-        }]
+        }],
+        "local":["metadata_tzf.xml"]
     },
     # This database holds the map between a subject's local identifier and
     # the identifier returned to a SP

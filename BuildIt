@@ -42,6 +42,12 @@ git clone https://github.com/IdentityPython/pysaml2.git
 docker build . -t linnil1/idp
 cd ..
 
+set sp
+saml setting
+curl metadata > ff
+
+
+
 # modify docker-compose for
 # 1. add user (only need to share network see docker-vnc for example),
 # 2. change host

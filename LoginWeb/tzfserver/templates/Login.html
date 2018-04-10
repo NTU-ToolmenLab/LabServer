@@ -13,24 +13,13 @@
   <div class="row justify-content-center">
     <div class="col-5 login-container">
       <div class="form-login">
-        <h4>Welcome to Lab304 !</h4>
-        <form action="{{ url_for('Login') }}" method="post">
-          <input type="text"     name="userName"     placeholder="username"
-                 class="form-control input-sm chat-input"/></br>
-          <input type="password" name="userPassword" placeholder="password"
-                 class="form-control input-sm chat-input"/></br>
+        <h4>Welcome to Here!</h4>
           <div class="wrapper">
             <span class="group-btn">
-              <input type="submit" value="login" class="btn btn-primary btn-md"/>
+                <a href="{{ url_for('Login') + '?sso' }}" class="btn btn-primary btn-md"/>Login</a>
             </span>
           </div>
-        </form>
       </div>
-      {% if error %}
-        <div class="alert alert-danger" role="alert">
-          {{ error }}
-        </div>
-      {% endif %}
     </div>
   </div>
 </div>
