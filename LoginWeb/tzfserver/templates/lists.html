@@ -10,9 +10,9 @@
 
   <nav class="navbar navbar-light bg-light justify-content-between">
     <a class="navbar-brand"> {{ current_user.id }} </a>
-    <form class="form-inline" action="{{ url_for('Login') + '?slo' }}">
-      <button class="btn btn-primary btn-md" type="submit">logout</button>
-    </form>
+     <form class="form-inline">
+         <a href="{{ url_for('Login') + '?slo' }}" class="btn btn-primary btn-md"/>logout</a>
+     </form>
   </nav>
 
   <div class="container">

@@ -99,7 +99,11 @@ def Login():
             name_id=name_id, session_index=session_index,
             return_to=url_for('Login')))
 
-    return render_template('Login.html')
+    nowUser = getUser()
+    if not nowUser:
+        return render_template('Login.html')
+    else:
+        return redirect(url_for('Lists'))
 
 @app.route('/metadata/')
 def metadata():
