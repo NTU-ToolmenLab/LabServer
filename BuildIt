@@ -54,7 +54,6 @@ docker pull collabora/code
 # 2. change host
 # 3. add docker network to extern ...
 vim docker-compose.yml
-docker run -it --rm -v $(pwd):/app/LoginWeb -v $(pwd)/database.db:/app/database.db linnil1/tzfserver python3 -c 'from tzfserver import start;start.add();'
 
 # Build IDP
 cd IDP
@@ -62,4 +61,43 @@ cd IDP
 # https://gist.github.com/linnil1/b782dc567b1f404efcdb71a643ddc7e4
 git clone https://github.com/IdentityPython/pysaml2.git
 docker build . -t linnil1/idp
+cd ..
+
+###
+# After running
+
+# Add user
+cd LoginWeb
+# docker run -it --rm -v $(pwd):/app/LoginWeb -v $(pwd)/database.db:/app/database.db linnil1/tzfserver python3 -c 'from tzfserver import start;start.add();'
+docker exec -it labserver_tzfserver_1 python3 -c 'from tzfserver import start;start.add();'
+cd ..
+# for bash input
+# docker run -it --rm -v $(pwd):/app/LoginWeb -v $(pwd)/database.db:/app/database.db linnil1/tzfserver python3
+# from tzfserver import start
+# start.add_user(name)
+# start.add_token(name)
+
+# NextCloud
+# enable collabora (Set https://my.domain.ntu.edu.tw:444)
+# enable saml and set like this
+"""
+"types": "authentication",
+"type": "saml",
+"general-idp0_display_name": "LoginName",
+"general-allow_multiple_user_back_ends": "1",
+"general-uid_mapping": "uid",
+"saml-attribute-mapping-displayName_mapping": "uid",
+"saml-attribute-mapping-quota_mapping": "quota",
+"idp-entityId": "myEntityID",
+"idp-singleSignOnService.url": "https:\/\/my.domain.ntu.edu.tw:443\/saml\/sso\/redirect",
+"idp-singleLogoutService.url": "https:\/\/my.domain.ntu.edu.tw:443\/saml\/slo\/redirect",
+"""
+# enable external storage
+
+# External Storage
+cd Nextcloud
+pip3 install requests
+vim adduser.py # set user_list
+python3 adduser.py
+docker exec -it labserver_nextcloud_1 -u 1000 php occ files_external:import my_storges.json
 cd ..

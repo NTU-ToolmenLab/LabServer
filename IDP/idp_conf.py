@@ -112,6 +112,8 @@ CONFIG = {
     "metadata": {
         "remote": [{
             "url": "https://my.domain.ntu.edu.tw:443/metadata/"
+        }, {
+            "url": "https://my.domain.ntu.edu.tw:444/apps/user_saml/saml/metadata"
         }],
     },
     # This database holds the map between a subject's local identifier and
