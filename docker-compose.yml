@@ -1,5 +1,4 @@
 version: '3'
-
 services:
   traefik:
     image: traefik
@@ -86,7 +85,10 @@ services:
     image: nextcloud:fpm
     restart: always
     volumes:
-      - ./nextcloud/nextcloud:/var/www/html
+      - ./Nextcloud/nextcloud:/var/www/html
+      - ./Nextcloud/etcpasswd:/etc/passwd
+      - ./Nextcloud/etcgroup:/etc/group
+      - /home/your_external/:/external_data
     networks:
       - mynet
 
@@ -99,10 +101,10 @@ services:
       - nextcloud
       - collabora
     volumes:
-      - ./nextcloud/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nextcloud/nextcloud:/var/www/html
-      - ./nextcloud/certs:/certs
-      - ./nextcloud/log:/var/log/nginx/
+      - ./Nextcloud/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./Nextcloud/nextcloud:/var/www/html
+      - ./Nextcloud/certs:/certs
+      - ./Nextcloud/log:/var/log/nginx/
     depends_on:
       - nextcloud
       - collabora
@@ -116,8 +118,6 @@ services:
       - MKNOD
     environment:
       - domain=my.domain.ntu.edu.tw
-    volumes:
-      - ./nextcloud/collabora:/etc/loolwsd
     networks:
       - mynet
 

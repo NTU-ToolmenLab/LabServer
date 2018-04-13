@@ -39,6 +39,17 @@ cd UserDocker
 docker build . -t linnil1/docker-firefox
 cd ..
 
+# build nextcloud
+cd Nextcloud
+docker pull nextcloud:fpm
+docker pull nginx
+docker pull collabora/code
+mkdir certs log
+cp ../traefik/host.cert certs/
+cp ../traefik/host.key certs/
+cp ../traefik/fullchain.pem certs/fullchain.pem
+cd ..
+
 # modify docker-compose for
 # 1. add user (only need to share network see docker-vnc for example),
 # 2. change host
