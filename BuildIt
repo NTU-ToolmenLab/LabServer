@@ -1,16 +1,20 @@
 # install virtual for better debuging and somewhat
+# Optional
 sudo apt-get install python3-pip
 sudo pip3 install virtualenv
 virtualenv env
 source env/bin/active
 
-# create encrypt files of traefik
-cd traefik/
+# You can create certs and key by Lets Encrypt it!
+# and copy into certs/
+# or do optional one
+# Optional
+openssl genrsa 1024 > privkey.pem
+chmod 400 privkey.pem
+openssl req -new -x509 -nodes -sha1 -days 365 -key host.key -out fullchain.pem
+
+# traefik
 docker pull traefik
-openssl genrsa 1024 > host.key
-chmod 400 host.key
-openssl req -new -x509 -nodes -sha1 -days 365 -key host.key -out host.cert
-cd ..
 
 # build LoginWeb
 cd LoginWeb
@@ -19,6 +23,7 @@ touch log
 docker build . -t linnil1/tzfserver
 touch databse.db
 docker run -it --rm -v $(pwd)/database.db:/app/database.db linnil1/tzfserver python3 -c 'from tzfserver import start;start.init_db();'
+
 # build saml
 cd saml
 vim settings.json
@@ -40,15 +45,9 @@ docker build . -t linnil1/docker-firefox
 cd ..
 
 # build nextcloud
-cd Nextcloud
 docker pull nextcloud:fpm
 docker pull nginx
 docker pull collabora/code
-mkdir certs log
-cp ../traefik/host.cert certs/
-cp ../traefik/host.key certs/
-cp ../traefik/fullchain.pem certs/fullchain.pem
-cd ..
 
 # modify docker-compose for
 # 1. add user (only need to share network see docker-vnc for example),
@@ -63,9 +62,4 @@ cd IDP
 # https://gist.github.com/linnil1/b782dc567b1f404efcdb71a643ddc7e4
 git clone https://github.com/IdentityPython/pysaml2.git
 docker build . -t linnil1/idp
-cp ../traefik/host.cert sp.crt
-cp ../traefik/host.key  sp.key
-docker compose up tzfserver
-curl -k https://my.domain.ntu.edu.tw:443/metadata/ > metadata_tzf.xml
-docker compose stop tzfserver
 cd ..

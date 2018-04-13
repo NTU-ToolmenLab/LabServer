@@ -6,8 +6,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./traefik/traefik.toml:/etc/traefik/traefik.toml:ro
-      - ./traefik/host.cert:/host.cert
-      - ./traefik/host.key:/host.key
+      - ./certs:/certs
     ports:
       - "80:80"
       - "443:443" # 8888:443
@@ -23,8 +22,10 @@ services:
     #   - FLASK_DEBUG=1
     #   - FLASK_APP=tzfserver
     volumes:
+      - ./certs:/certs
       - ./LoginWeb:/app/LoginWeb
       - ./LoginWeb/database.db:/app/database.db
+     - ./LoginWeb/onelogin/settings.py:/usr/local/lib/python3.6/site-packages/onelogin/saml2/settings.py
       - /var/run/DockerServer:/app/sock
     labels:
       - "traefik.frontend.rule=Host:127.0.0.1"
@@ -73,6 +74,7 @@ services:
     volumes:
       - ./IDP:/app/IDP
       - ./LoginWeb/database.db:/app/database.db
+      - ./certs:/certs
     labels:
       - "traefik.frontend.rule=Host:my.domain.ntu.edu.tw;PathPrefixStrip:/saml/"
       - "traefik.port=8088"
@@ -101,9 +103,9 @@ services:
       - nextcloud
       - collabora
     volumes:
+      - ./certs:/certs
       - ./Nextcloud/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./Nextcloud/nextcloud:/var/www/html
-      - ./Nextcloud/certs:/certs
       - ./Nextcloud/log:/var/log/nginx/
     depends_on:
       - nextcloud

@@ -10,8 +10,8 @@ defaultEntryPoints = ["https","http"]
   address = ":443"
     [entryPoints.https.tls]
       [[entryPoints.https.tls.certificates]]
-      certFile = "host.cert"
-      keyFile = "host.key"
+      certFile = "/certs/fullchain.pem"
+      keyFile  = "/certs/privkey.pem"
 
 [api]
   # Name of the related entry point

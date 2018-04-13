@@ -34,8 +34,9 @@ HTTPS = False
 BASE = "https://%s:%s" % (HOST, PORT)
 
 # HTTPS cert information
-SERVER_CERT = "pki/host.cert"
-SERVER_KEY = "pki/host.key"
+SERVER_CERT = "/certs/cert.pem"
+SERVER_KEY =  "/certs/privkey.pem"
+CERT_CHAIN =  "/certs/fullchain.pem"
 SIGN_ALG = None
 DIGEST_ALG = None
 #SIGN_ALG = ds.SIG_RSA_SHA512
@@ -109,7 +110,9 @@ CONFIG = {
     "key_file": full_path(SERVER_KEY),
     "cert_file": full_path(SERVER_CERT),
     "metadata": {
-        "local":["metadata_tzf.xml"]
+        "remote": [{
+            "url": "https://my.domain.ntu.edu.tw:443/metadata/"
+        }],
     },
     # This database holds the map between a subject's local identifier and
     # the identifier returned to a SP
