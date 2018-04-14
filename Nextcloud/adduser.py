@@ -12,6 +12,7 @@ admin_name_password = "admin:password"
 http = "https://"
 host_port = "my.domain.ntu.edu.tw:444"
 user_list = ['name']
+password = "password"
 # config end
 
 header = {
@@ -22,7 +23,7 @@ header = {
 
 def addUser(name):
     resp = requests.post(http + admin_name_password + '@' + host_port + "/ocs/v1.php/cloud/users",
-                         data={'userid': name, 'password': "IT is xxx strange."},
+                         data={'userid': name, 'password': password},
                          headers=header)
     pprint(resp.json())
     return True

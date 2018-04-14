@@ -48,11 +48,13 @@ cd ..
 docker pull nextcloud:fpm
 docker pull nginx
 docker pull collabora/code
+docker pull mariadb
 
 # modify docker-compose for
 # 1. add user (only need to share network see docker-vnc for example),
 # 2. change host
 # 3. add docker network to extern ...
+# 4. nextcloud_db password
 vim docker-compose.yml
 
 # Build IDP
@@ -78,6 +80,8 @@ cd ..
 # start.add_token(name)
 
 # NextCloud
+# Go in to web https://my.domain.ntu.edu.tw:444
+# Set admin and password, and choose mysql: hostname=nextclouddb, and the other are same as docker-compose written
 # enable collabora (Set https://my.domain.ntu.edu.tw:444)
 # enable saml and set like this
 """

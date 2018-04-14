@@ -90,7 +90,11 @@ services:
       - ./Nextcloud/nextcloud:/var/www/html
       - ./Nextcloud/etcpasswd:/etc/passwd
       - ./Nextcloud/etcgroup:/etc/group
-      - /home/your_external/:/external_data
+      - /path/external_data:/external_data
+    depends_on:
+      - nextcloud_db
+    external_links:
+      - nextcloud_db:nextclouddb
     networks:
       - mynet
 
@@ -110,6 +114,19 @@ services:
     depends_on:
       - nextcloud
       - collabora
+    networks:
+      - mynet
+
+  nextcloud_db:
+    image: mariadb
+    restart: always
+    volumes:
+      - ./Nextcloud/db:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=
+      - MYSQL_PASSWORD=
+      - MYSQL_DATABASE=nextcloud
+      - MYSQL_USER=nextcloud
     networks:
       - mynet
 
