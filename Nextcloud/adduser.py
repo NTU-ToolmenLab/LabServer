@@ -10,9 +10,11 @@ https://docs.nextcloud.com/server/12/developer_manual/core/externalapi.html
 # config start
 admin_name_password = "admin:password"
 http = "https://"
-host_port = "my.domain.ntu.edu.tw:444"
-user_list = ['name']
-password = "password"
+host_port = "mydomain.ntu.edu.tw:444"
+user_list = ["name"]
+group_id = "newgroup"
+password = "It is password"
+
 # config end
 
 header = {
@@ -21,9 +23,19 @@ header = {
     "Accept": "application/json"
 }
 
+def createGroup():
+    resp = requests.post(http + admin_name_password + '@' + host_port + "/ocs/v1.php/cloud/groups",
+                         data={'groupid': group_id},
+                         headers=header)
+    pprint(resp.json())
+
 def addUser(name):
     resp = requests.post(http + admin_name_password + '@' + host_port + "/ocs/v1.php/cloud/users",
                          data={'userid': name, 'password': password},
+                         headers=header)
+    pprint(resp.json())
+    resp = requests.post(http + admin_name_password + '@' + host_port + "/ocs/v1.php/cloud/users/" + name + "/groups",
+                         data={'groupid': group_id},
                          headers=header)
     pprint(resp.json())
     return True

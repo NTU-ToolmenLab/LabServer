@@ -554,7 +554,7 @@ def username_password_authn(environ, start_response, reference, key,
         "key": key,
         "authn_reference": reference,
         # for traefik
-        "redirect_uri": redirect_uri.replace("http","https").replace(":443",":443/saml")
+        "redirect_uri": redirect_uri.replace("http","https").replace(":443",":443/saml") # change both 443
     }
     logger.info("do_authentication argv: %s", argv)
     return resp(environ, start_response, **argv)
@@ -571,6 +571,8 @@ def verify_username_and_password(dic):
     name = dic["userName"][0]
     cur = db.execute('SELECT * FROM login WHERE name = ?', [name])
     res = cur.fetchone()
+    if not res:
+        return False, ""
     if passlib.hash.sha512_crypt.verify(dic["userPassword"][0], res['pass']):
         return True, name
     else:
