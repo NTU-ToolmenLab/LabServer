@@ -122,5 +122,13 @@ tags
 # my file
 database.db
 LoginWeb/log
-host.cert
-host.key
+certs/*.pem
+IDP/idp.subject
+IDP/modules
+Nextcloud/db/
+Nextcloud/nextcloud/
+
+# git clone
+my_vnc/noVNC
+my_vnc/websockify
+IDP/pysaml2

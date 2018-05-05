@@ -42,8 +42,8 @@ def addUser(name):
 
 def setStorage(name):
     return {
-        "mount_point": "\/share_" + name,
-        "storage": "\\OC\\Files\\Storage\\Local",
+        "mount_point": "/share_" + name,
+        "storage": r"\OC\Files\Storage\Local",
         "authentication_type": "null::null",
         "configuration": {
             "datadir": "/external_data/" + name

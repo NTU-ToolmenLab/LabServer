@@ -25,7 +25,7 @@ services:
       - ./certs:/certs
       - ./LoginWeb:/app/LoginWeb
       - ./LoginWeb/database.db:/app/database.db
-     - ./LoginWeb/onelogin/settings.py:/usr/local/lib/python3.6/site-packages/onelogin/saml2/settings.py
+      - ./LoginWeb/onelogin/settings.py:/usr/local/lib/python3.6/site-packages/onelogin/saml2/settings.py
       - /var/run/DockerServer:/app/sock
     labels:
       - "traefik.frontend.rule=Host:127.0.0.1"

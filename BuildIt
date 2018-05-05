@@ -6,6 +6,7 @@ source env/bin/active
 
 # You can create certs and key by Lets Encrypt it!
 ## You should open port 80 for veriation
+docker pull certbot/certbot
 docker run --rm -it -p 80:80 -v $(pwd)/letsencrypt:/etc/letsencrypt certbot/certbot certonly --standalone
 cp letsencrypt/live/my.domain.ntu.edu.tw/* certs/
 
