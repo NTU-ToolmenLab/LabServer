@@ -53,7 +53,7 @@ services:
       - ./my_vnc:/app/my_vnc
       - ./LoginWeb/database.db:/app/database.db
     labels:
-      - "traefik.frontend.rule=Host:127.0.0.1;PathPrefixStrip:/vnc"
+      - "traefik.frontend.rule=Host:127.0.0.1;PathPrefixStrip:/vnc/"
       - "traefik.port=6080"
       - "traefik.enable=true"
       - "traefik.backend=vnc"

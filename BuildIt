@@ -41,7 +41,20 @@ vim settings.json # modify my.domain:443
 cd ../..
 
 # copy my_vnc
-# ..
+cd my_vnc
+git clone https://github.com/novnc/noVNC.git
+cd noVNC
+## if you don't have node npm that fine
+## just build it in anthoer place and copy build folder
+npm install
+./utils/use_require.js --with-app --as commonjs
+## copy to my_vnc/
+mv build ../
+cd ..
+git clone https://github.com/novnc/websockify
+cat token_plugin.py >> websockify/websockify/token_plugins.py
+docker build . -t linnil1/docker-vnc
+cd ..
 
 # Control docker to start or stop
 cd DockerServer

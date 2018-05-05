@@ -150,7 +150,7 @@ def Resume(nowUser):
     # https://github.com/containous/traefik/issues/1957
     # BUG: solution: hard code beacuse of the bug
     # return redirect("/vnc/?tokeon=" + token)
-    return redirect("https://" + request.host + "/vnc/?token=" + token)
+    return redirect("https://" + request.host + "/vnc/?path=vnc/?token=" + token)
 
 @app.route("/changepw", methods=['GET', 'POST'])
 @isLogin
@@ -172,10 +172,10 @@ def ChangePassword(nowUser):
 @isLogin
 def vncToken(nowUser):
     token = request.args.get('token')
-    qdata = query_db("SELECT tokenstatus FROM tokens WHERE tokenname = ? AND user = ?", (token, nowUser.id), one=True)
+    qdata = query_db("SELECT * FROM tokens WHERE tokenname = ? AND user = ?", (token, nowUser.id), one=True)
     if not qdata:
         return ""
-    return qdata['tokenstatus'] + '|password'
+    return "tokens"
 
 """
 @app.before_request
