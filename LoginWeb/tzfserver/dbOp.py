@@ -19,7 +19,10 @@ def close_connection(exception):
 
 def query_db(query, args=(), one=False):
     with app.app_context():
-        cur = get_db().execute(query, args)
+        if args:
+            cur = get_db().execute(query, args)
+        else:
+            cur = get_db().execute(query)
         if one:
             rv = cur.fetchone()
         else:

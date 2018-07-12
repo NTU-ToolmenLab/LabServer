@@ -170,12 +170,9 @@ def ChangePassword(nowUser):
 
 @app.route("/vnctoken", methods=['GET'])
 @isLogin
-def vncToken(nowUser):
+def tokenVnc(nowUser):
     token = request.args.get('token')
-    qdata = query_db("SELECT * FROM tokens WHERE tokenname = ? AND user = ?", (token, nowUser.id), one=True)
-    if not qdata:
-        return ""
-    return "tokens"
+    return nowUser.user.checkVNCtoken(token)
 
 """
 @app.before_request

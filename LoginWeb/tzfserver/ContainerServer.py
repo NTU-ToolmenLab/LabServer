@@ -25,26 +25,45 @@ class User:
         self.name = name
         self.netName = "labserver_mynet"
         self.sock= "http+unix://%2Fapp%2Fsock%2FDockerServer.sock"
+        self.isadmin = self.name == "linnil1"
 
-    def getToken(self, queryStr, queryObj, one=True):
+    def getToken(self, queryStr, queryObj=(), one=True):
         qdata = query_db(queryStr, queryObj, one=one)
         return qdata
 
     def checkID(self, containerID):
-        ddata = self.getToken("SELECT * FROM tokens WHERE user = ? AND boxid = ?",
-                              (self.name, containerID))
+        if self.isadmin:
+            ddata = self.getToken("SELECT * FROM tokens WHERE boxid = ?", (containerID,))
+        else:
+            ddata = self.getToken("SELECT * FROM tokens WHERE user = ? AND boxid = ?",
+                                  (self.name, containerID))
         if not ddata:
             raise UserError
         return ddata
 
+    def checkVNCtoken(self, token):
+        if self.isadmin:
+            ddata = query_db("SELECT * FROM tokens WHERE tokenname = ?", (token,), one=True)
+        else:
+            ddata = query_db("SELECT * FROM tokens WHERE tokenname = ? AND user = ?", (token, self.name), one=True)
+        if not ddata:
+            return ""
+            raise UserError
+        return qdata['tokenstatus'] + '|passowrd'
+
     def lists(self):
         print("list", self.name)
-        ddata = self.getToken("SELECT * FROM tokens WHERE user = ?", (self.name,), one=False)
+        if self.isadmin:
+            ddata = self.getToken("SELECT * FROM tokens", one=False)
+        else:
+            ddata = self.getToken("SELECT * FROM tokens WHERE user = ?", (self.name,), one=False)
 
         list_box = []
         for d in ddata:
             cont = post(self.sock + "/search", data={'key': d['boxname']}).json()
             if cont.get('error'):
+                print("Error", d['boxname'])
+                continue
                 raise UserError
             set_db("UPDATE tokens SET boxid = ?, boxstatus = ? WHERE boxname = ?",
                    (cont['id'], cont['status'], d['boxname']))

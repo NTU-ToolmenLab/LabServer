@@ -93,10 +93,8 @@ def ChangePassword():
 def vncToken():
     nowUser = flask_login.current_user
     token = request.args.get('token')
-    qdata = query_db("SELECT tokenstatus FROM tokens WHERE tokenname = ? AND user = ?", (token, nowUser.id), one=True)
-    if not qdata:
-        return ""
-    return qdata['tokenstatus'] + '|passowrd'
+    return nowUser.user.checkVNCtoken(token)
+
 
 """
 @app.before_request
