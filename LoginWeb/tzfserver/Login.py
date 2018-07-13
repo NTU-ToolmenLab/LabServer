@@ -13,7 +13,8 @@ class LoginUser(flask_login.UserMixin):
         self.id = u['name']
         self.password = u['pass']
         self.time = u['time']
-        self.user = User(self.id)
+        self.user = User(self.id, u['admin'])
+
     def checkPassword(self, password):
         return passlib.hash.sha512_crypt.verify(password, self.password)
 
@@ -50,15 +51,15 @@ def setPW(user, oldone, newone):
     return "ok"
 
 def std_add_user():
-    print("Username ")
-    name = input()
+    name = input("Username ")
     passwd = getpass()
     passwd1 = getpass("Password Again: ")
+    admin = int(input('Is admin (Y/n)') == 'Y')
     assert(passwd == passwd1 and len(passwd) >= 8)
-    return add_user(name, passwd)
+    return add_user(name, passwd, time.time(), admin)
 
-def add_user(name, passwd='test'): # change it
+def add_user(name, passwd='test', time=0, admin=0): # change it
     assert(not query_db('SELECT name FROM login WHERE name = ?', [name], one=True))
     password = passlib.hash.sha512_crypt.encrypt(passwd)
-    set_db("INSERT INTO login (name, pass, time) VALUES (?, ?, ?)", (name, password, 0))
+    set_db("INSERT INTO login (name, pass, time, admin) VALUES (?, ?, ?, ?)", (name, password, time, admin))
     return name

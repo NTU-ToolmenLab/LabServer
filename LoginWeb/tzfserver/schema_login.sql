@@ -2,7 +2,8 @@ DROP TABLE IF EXISTS login;
 CREATE TABLE login (
   name TEXT PRIMARY KEY,
   pass TEXT NOT NULL,
-  time FLOAT NOT NULL
+  time FLOAT NOT NULL,
+  admin BOOLEAN NOT NULL
 );
 
 DROP TABLE IF EXISTS tokens;

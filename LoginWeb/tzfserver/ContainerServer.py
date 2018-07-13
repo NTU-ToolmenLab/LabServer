@@ -21,11 +21,11 @@ CREATE TABLE tokens (
 """
 
 class User:
-    def __init__(self, name):
+    def __init__(self, name, admin=0):
         self.name = name
         self.netName = "labserver_mynet"
         self.sock= "http+unix://%2Fapp%2Fsock%2FDockerServer.sock"
-        self.isadmin = self.name == "linnil1"
+        self.isadmin = int(admin)
 
     def getToken(self, queryStr, queryObj=(), one=True):
         qdata = query_db(queryStr, queryObj, one=one)
