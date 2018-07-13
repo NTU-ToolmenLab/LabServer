@@ -7,6 +7,7 @@ app.secret_key = ''  # Change this!
 
 from .dbOp  import *
 from .Login import *
+from . import admin_page
 
 login_manager.init_app(app)
 login_manager.login_view = 'Login'
@@ -95,6 +96,15 @@ def vncToken():
     token = request.args.get('token')
     return nowUser.user.checkVNCtoken(token)
 
+@app.route('/adminpage', methods=['GET', 'POST'])
+@flask_login.login_required
+def adminPage():
+    if not flask_login.current_user.user.isadmin:
+        raise UserError
+    if request.method == 'GET':
+        return admin_page.adminPage()
+    else:
+        return admin_page.adminPageModify(request.form)
 
 """
 @app.before_request

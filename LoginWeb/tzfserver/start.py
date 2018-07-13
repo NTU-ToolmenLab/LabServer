@@ -16,6 +16,7 @@ app.config['SAML_PATH'] = os.path.join(os.path.dirname(os.path.dirname(__file__)
 
 from .dbOp  import *
 from .Login import *
+from . import admin_page
 
 login_manager.init_app(app)
 login_manager.login_view = 'Login'
@@ -173,6 +174,16 @@ def ChangePassword(nowUser):
 def tokenVnc(nowUser):
     token = request.args.get('token')
     return nowUser.user.checkVNCtoken(token)
+
+@app.route('/adminpage', methods=['GET', 'POST'])
+@isLogin
+def adminPage(nowUser):
+    if not nowUser.user.isadmin:
+        raise UserError
+    if request.method == 'GET':
+        return admin_page.adminPage()
+    else:
+        return admin_page.adminPageModify(request.form)
 
 """
 @app.before_request
