@@ -153,7 +153,7 @@ def Resume(nowUser):
     # return redirect("/vnc/?tokeon=" + token)
     return redirect("https://" + request.host + "/vnc/?path=vnc/?token=" + token)
 
-@app.route("/changepw", methods=['GET', 'POST'])
+@app.route("/passwd", methods=['GET', 'POST'])
 @isLogin
 def ChangePassword(nowUser):
     if request.method == 'GET':

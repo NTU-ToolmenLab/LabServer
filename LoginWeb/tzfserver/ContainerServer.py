@@ -113,6 +113,18 @@ class User:
         print("restart", containerID)
         return True
 
+    def passwd(self, pw):
+        ddata = self.getToken("SELECT * FROM tokens WHERE user = ?", (self.name,), one=False)
+        for i in ddata:
+            containerID = i['boxname']
+            rep = post(self.sock + "/passwd", data={'id': containerID,
+                                                    'pw': pw}).json()
+            if rep.get('error'):
+                raise UserError
+            print("passwd ", containerID)
+        print("passwd ", self.name)
+        return True
+
 def add_token(name, tokenname, realtoken=""):
     # in this case realtoken = "labserver_" + tokenname + "_1"
     if not realtoken:

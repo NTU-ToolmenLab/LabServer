@@ -56,5 +56,15 @@ def restart():
     container.restart()
     return Ok()
 
+@app.route('/passwd', methods=['POST'])
+def passwd():
+    cid = request.form.get('id')
+    container = getContainer(cid)
+    pw = request.form.get('pw')
+    pwd = pw.replace(r'/', r'\/').replace('$',r'\$')
+    # Is it not robost ?
+    rest = container.exec_run(r'perl -p -i -e "s/(ubuntu:).*?(:.+)/\1' + pwd + r'\2/g" /etc/shadow')
+    return Ok()
+
 if __name__=='__main__':
     app.run()
