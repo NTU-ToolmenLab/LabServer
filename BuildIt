@@ -62,7 +62,7 @@ cd DockerServer
 docker build . -t linnil1/dockerserver
 cd ..
 
-# build example docker-firefox-vnc
+# build example docker-firefox-vnc (for testing)
 cd UserDocker
 docker build . -t linnil1/docker-firefox
 cd ..

@@ -89,6 +89,11 @@ class User:
         set_db("UPDATE tokens SET tokenstatus = ?, boxstatus = ?, tokenip = ? WHERE boxid = ?",
                ("init" + passlib.hash.hex_md5.encrypt(str(time.time())), cont['status'],
                 cont['ip'], containerID))
+
+        if not self.isadmin:
+            pw = self.getToken("SELECT * FROM login where name = ?", (self.name,), one=True)['pass']
+            self.passwdone(pw, containerID)
+
         # my_vnc code should add 5900 by itself
         print("resume", dict(ddata))
         return mytoken
@@ -116,14 +121,16 @@ class User:
     def passwd(self, pw):
         ddata = self.getToken("SELECT * FROM tokens WHERE user = ?", (self.name,), one=False)
         for i in ddata:
-            containerID = i['boxname']
-            rep = post(self.sock + "/passwd", data={'id': containerID,
-                                                    'pw': pw}).json()
-            if rep.get('error'):
-                raise UserError
-            print("passwd ", containerID)
+            self.passwdone(pw, i['boxname'])
         print("passwd ", self.name)
         return True
+
+    def passwdone(self, pw, containerID):
+        rep = post(self.sock + "/passwd", data={'id': containerID,
+                                                'pw': pw}).json()
+        if rep.get('error'):
+            raise UserError
+        print("passwd ", containerID)
 
 def add_token(name, tokenname, realtoken=""):
     # in this case realtoken = "labserver_" + tokenname + "_1"

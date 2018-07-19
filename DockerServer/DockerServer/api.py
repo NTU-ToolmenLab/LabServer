@@ -60,6 +60,8 @@ def restart():
 def passwd():
     cid = request.form.get('id')
     container = getContainer(cid)
+    if not container.attrs['State']['Running']:
+        abort(404)
     pw = request.form.get('pw')
     pwd = pw.replace(r'/', r'\/').replace('$',r'\$')
     # Is it not robost ?
