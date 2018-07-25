@@ -47,6 +47,17 @@ services:
     networks:
       - mynet
 
+  guikill:
+    image: linnil1/dockerserver
+    command: "python3 /app/guikill.py > /app/log"
+    volumes:
+      - ./DockerServer:/app/
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    labels:
+      - "traefik.enable=false"
+    networks:
+      - mynet
+
   vnc:
     image: linnil1/docker-vnc
     volumes:
