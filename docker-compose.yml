@@ -49,7 +49,7 @@ services:
 
   guikill:
     image: linnil1/dockerserver
-    command: "python3 /app/guikill.py > /app/log"
+    command: "python3 /app/guikill.py"
     volumes:
       - ./DockerServer:/app/
       - /var/run/docker.sock:/var/run/docker.sock:ro

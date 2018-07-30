@@ -1,5 +1,18 @@
 import docker
 import time
+import logging
+
+logger = logging.getLogger('GUIKILL')
+logger.setLevel(logging.DEBUG)
+fh = logging.FileHandler('/app/guikill.log')
+ch = logging.StreamHandler()
+fh.setLevel(logging.DEBUG)
+ch.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)-12s - %(name)-12s - %(levelname)-8s - %(message)s')
+fh.setFormatter(formatter)
+ch.setFormatter(formatter)
+logger.addHandler(fh)
+logger.addHandler(ch)
 
 def killandAdd(name, what):
     shstr = ''
@@ -32,25 +45,25 @@ def getconts():
 def main():
     conts = getconts()
     for cont in conts:
-        name = cont.name 
+        name = cont.name
         top = cont.top(ps_args='-A -o pid,pcpu,rss,time,command')
         scripts = []
         for p in top['Processes']:
-            if float(p[1]) < 5:
+            if float(p[1]) < 2:
                 continue
             for cmd in ['gnome-panel', 'nemo', 'nautilus']:
                 if cmd  in p[-1]:
-                    print(p)
+                    logger.debug(p)
                     scripts.extend(killandAdd(name, cmd))
 
         if scripts:
-            print(name)
-            print(scripts)
+            logger.info(name)
+            logger.info(scripts)
             for s in scripts:
                 cont.exec_run(s)
 
 while True:
-    time.sleep(10)
+    logger.info("Check")
     main()
     time.sleep(3600)
 

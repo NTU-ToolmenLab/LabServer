@@ -124,6 +124,7 @@ database.db
 LoginWeb/log
 certs/*.pem
 IDP/idp.subject
+IDP/idp.log*
 IDP/modules
 Nextcloud/db/
 Nextcloud/nextcloud/
