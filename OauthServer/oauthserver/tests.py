@@ -5,7 +5,7 @@ from models import User, db
 import requests
 import passlib.hash
 
-class TestAll(TestCase):
+class TestDB(TestCase):
     def create_app(self):
         app = Flask(__name__)
         app.config.update({
@@ -31,7 +31,6 @@ class TestAll(TestCase):
         db.session.remove()
         db.drop_all()
 
-    # DB
     def test_add(self):
         user = User(name="test1", password="test123", admin=0)
         db.session.add(user)
@@ -53,7 +52,11 @@ class TestAll(TestCase):
         a = User.query.filter_by(name='test2').first()
         self.assertEqual(a, None)
 
-    # Login
+class Test_Login(unittest.TestCase):
+    def test_look_error(self):
+        a = requests.get("http://127.0.0.1:5000/api/hi")
+        self.assertEqual(a.status_code, 401)
+
     def test_look(self):
         a = requests.get("http://127.0.0.1:5000")
         self.assertTrue(a.ok)
@@ -72,6 +75,76 @@ class TestAll(TestCase):
             'userPassword': 'testWrong'})
         self.assertTrue(a.ok)
         self.assertTrue("Fail to Login" in a.text)
+
+class Test_passwd(unittest.TestCase):
+    def test_passwd_0(self):
+        a = requests.get("http://127.0.0.1:5000/passwd")
+        self.assertEqual(a.status_code, 401)
+
+    def test_passwd(self):
+        s = requests.Session()
+        a = s.post("http://127.0.0.1:5000", data={
+            'userName': 'test',
+            'userPassword': 'test123'})
+        self.assertTrue(a.ok)
+        self.assertEqual(a.json(), {'hi': True})
+        a = s.get("http://127.0.0.1:5000/passwd")
+        self.assertTrue(a.ok)
+
+    def test_passwd_1(self):
+        s = requests.Session()
+        s.post("http://127.0.0.1:5000", data={
+            'userName': 'test',
+            'userPassword': 'test123'})
+        a = s.post("http://127.0.0.1:5000/passwd", data={
+                'opw': 'test',
+                'npw': 'test123123xx',
+                'npw1': 'test123123'})
+        self.assertTrue(a.ok)
+        self.assertTrue("confirm password error" in a.text)
+
+    def test_passwd_2(self):
+        s = requests.Session()
+        s.post("http://127.0.0.1:5000", data={
+            'userName': 'test',
+            'userPassword': 'test123'})
+        a = s.post("http://127.0.0.1:5000/passwd", data={
+                'opw': 'test',
+                'npw': 'test123123',
+                'npw1': 'test123123'})
+        self.assertTrue(a.ok)
+        self.assertTrue("Wrong password" in a.text)
+
+    def test_passwd_3(self):
+        s = requests.Session()
+        s.post("http://127.0.0.1:5000", data={
+            'userName': 'test',
+            'userPassword': 'test123'})
+        a = s.post("http://127.0.0.1:5000/passwd", data={
+                'opw': 'test123',
+                'npw': 'test',
+                'npw1': 'test'})
+        self.assertTrue(a.ok)
+        self.assertTrue("Password should be more than 8 characters" in a.text)
+
+    def test_passwd_4(self):
+        s = requests.Session()
+        s.post("http://127.0.0.1:5000", data={
+            'userName': 'test',
+            'userPassword': 'test123'})
+        a = s.post("http://127.0.0.1:5000/passwd", data={
+                'opw': 'test123',
+                'npw': 'test123123',
+                'npw1': 'test123123'})
+        self.assertTrue(a.ok)
+        self.assertEqual(a.json(), {'hi': True})
+
+    def test_passwd_5(self):
+        a = requests.post("http://127.0.0.1:5000", data={
+            'userName': 'test',
+            'userPassword': 'test123123'})
+        self.assertTrue(a.ok)
+        self.assertEqual(a.json(), {'hi': True})
         
 
 if __name__ == '__main__':

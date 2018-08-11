@@ -17,6 +17,9 @@ class User(db.Model, flask_login.UserMixin):
 
     def checkPassword(self, password):
         return passlib.hash.sha512_crypt.verify(password, self.password)
+    def setPassword(self, password):
+        self.password = passlib.hash.sha512_crypt.hash(password)
+        db.session.commit()
 
 @login_manager.user_loader
 def user_loader(id):
@@ -31,3 +34,12 @@ def getUserId(name, password):
     if not u.checkPassword(password):
         return None
     return user_loader(u.id)
+
+def setPW(user, oldone, newone):
+    if not user.checkPassword(oldone):
+        return "Wrong password"
+    if len(newone) < 8:
+       return "Password should be more than 8 characters"
+    user.setPassword(newone)
+    return "ok"
+
