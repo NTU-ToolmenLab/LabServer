@@ -7,6 +7,7 @@ db = SQLAlchemy()
 login_manager = flask_login.LoginManager()
 
 class User(db.Model, flask_login.UserMixin):
+    __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(32), unique=True)
     password = db.Column(db.String(300), nullable=True)
@@ -42,4 +43,3 @@ def setPW(user, oldone, newone):
        return "Password should be more than 8 characters"
     user.setPassword(newone)
     return "ok"
-

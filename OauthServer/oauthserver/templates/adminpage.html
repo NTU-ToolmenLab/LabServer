@@ -1,26 +1,19 @@
-<!doctype html>
-<html>
-<head>
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <title>Title</title>
+{% extends 'base.html' %}
+
+{% block title %}
+Admin
+{% endblock %}
+
+{% block head %}
   <style>
 .mytable {
     table-layout: fixed;
     word-wrap: break-word;
 }
   </style>
-</head>
-<body>
+{% endblock %}
 
-  <nav class="navbar navbar-light bg-light justify-content-between">
-    <a class="navbar-brand"> {{ current_user.id }} </a>
-     <form class="form-inline">
-         <a href="{{ url_for('Login') + '?slo' }}" class="btn btn-primary btn-md"/>logout</a>
-     </form>
-  </nav>
-
+{% block body %}
       {% for table in tables %}
       <h2>{{table.name}}</h2>
       <div class="table-responsive">
@@ -35,7 +28,7 @@
           <tbody>
             {% for body in table.table %}
             <tr>
-              <form action="{{ url_for('adminPage') }}" method="post">
+              <form action="{{ url_for('oauthserver.routes.AdminPage') }}" method="post">
               {% for ind, data in dict(body).items() %}
               <th>{{data}}</th>
               <input  type="hidden" value="{{data}}" name="{{ind}}"/>
@@ -50,7 +43,7 @@
             </tr>
             {% endfor %}
             <tr>
-              <form action="{{ url_for('adminPage') }}" method="post">
+              <form action="{{ url_for('oauthserver.routes.AdminPage') }}" method="post">
               {% for key in table.table[0].keys() %}
               <th>
                   <input  type="text" value="" name="{{key}}"/>
@@ -68,9 +61,4 @@
         </table>
       </div>
       {% endfor %}
-
-</body>
-<script>
-
-</script>
-</html>
+{% endblock %}

@@ -3,6 +3,7 @@ from flask import render_template, redirect, jsonify, url_for
 import flask_login
 from .models import getUserId, setPW
 import logging
+from .adminpage import adminSet, adminView
 
 logger = logging.getLogger('oauthserver')
 bp = Blueprint(__name__, 'home')
@@ -67,3 +68,16 @@ def ChangePassword():
 
     logger.info(nowUser.name + " ChangePassword OK")
     return redirect(url_for('oauthserver.routes.hi'))
+
+@bp.route("/adminpage", methods=['GET', 'POST'])
+@flask_login.login_required
+def AdminPage():
+    nowUser = flask_login.current_user
+    # if nowUser.admin
+    logger.info(nowUser.name + " AdminPage")
+    if request.method == 'GET':
+        return adminView()
+    else:
+        return adminSet(request.form)
+
+    return redirect(url_for('oauthserver.routes.Login'))

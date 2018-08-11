@@ -2,11 +2,14 @@ from oauthserver.app import create_app
 import logging
 
 app = create_app({
+    'url': 'http://127.0.0.1:5000',
+    'name': 'Lab304',
     'SECRET_KEY': 'secret',
     'OAUTH2_REFRESH_TOKEN_GENERATOR': True,
     'SQLALCHEMY_TRACK_MODIFICATIONS': False,
     'SQLALCHEMY_DATABASE_URI': 'sqlite:////tmp/db.sqlite',
 })
+
 
 logger = logging.getLogger('oauthserver')
 logger.setLevel(logging.DEBUG)

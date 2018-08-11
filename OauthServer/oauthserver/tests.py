@@ -52,6 +52,13 @@ class TestDB(TestCase):
         a = User.query.filter_by(name='test2').first()
         self.assertEqual(a, None)
 
+    def test_get_key(self):
+        a = User.query.filter_by(name='test').first()
+        d = dict(a.__dict__)
+        di = {k: v for k, v in d.items() if not k.startswith('_')}
+        # for i in dir(a):
+        #     print(i, getattr(a, i))
+
 class Test_Login(unittest.TestCase):
     def test_look_error(self):
         a = requests.get("http://127.0.0.1:5000/api/hi")
@@ -75,6 +82,7 @@ class Test_Login(unittest.TestCase):
             'userPassword': 'testWrong'})
         self.assertTrue(a.ok)
         self.assertTrue("Fail to Login" in a.text)
+
 
 class Test_passwd(unittest.TestCase):
     def test_passwd_0(self):
@@ -145,7 +153,39 @@ class Test_passwd(unittest.TestCase):
             'userPassword': 'test123123'})
         self.assertTrue(a.ok)
         self.assertEqual(a.json(), {'hi': True})
+
+
+class Test_lists(unittest.TestCase):
+    def test_nologin(self):
+        a = requests.get("http://127.0.0.1:5000/box/list")
+        self.assertEqual(a.status_code, 401)
+
+    def test_list(self):
+        s = requests.Session()
+        s.post("http://127.0.0.1:5000", data={
+            'userName': 'test',
+            'userPassword': 'test123'})
+        a = s.get("http://127.0.0.1:5000/box/list")
+        self.assertTrue(a.ok)
+
+    def test_logout(self):
+        s = requests.Session()
+        s.post("http://127.0.0.1:5000", data={
+            'userName': 'test',
+            'userPassword': 'test123'})
+        a = s.get("http://127.0.0.1:5000/logout")
+        self.assertTrue("Welcome" in a.text)
+
+        a = requests.get("http://127.0.0.1:5000/api/hi")
+        self.assertEqual(a.status_code, 401)
         
+    def test_glabol(self):
+        s = requests.Session()
+        s.post("http://127.0.0.1:5000", data={
+            'userName': 'test',
+            'userPassword': 'test123'})
+        a = s.get("http://127.0.0.1:5000/box/list")
+        self.assertTrue("127.0.0.1" in a.text)
 
 if __name__ == '__main__':
     unittest.main()

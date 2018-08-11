@@ -1,19 +1,15 @@
-<!doctype html>
-<html>
-<head>
-  <!-- https://bootsnipp.com/snippets/featured/simple-login -->
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <title>Title</title>
-</head>
-<body>
+{% extends 'base.html' %}
 
+{% block title %}
+Login
+{% endblock %}
+
+{% block body %}
 <div class="container">
   <div class="row justify-content-center">
     <div class="col-5 login-container">
       <div class="form-login">
-        <h4>Welcome to Lab304 !</h4>
+        <h4>Welcome to {{ config.name }} !</h4>
         <form action="{{ url_for('oauthserver.routes.Login') }}" method="post">
           <input type="text"     name="userName"     placeholder="username"
                  class="form-control input-sm chat-input"/></br>
@@ -34,7 +30,9 @@
     </div>
   </div>
 </div>
+{% endblock %}
 
+{% block head %}
 <style>
 @import url(http://fonts.googleapis.com/css?family=Roboto:400);
 body {
@@ -76,6 +74,4 @@ h4 {
   text-align: center;
 }
 </style>
-
-</body>
-</html>
+{% endblock %}

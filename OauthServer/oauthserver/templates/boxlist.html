@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block title %}
+list
+{% endblock %}
+
+
+{% block body %}
+  <nav class="navbar navbar-light bg-light justify-content-between">
+    <a class="navbar-brand"> {{ current_user.name }} </a>
+     <form class="form-inline">
+         <a href="{{ url_for('oauthserver.routes.Logout')}}" class="btn btn-primary btn-md"/>logout</a>
+     </form>
+  </nav>
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-8">
+        <div class="alert alert-success" role="alert">
+          <h3> Bulletin Board </h3>
+          <br>
+          <p> Change Your Password Here <a href="{{ url_for('oauthserver.routes.ChangePassword') }}"> {{ config.url }}/passwd</a></p>
+        </div>
+
+        {% for data in container_list %}
+          <div class="card my-3">
+            <div class="card-header"> {{ data.name }} </div>
+            <div class="card-body">
+              <h5 class="card-title"> status: {{ data.status }} </h5>
+              <p class="card-text"> {{ data.comment }} </p>
+
+              <div class="btn-group" role="group">
+                <form action="{{ url_for('oauthserver.routes.boxResume')}}" method="post">
+                  <input type="hidden" name="id"     value="{{data.id}}"/>
+                  <input type="submit" value="Resume" class="btn btn-outline-primary"/>
+                </form>
+
+                <form action="{{ url_for('oauthserver.routes.boxapi')}}" method="post">
+                  <input  type="hidden" value="{{data.id}}" name="id"/>
+                  <input  type="hidden" value=""            name="method"/>
+                  <input  type="submit" value="Restart" onclick="changeMethod(this, 'Restart')"
+                          class="btn btn-outline-warning"/>
+                  <input  type="submit" value="Stop"    onclick="changeMethod(this, 'Stop')"
+                          class="btn btn-outline-danger"/>
+                </form>
+              </div>
+            </div>
+            <div class="card-footer text-muted"> {{ data.id[:10] }} </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block head %}
+<script>
+  function changeMethod(ele, method) {
+    ele.parentElement.querySelector("input[name='method']").value = method;
+  }
+</script>
+{% endblock %}
