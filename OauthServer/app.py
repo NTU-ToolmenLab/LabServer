@@ -25,11 +25,19 @@ logging.debug('Start')
 
 @app.cli.command()
 def initdb():
-    from oauthserver.models import db, User
-    import passlib.hash
+    from oauthserver.models import db, add_user
+    logger.info("Recreate DataBase")
     db.drop_all()
     db.create_all()
-    p = passlib.hash.sha512_crypt.hash('test123')
-    user = User(name="test", password=p, admin=0)
-    db.session.add(user)
-    db.session.commit()
+    add_user("test", 'test123', admin=1)
+    add_user("test_user", 'test123123')
+
+@app.cli.command()
+def std_add_user():
+    from oauthserver.models import add_user
+    name = input("Username ")
+    passwd = getpass()
+    passwd1 = getpass("Password Again: ")
+    admin = int(input('Is admin (Y/n)') == 'Y')
+    assert(passwd == passwd1 and len(passwd) >= 8)
+    return add_user(name, passwd, time.time(), admin)

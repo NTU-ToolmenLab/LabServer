@@ -2,7 +2,10 @@ import time
 from flask_sqlalchemy import SQLAlchemy
 import flask_login
 import passlib.hash
+import time
+import logging
 
+logger = logging.getLogger('oauthserver')
 db = SQLAlchemy()
 login_manager = flask_login.LoginManager()
 
@@ -11,6 +14,7 @@ class User(db.Model, flask_login.UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(32), unique=True)
     password = db.Column(db.String(300), nullable=True)
+    passtime = db.Column(db.Float, default=0)
     admin = db.Column(db.Boolean(32), nullable=True)
 
     def __str__(self):
@@ -27,8 +31,6 @@ def user_loader(id):
     return User.query.get(id)
 
 def getUserId(name, password):
-    u = User.query.all()
-    print(u)
     u = User.query.filter_by(name=name).first()
     if not u:
         return None
@@ -42,4 +44,18 @@ def setPW(user, oldone, newone):
     if len(newone) < 8:
        return "Password should be more than 8 characters"
     user.setPassword(newone)
+    user.passtime = time.time()
+    db.session.commit()
     return "ok"
+
+def add_user(name, passwd='', time=0, admin=0):
+    logger.info("Add User " + name)
+    u = User.query.filter_by(name=name).first()
+    assert(not u)
+    u = User(name=name,
+             passtime=time,
+             admin=admin)
+    u.setPassword(passwd)
+    db.session.add(u)
+    db.session.commit()
+    return name

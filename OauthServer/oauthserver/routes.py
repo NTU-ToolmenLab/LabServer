@@ -1,5 +1,4 @@
-from flask import Blueprint, request, session
-from flask import render_template, redirect, jsonify, url_for
+from flask import Blueprint, request, session, abort, render_template, redirect, jsonify, url_for
 import flask_login
 from .models import getUserId, setPW
 import logging
@@ -73,7 +72,8 @@ def ChangePassword():
 @flask_login.login_required
 def AdminPage():
     nowUser = flask_login.current_user
-    # if nowUser.admin
+    if not nowUser.admin:
+        abort(401)
     logger.info(nowUser.name + " AdminPage")
     if request.method == 'GET':
         return adminView()
