@@ -13,12 +13,12 @@ class User(db.Model, flask_login.UserMixin):
     __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(32), unique=True)
-    password = db.Column(db.String(300), nullable=True)
+    password = db.Column(db.String(300), nullable=False)
     passtime = db.Column(db.Float, default=0)
-    admin = db.Column(db.Boolean(32), nullable=True)
+    admin = db.Column(db.Boolean(32), default=0, nullable=False)
 
     def __str__(self):
-        return self.name
+        return '<User {}>'.format(self.name)
 
     def checkPassword(self, password):
         return passlib.hash.sha512_crypt.verify(password, self.password)

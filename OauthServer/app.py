@@ -26,11 +26,15 @@ logging.debug('Start')
 @app.cli.command()
 def initdb():
     from oauthserver.models import db, add_user
+    from oauthserver.box import db as boxdb
     logger.info("Recreate DataBase")
     db.drop_all()
+    boxdb.drop_all()
     db.create_all()
+    boxdb.create_all()
     add_user("test", 'test123', admin=1)
     add_user("test_user", 'test123123')
+    add_box("test", 'testbox')
 
 @app.cli.command()
 def std_add_user():
@@ -41,3 +45,11 @@ def std_add_user():
     admin = int(input('Is admin (Y/n)') == 'Y')
     assert(passwd == passwd1 and len(passwd) >= 8)
     return add_user(name, passwd, time.time(), admin)
+
+@app.cli.command()
+def std_add_box():
+    from oauthserver.box import add_box
+    user = input("Username ")
+    box_name = input("box_name ")
+    docker_name = input("docker_name ")
+    add_box(user, docker_name, box_name)

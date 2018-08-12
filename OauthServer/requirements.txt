@@ -1,7 +1,8 @@
-Flask
+flask
 Flask-SQLAlchemy
-Authlib>=0.6
 Flask-Testing
 flask-login
+Authlib
 passlib
 lxml
+requests

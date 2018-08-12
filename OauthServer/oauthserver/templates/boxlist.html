@@ -4,7 +4,6 @@
 list
 {% endblock %}
 
-
 {% block body %}
   <nav class="navbar navbar-light bg-light justify-content-between">
     <a class="navbar-brand"> {{ current_user.name }} </a>
@@ -26,23 +25,16 @@ list
             <div class="card-header"> {{ data.name }} </div>
             <div class="card-body">
               <h5 class="card-title"> status: {{ data.status }} </h5>
-              <p class="card-text"> {{ data.comment }} </p>
+              <p class="card-text"> {{ data.text }} </p>
 
-              <div class="btn-group" role="group">
-                <form action="{{ url_for('oauthserver.routes.boxResume')}}" method="post">
-                  <input type="hidden" name="id"     value="{{data.id}}"/>
-                  <input type="submit" value="Resume" class="btn btn-outline-primary"/>
-                </form>
-
-                <form action="{{ url_for('oauthserver.routes.boxapi')}}" method="post">
-                  <input  type="hidden" value="{{data.id}}" name="id"/>
-                  <input  type="hidden" value=""            name="method"/>
-                  <input  type="submit" value="Restart" onclick="changeMethod(this, 'Restart')"
-                          class="btn btn-outline-warning"/>
-                  <input  type="submit" value="Stop"    onclick="changeMethod(this, 'Stop')"
-                          class="btn btn-outline-danger"/>
-                </form>
-              </div>
+              <form action="{{ url_for('oauthserver.box.api')}}" method="post">
+                <input type="hidden"   name="id"     value="{{data.id}}"/>
+                <div class="btn-group" role="group">
+                  <input type="submit" name="method" value="Resume"  class="btn btn-outline-primary"/>
+                  <input type="submit" name="method" value="Restart" class="btn btn-outline-warning"/>
+                  <input type="submit" name="method" value="Stop"    class="btn btn-outline-danger" />
+                </div>
+              </form>
             </div>
             <div class="card-footer text-muted"> {{ data.id[:10] }} </div>
           </div>
@@ -50,12 +42,4 @@ list
       </div>
     </div>
   </div>
-{% endblock %}
-
-{% block head %}
-<script>
-  function changeMethod(ele, method) {
-    ele.parentElement.querySelector("input[name='method']").value = method;
-  }
-</script>
 {% endblock %}
