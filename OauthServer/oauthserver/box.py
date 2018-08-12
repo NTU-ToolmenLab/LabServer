@@ -2,10 +2,21 @@ from flask import Blueprint, request, abort, render_template, redirect, jsonify,
 from flask_sqlalchemy import SQLAlchemy
 import flask_login
 import logging
+from requests import post
 
 logger = logging.getLogger('oauthserver')
 bp = Blueprint(__name__, 'box')
 db = SQLAlchemy()
+
+myMap = {
+    'Resume' : "start",
+    'Stop'   : "stop",
+    'Restart': "restart"}
+
+# to get app config
+@bp.record
+def record_params(setup_state):
+    bp.sock = setup_state.app.config['dockerserver']
 
 @bp.route('/')
 @flask_login.login_required
@@ -20,21 +31,17 @@ def api():
     data = request.form
     logger.debug(nowUser.name + " api " + str(data))
 
-    # box = Box.query.filter_by(user=nowUser.name).filter(
-    #       Box.docker_id.startswith(data['id'])).first()
-    box = Box.query.filter_by(user=nowUser.name).first()
+    box = Box.query.filter_by(user=nowUser.name, docker_id=data['id']).first()
     if not box:
-        abort(501)
+        abort(403)
+    if data.get('method') not in myMap.keys():
+        abort(403)
 
+    logger.info("boxapi " + nowUser.name + " " + data['method'] + " " + data['id'])
+    box.api(myMap[data['method']])
     if data.get('method') == 'Resume':
-        box.resume()
+        box.api('passwd', pw=nowUser.password)
         # return redirect("/vnc/?token=" + token)
-    elif data.get('method') == 'Stop':
-        box.stop()
-    elif data.get('method') == 'Restart':
-        box.restart()
-    else:
-        abort(501)
     return redirect(url_for('oauthserver.box.Lists'))
 
 class Box(db.Model):
@@ -54,20 +61,26 @@ class Box(db.Model):
         return '<Box {}>'.format(docker_name)
 
     def getStatus(self):
-        example = {'id'    : "id",
-                   'name'  : "name",
-                   'text'  : "text",
-                   'status': "status"}
-        return example
+        print(self.box_name)
+        rep = post(bp.sock + "/search", data={'key': self.docker_name}).json()
+        if rep.get('error'):
+            return {'name'  : self.box_name,
+                    'status': 'error'}
 
-    def resume(self):
-        pass
+        self.docker_id = rep['id']
+        self.docker_ip = rep['ip']
+        return {'id'    : self.docker_id,
+                'name'  : self.box_name,
+                'text'  : self.box_text,
+                'status': rep['status']}
 
-    def restart(self):
-        pass
+    def api(self, name, **kwrags):
+        if name not in ['start', 'restart', 'stop', 'passwd']:
+            abort(403)
 
-    def stop(self):
-        pass
+        rep = post(bp.sock + "/" + name, data={'id': self.docker_id, **kwrags}).json()
+        if rep.get('error'):
+            abort(403)
 
 def add_box(user, docker_name, box_name=''):
     logger.info("Add box " + user + ' -> ' + docker_name)
@@ -90,4 +103,6 @@ def getList():
     nowUser = flask_login.current_user
     logger.info("list " + nowUser.name)
     boxes_ori = Box.query.filter_by(user=nowUser.name).all()
-    return [box.getStatus() for box in boxes_ori]
+    boxes = [box.getStatus() for box in boxes_ori]
+    db.session.commit()
+    return boxes

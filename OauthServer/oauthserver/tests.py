@@ -5,7 +5,7 @@ from models import User, db, add_user
 from box import db as boxdb, Box, add_box
 import requests
 import passlib.hash
-from lxml import etree
+from lxml import html
 import datetime
 import time
 from flask_sqlalchemy import SQLAlchemy, sqlalchemy
@@ -199,7 +199,7 @@ class Test_adminpage(unittest.TestCase):
     def test_nologin(self):
         a = requests.get("http://127.0.0.1:5000/adminpage")
         self.assertEqual(a.status_code, 401)
-        
+
     def test_nologin(self):
         s = requests.Session()
         s.post("http://127.0.0.1:5000", data={
@@ -279,7 +279,7 @@ class TestRealDB(TestCase):
         self.assertTrue(User.query.filter_by(name='test1'))
 
     def test_passtime(self):
-        User.query.filter_by(name='test_user').first().passtime = 0 
+        User.query.filter_by(name='test_user').first().passtime = 0
         db.session.commit()
         s = requests.Session()
         s.post("http://127.0.0.1:5000", data={
@@ -316,7 +316,6 @@ class Test_box_DB(TestCase):
         })
         boxdb.init_app(app)
         return app
-
     def setUp(self):
         boxdb.session.remove()
         boxdb.drop_all()
@@ -379,7 +378,7 @@ class Test_box_list(unittest.TestCase):
             'userPassword': 'test123'})
         a = s.get("http://127.0.0.1:5000/box/")
         self.assertTrue(a.ok)
-        
+
     def test_glabol(self):
         s = requests.Session()
         s.post("http://127.0.0.1:5000", data={
@@ -396,10 +395,10 @@ class Test_box_list(unittest.TestCase):
         a = s.post("http://127.0.0.1:5000/box/api", data={
             'id': 'id',
             'method': 'res_ume'})
-        self.assertEqual(a.status_code, 501)
+        self.assertEqual(a.status_code, 403)
         a = s.get("http://127.0.0.1:5000/box/api")
         self.assertEqual(a.status_code, 405)
-        
+
     def test_list_resume(self):
         s = requests.Session()
         s.post("http://127.0.0.1:5000", data={
@@ -410,6 +409,101 @@ class Test_box_list(unittest.TestCase):
             'method': 'Resume'})
         self.assertTrue(a.ok)
 
+class Test_box_list_docker(unittest.TestCase):
+    """
+    This need to run with DockerServer
+    """
+
+    def setUp(self):
+        self.url = 'http://127.0.0.1:3476'
+
+    def test_connect(self):
+        s = requests.Session()
+        a = s.post(self.url + "/search", data={'key': 'testbox'})
+        self.assertTrue(a.ok)
+        rep = a.json()
+        self.assertFalse(rep.get('error'))
+        self.assertIn('id', rep)
+        self.assertIn('ip', rep)
+        self.assertIn('name', rep)
+        self.assertIn('status', rep)
+
+    def test_api(self):
+        id = requests.post(self.url + "/search", data={'key': 'testbox'}).json()['id']
+        a = requests.post(self.url + "/start", data={'id': id})
+        self.assertTrue(a.ok)
+        rep = a.json()
+        self.assertFalse(rep.get('error'))
+
+    # Be careful. This need time to run
+    def test_start_stop(self):
+        s = requests.Session()
+        s.post("http://127.0.0.1:5000", data={
+            'userName': 'test',
+            'userPassword': 'test123'})
+
+        # list
+        a = s.get("http://127.0.0.1:5000/box/")
+        self.assertTrue(a.ok)
+        self.assertIn('running', a.text)
+
+        # stop
+        a = s.post("http://127.0.0.1:5000/box/api", data={
+            'id': html.fromstring(a.text).xpath("//*[@name='id']")[0].value,
+            'method': 'Stop'})
+        self.assertTrue(a.ok)
+        a = s.get("http://127.0.0.1:5000/box/")
+        self.assertTrue(a.ok)
+        self.assertIn('exited', a.text)
+
+        # start
+        a = s.post("http://127.0.0.1:5000/box/api", data={
+            'id': html.fromstring(a.text).xpath("//*[@name='id']")[0].value,
+            'method': 'Resume'})
+        self.assertTrue(a.ok)
+        a = s.get("http://127.0.0.1:5000/box/")
+        self.assertTrue(a.ok)
+        self.assertIn('running', a.text)
+
+    # Be careful. This need time to run
+    def test_restart(self):
+        s = requests.Session()
+        s.post("http://127.0.0.1:5000", data={
+            'userName': 'test',
+            'userPassword': 'test123'})
+
+        # list
+        a = s.get("http://127.0.0.1:5000/box/")
+        self.assertTrue(a.ok)
+        self.assertIn('running', a.text)
+
+        # restart
+        a = s.post("http://127.0.0.1:5000/box/api", data={
+            'id': html.fromstring(a.text).xpath("//*[@name='id']")[0].value,
+            'method': 'Restart'})
+        self.assertTrue(a.ok)
+        a = s.get("http://127.0.0.1:5000/box/")
+        self.assertTrue(a.ok)
+        self.assertIn('running', a.text)
+
+    def test_passwd(self):
+        # how to implement check
+        s = requests.Session()
+        s.post("http://127.0.0.1:5000", data={
+            'userName': 'test',
+            'userPassword': 'test123'})
+
+        # list
+        a = s.get("http://127.0.0.1:5000/box/")
+        self.assertTrue(a.ok)
+        self.assertIn('running', a.text)
+
+        # passwd
+        a = s.post("http://127.0.0.1:5000/box/api", data={
+            'id': html.fromstring(a.text).xpath("//*[@name='id']")[0].value,
+            'method': 'Resume'})
+        self.assertTrue(a.ok)
+        self.assertIn('running', a.text)
 
 if __name__ == '__main__':
     unittest.main()

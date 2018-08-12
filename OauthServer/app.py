@@ -4,6 +4,7 @@ import logging
 app = create_app({
     'url': 'http://127.0.0.1:5000',
     'name': 'Lab304',
+    'dockerserver': 'http://127.0.0.1:3476',
     'SECRET_KEY': 'secret',
     'OAUTH2_REFRESH_TOKEN_GENERATOR': True,
     'SQLALCHEMY_TRACK_MODIFICATIONS': False,
@@ -26,7 +27,7 @@ logging.debug('Start')
 @app.cli.command()
 def initdb():
     from oauthserver.models import db, add_user
-    from oauthserver.box import db as boxdb
+    from oauthserver.box import db as boxdb, add_box
     logger.info("Recreate DataBase")
     db.drop_all()
     boxdb.drop_all()
