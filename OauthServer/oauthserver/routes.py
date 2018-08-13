@@ -12,17 +12,19 @@ def Login():
     if request.method == 'GET':
         if flask_login.login_fresh():
             logger.debug("Skip Login")
-            return redirect(url_for('oauthserver.routes.hi'))
+            return redirect(url_for('oauthserver.box.List'))
+            # return redirect(url_for('oauthserver.routes.hi')) # for test
         else:
             return render_template('Login.html')
     else:
         user = requestParse(request)
         if user:
-            return redirect(url_for('oauthserver.routes.hi'))
+            return redirect(url_for('oauthserver.box.List'))
+            # return redirect(url_for('oauthserver.routes.hi')) # for test
         else:
             return render_template('Login.html', error="Fail to Login")
 
-@bp.route("/api/hi")
+@bp.route("/api/hi") # for test
 @flask_login.login_required
 def hi():
     return jsonify({"hi":True})
@@ -66,7 +68,8 @@ def ChangePassword():
         return render_template('changePassword.html', error=rep)
 
     logger.info(nowUser.name + " ChangePassword OK")
-    return redirect(url_for('oauthserver.routes.hi'))
+    return redirect(url_for('oauthserver.box.List'))
+    # return redirect(url_for('oauthserver.routes.hi')) # for test
 
 @bp.route("/adminpage", methods=['GET', 'POST'])
 @flask_login.login_required

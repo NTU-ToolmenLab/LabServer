@@ -4,16 +4,22 @@ import logging
 app = create_app({
     'url': 'http://127.0.0.1:5000',
     'name': 'Lab304',
+    # 'dockerserver': 'http://dockerserver:3476', # on docker
     'dockerserver': 'http://127.0.0.1:3476',
     'SECRET_KEY': 'secret',
     'OAUTH2_REFRESH_TOKEN_GENERATOR': True,
     'SQLALCHEMY_TRACK_MODIFICATIONS': False,
     'SQLALCHEMY_DATABASE_URI': 'sqlite:////tmp/db.sqlite',
+    # 'SQLALCHEMY_DATABASE_URI': 'sqlite:////app/OauthServer/db.sqlite', # on docker
+    # 'logfile': '/app/OauthServer/log', # on docker
+    'logfile': './log',
 })
 
 
 logger = logging.getLogger('oauthserver')
 logger.setLevel(logging.DEBUG)
+
+# output to std
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 # create formatter and add it to the handlers
@@ -21,8 +27,14 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(messag
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
-logging.debug('Start')
+# output to file
+if app.config.get("logfile"):
+    fh = logging.FileHandler(app.config['logfile'])
+    fh.setLevel(logging.DEBUG)
+    fh.setFormatter(formatter)
+    logger.addHandler(fh)
 
+logging.debug('Start')
 
 @app.cli.command()
 def initdb():
@@ -33,9 +45,10 @@ def initdb():
     boxdb.drop_all()
     db.create_all()
     boxdb.create_all()
-    add_user("test", 'test123', admin=1)
-    add_user("test_user", 'test123123')
-    add_box("test", 'testbox')
+    # testing
+    # add_user("test", 'test123', admin=1)
+    # add_user("test_user", 'test123123')
+    # add_box("test", 'testbox')
 
 @app.cli.command()
 def std_add_user():

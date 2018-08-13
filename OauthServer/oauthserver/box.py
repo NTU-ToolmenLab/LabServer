@@ -20,7 +20,7 @@ def record_params(setup_state):
 
 @bp.route('/')
 @flask_login.login_required
-def Lists():
+def List():
     lists = getList()
     return render_template('boxlist.html', container_list = lists)
 
@@ -31,7 +31,11 @@ def api():
     data = request.form
     logger.debug(nowUser.name + " api " + str(data))
 
-    box = Box.query.filter_by(user=nowUser.name, docker_id=data['id']).first()
+    if nowUser.admin:
+        box = Box.query.filter_by(docker_id=data['id']).first()
+    else:
+        box = Box.query.filter_by(user=nowUser.name, docker_id=data['id']).first()
+
     if not box:
         abort(403)
     if data.get('method') not in myMap.keys():
@@ -40,9 +44,25 @@ def api():
     logger.info("boxapi " + nowUser.name + " " + data['method'] + " " + data['id'])
     box.api(myMap[data['method']])
     if data.get('method') == 'Resume':
-        box.api('passwd', pw=nowUser.password)
-        # return redirect("/vnc/?token=" + token)
-    return redirect(url_for('oauthserver.box.Lists'))
+        if not nowUser.admin or box.user == nowUser.name:
+            box.api('passwd', pw=nowUser.password)
+
+        return redirect("/vnc/?path=vnc/?token=" + box.docker_name) # on docker
+    return redirect(url_for('oauthserver.box.List'))
+
+@bp.route('/vnctoken', methods=['POST'])
+@flask_login.login_required
+def vncToken():
+    nowUser = flask_login.current_user
+    docker_name = request.args.get('token')
+    if nowUser.admin:
+        box = Box.query.filter_by(docker_name=docker_name).first()
+    else:
+        box = Box.query.filter_by(user=nowUser.name, docker_name=docker_name).first()
+    if not box:
+        abort(403)
+    return "password_of_vnc"
+
 
 class Box(db.Model):
     __tablename__ = 'box'
@@ -65,6 +85,7 @@ class Box(db.Model):
         rep = post(bp.sock + "/search", data={'key': self.docker_name}).json()
         if rep.get('error'):
             return {'name'  : self.box_name,
+                    'id': 'erro',
                     'status': 'error'}
 
         self.docker_id = rep['id']
@@ -102,7 +123,10 @@ def add_box(user, docker_name, box_name=''):
 def getList():
     nowUser = flask_login.current_user
     logger.info("list " + nowUser.name)
-    boxes_ori = Box.query.filter_by(user=nowUser.name).all()
+    if nowUser.admin:
+        boxes_ori = Box.query.all()
+    else:
+        boxes_ori = Box.query.filter_by(user=nowUser.name).all()
     boxes = [box.getStatus() for box in boxes_ori]
     db.session.commit()
     return boxes
