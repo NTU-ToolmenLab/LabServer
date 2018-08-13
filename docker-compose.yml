@@ -2,6 +2,7 @@ version: '3'
 services:
   traefik:
     image: traefik
+    restart: always
     command: --logLevel=INFO
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -14,33 +15,44 @@ services:
     networks:
       - mynet
 
-  tzfserver:
-    image: linnil1/tzfserver
-    command: "gunicorn tzfserver:app -b 0.0.0.0:5000 --log-file /app/LoginWeb/log --reload"
-    # command: "flask run -h 0.0.0.0"
-    # environment:
-    #   - FLASK_DEBUG=1
-    #   - FLASK_APP=tzfserver
+  oauthserver:
+    image: linnil1/oauthserver
+    restart: always
+    command: "gunicorn -b 0.0.0.0:5000 app:app --access-logfile /app/OauthServer/access.log"
     volumes:
-      - ./certs:/certs
-      - ./LoginWeb:/app/LoginWeb
-      - ./LoginWeb/database.db:/app/database.db
-      - ./LoginWeb/onelogin/settings.py:/usr/local/lib/python3.6/site-packages/onelogin/saml2/settings.py
-      - /var/run/DockerServer:/app/sock
+      - ./OauthServer:/app/OauthServer
     labels:
       - "traefik.frontend.rule=Host:127.0.0.1"
       - "traefik.port=5000"
       - "traefik.enable=true"
-      - "traefik.backend=tzfserver"
+      - "traefik.backend=oauthserver"
+    depends_on:
+      - dockerserver 
+    external_links:
+      - dockerserver:dockerserver 
+    networks:
+      - mynet
+
+  vnc:
+    image: linnil1/docker-vnc
+    restart: always
+    volumes:
+      - ./my_vnc:/app/my_vnc
+      - ./OauthServer/db.sqlite:/app/db.sqlite:ro
+    labels:
+      - "traefik.frontend.rule=Host:127.0.0.1;PathPrefixStrip:/vnc/"
+      - "traefik.port=6080"
+      - "traefik.enable=true"
+      - "traefik.backend=vnc"
     networks:
       - mynet
 
   dockerserver:
+    restart: always
     image: linnil1/dockerserver
-    command: "gunicorn -b unix:///app/sock/DockerServer.sock DockerServer:app --reload"
+    command: "gunicorn -b 0.0.0.0:3476 DockerServer:app --reload"
     volumes:
       - ./DockerServer:/app/DockerServer
-      - /var/run/docker.sock:/var/run/docker.sock:ro
       - /var/run/DockerServer:/app/sock
     labels:
       - "traefik.enable=false"
@@ -55,19 +67,6 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     labels:
       - "traefik.enable=false"
-    networks:
-      - mynet
-
-  vnc:
-    image: linnil1/docker-vnc
-    volumes:
-      - ./my_vnc:/app/my_vnc
-      - ./LoginWeb/database.db:/app/database.db
-    labels:
-      - "traefik.frontend.rule=Host:127.0.0.1;PathPrefixStrip:/vnc/"
-      - "traefik.port=6080"
-      - "traefik.enable=true"
-      - "traefik.backend=vnc"
     networks:
       - mynet
 

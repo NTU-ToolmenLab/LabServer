@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block title %}
+list
+{% endblock %}
+
+{% block body %}
+  <nav class="navbar navbar-light bg-light justify-content-between">
+    <a class="navbar-brand"> {{ current_user.name }} </a>
+     <form class="form-inline">
+         <a href="{{ url_for('oauthserver.routes.Logout')}}" class="btn btn-primary btn-md"/>logout</a>
+     </form>
+  </nav>
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-8">
+        <div class="alert alert-success" role="alert">
+          <h3> Bulletin Board </h3>
+          <br>
+          <p> Change Your Password Here <a href="{{ url_for('oauthserver.routes.ChangePassword') }}"> {{ config.url }}/passwd</a></p>
+        </div>
+
+        {% for data in container_list %}
+          <div class="card my-3">
+            <div class="card-header"> {{ data.name }} </div>
+            <div class="card-body">
+              <h5 class="card-title"> status: {{ data.status }} </h5>
+              <p class="card-text"> {{ data.text }} </p>
+
+              <form action="{{ url_for('oauthserver.box.api')}}" method="post">
+                <input type="hidden"   name="id"     value="{{data.id}}"/>
+                <div class="btn-group" role="group">
+                  <input type="submit" name="method" value="Resume"  class="btn btn-outline-primary"/>
+                  <input type="submit" name="method" value="Restart" class="btn btn-outline-warning"/>
+                  <input type="submit" name="method" value="Stop"    class="btn btn-outline-danger" />
+                </div>
+              </form>
+            </div>
+            <div class="card-footer text-muted"> {{ data.id[:10] }} </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+{% endblock %}

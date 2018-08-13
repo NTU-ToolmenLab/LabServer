@@ -41,32 +41,23 @@ cd ..
 ## Add traefik
 docker pull traefik
 
-## build LoginWeb
+## build OauthServer
 ```
-cd LabServer/LoginServer
-vim tzfserver/start.py # modify secrect_key and my.domain:443 and password
-touch log
-docker build . -t linnil1/tzfserver
-touch database.db
-docker run -it --rm -v $(pwd)/database.db:/app/database.db linnil1/tzfserver python3 -c 'from tzfserver import start;start.init_db();'
+cd LabServer/OauthServer
+vim app.py # modify secrect_key and my.domain:443 and path 
+docker build . -t linnil1/oauthserver
+docker run -it --rm -v $(pwd)/db.sqlite:/app/db.sqlite linnil1/oauthserver flask initdb
 ```
 
 ## Add User and Container
 1. Add it by command line
-`docker run -it --rm -v $(pwd):/app/LoginWeb -v $(pwd)/database.db:/app/database.db linnil1/tzfserver python3`
+`docker run -it --rm -v $(pwd)/db.sqlite:/app/db.sqlite linnil1/oauthserver flask std_add_user`
+`docker run -it --rm -v $(pwd)/db.sqlite:/app/db.sqlite linnil1/oauthserver flask std_add_box`
 
-and run two of five lines below.
+2. Add with code
+Modify `std_add_user` in `app.py`, it is very easy.
 
-``` python3
-from tzfserver import start;
-start.add(); # add user and conatiner by std
-start.std_add_user() # add user by std
-start.add_user(name, passwd, time=0, admin=0)
-start.std_add_token(user) add token by std
-start.add_token(user, tokenname, realtoken="")
-```
-
-2. Add it by web (After init)
+3. Add it by web (After init)
 If you are admin, go to `your.domain.name/adminpage` to modify.
 
 ## Control docker to start or stop

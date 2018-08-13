@@ -7,4 +7,5 @@ RUN pip3 install -e /app/DockerServer && \
 
 WORKDIR /app
 # command: "gunicorn -b unix:/tmp/DockerServer.sock DockerServer:app --reload"
-CMD ["gunicorn", "DockerServer:app", "-b", "unix:/var/run/DockerServer.sock"]
+EXPOSE 3476
+CMD ["gunicorn DockerServer:app -b "0.0.0.0:3476"]

@@ -1,0 +1,8 @@
+flask
+Flask-SQLAlchemy
+Flask-Testing
+flask-login
+Authlib
+passlib
+lxml
+requests
