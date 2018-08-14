@@ -126,12 +126,14 @@ def authorize():
     Need to ask grant and confirmed again, but I'm lazy
     # grant = authorization.validate_consent_request(end_user=user)
     """
+    logger.debug("[oauth] auth " + str(request.form))
     nowUser = flask_login.current_user
     grant = authorization.validate_consent_request(end_user=nowUser)
     return authorization.create_authorization_response(grant_user=nowUser)
 
 @bp.route('/oauth/token', methods=['POST'])
 def issue_token():
+    logger.debug("[oauth] token " + str(request.form))
     return authorization.create_token_response()
 
 @bp.route('/oauth/revoke', methods=['POST'])

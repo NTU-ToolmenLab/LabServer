@@ -50,10 +50,10 @@ services:
   dockerserver:
     restart: always
     image: linnil1/dockerserver
-    command: "gunicorn -b 0.0.0.0:3476 DockerServer:app --reload"
+    command: "gunicorn -b 0.0.0.0:3476 DockerServer:app"
     volumes:
       - ./DockerServer:/app/DockerServer
-      - /var/run/DockerServer:/app/sock
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     labels:
       - "traefik.enable=false"
     networks:

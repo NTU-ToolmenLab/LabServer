@@ -81,7 +81,6 @@ class Box(db.Model):
         return '<Box {}>'.format(docker_name)
 
     def getStatus(self):
-        print(self.box_name)
         # test without dockerserver
         # return {'name'  : self.box_name,
         #         'id': 'erro',

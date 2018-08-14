@@ -34,7 +34,7 @@ def adminSet(form):
         if not acls:
             acls = cls()
             modify = 0
-        print(cls.__table__.columns.items())
+        # print(cls.__table__.columns.items())
         for i in cls.__table__.columns.items():
             if i[0] == 'password':
                 acls.setPassword(formwords[i[0]])

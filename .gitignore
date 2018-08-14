@@ -122,6 +122,7 @@ tags
 
 # my file
 database.db
+db.sqlite
 LoginWeb/log
 certs/*.pem
 IDP/idp.subject
