@@ -69,17 +69,7 @@ class TestDB(TestCase):
         it = User.__table__.columns.items()
         it[0][1].type.python_type
 
-    def test_get_key(self):
-        a = User.query.filter_by(name='test').first()
-        # import pdb
-        # pdb.set_trace()
-        d = dict(a.__dict__)
-        di = {k: v for k, v in d.items() if not k.startswith('_')}
-
-        it = User.__table__.columns.items()
-        it[0][1].type.python_type
-
-    def test_get_key(self):
+    def test_set_time(self):
         a = User.query.filter_by(name='test').first()
         a.passtime = time.time()
 
@@ -506,6 +496,8 @@ class Test_box_list_docker(unittest.TestCase):
             'method': 'Resume'})
         self.assertTrue(a.ok)
         self.assertIn('running', a.text)
+
+
 class Test_redir(unittest.TestCase):
     """
     in `oauthserver/app.py` set `LoginView`
@@ -607,6 +599,34 @@ class Test_oauth(unittest.TestCase):
             'userPassword': 'test123'})
         self.assertNotEqual(a.status_code, 400)
         self.assertEqual(a.url, "http://127.0.0.1:5001/")
+
+class Test_oauth_client(unittest.TestCase):
+    def setUp(self):
+        self.s = requests.Session()
+        self.s.post("http://127.0.0.1:5000", data={
+            'userName': 'test',
+            'userPassword': 'test123'})
+
+    def test_look_ok(self):
+        a = self.s.get("http://127.0.0.1:5000/oauth/client")
+        self.assertTrue(a.ok)
+
+    def test_delete(self):
+        a = self.s.get("http://127.0.0.1:5000/oauth/client")
+        client_id = html.fromstring(a.text).xpath("//*[@name='delete_client_id']")[0].value
+        a = self.s.post("http://127.0.0.1:5000/oauth/client", data={
+            'delete_client_id': client_id})
+        self.assertTrue(a.ok)
+
+    def test_add(self):
+        a = self.s.get("http://127.0.0.1:5000/oauth/client")
+        self.assertTrue(a.ok)
+        b = html.fromstring(a.text).xpath("//form")[-1].xpath(".//*[@name]")
+        d = {i.name: i.value for i in b}
+        d['client_name'] = "testmyapp"
+        a = self.s.post("http://127.0.0.1:5000/oauth/client", data=d)
+        self.assertTrue(a.ok)
+        self.assertIn('testmyapp', a.text)
 
 
 if __name__ == '__main__':

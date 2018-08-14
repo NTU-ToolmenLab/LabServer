@@ -15,6 +15,7 @@ def create_app(config={}):
     login_manager.login_view = "oauthserver.routes.Login" # redir
 
     config_oauth(app)
+    os.environ['AUTHLIB_INSECURE_TRANSPORT']=1
 
     # box
     app.register_blueprint(boxbp, url_prefix='/box/')

@@ -102,6 +102,11 @@ def config_oauth(app):
 
 
 def clientCreate(form, user):
+    if form.get("delete_client_id"):
+        logger.debug("[oauth] oauth client delete by " + user.name)
+        db.session.delete(OAuth2Client.query.filter_by(client_id=form['delete_client_id']).first())
+        db.session.commit()
+        return
     logger.debug("[oauth] oauth client created by " + user.name)
     client = OAuth2Client(**form.to_dict(flat=True))
     client.user_id = user.id

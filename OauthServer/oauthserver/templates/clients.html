@@ -6,13 +6,23 @@ Clients
 
 {% block body %}
 
+<table>
 {% for client in clients %}
-<pre>
-{{ client.client_info|tojson }}
-{{ client.client_metadata|tojson }}
-</pre>
-<hr>
+  <tr>
+    <td>
+      <form action="" method="post">
+        <input type="hidden" name="delete_client_id" value={{client.client_id}}>
+        <button type="submit" class="btn btn-danger">Delete</button>
+      </form>
+    </td>
+    <td>
+      <pre>{{ client.client_info|tojson }}
+{{ client.client_metadata|tojson }}</pre>
+    </td>
+  </tr>
 {% endfor %}
+</table>
+<hr>
 
 <form action="" method="post">
   <div class="input-group mb-3">

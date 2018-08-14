@@ -6,7 +6,8 @@ from urllib.parse import urlparse, urljoin
 
 from .models import getUserId, setPW
 from .adminpage import adminSet, adminView
-from .oauth2 import authorization, OAuth2Client, clientCreate
+from .oauth2 import authorization, OAuth2Client, clientCreate, require_oauth
+from authlib.flask.oauth2 import current_token
 
 logger = logging.getLogger('oauthserver')
 bp = Blueprint(__name__, 'home')
@@ -108,9 +109,9 @@ def AdminPage():
 @flask_login.login_required
 def client():
     nowUser = flask_login.current_user
-    logger.debug("[oauth] client " + nowUser.name)
     if not nowUser.admin:
         abort(401)
+    logger.debug("[oauth] client " + nowUser.name)
 
     if request.method == 'GET':
         return render_template('clients.html', clients=OAuth2Client.query.all())
@@ -131,9 +132,15 @@ def authorize():
 
 @bp.route('/oauth/token', methods=['POST'])
 def issue_token():
-    logger.debug("[oauth] token " + str(request.form))
     return authorization.create_token_response()
 
 @bp.route('/oauth/revoke', methods=['POST'])
 def revoke_token():
     return authorization.create_endpoint_response('revocation')
+
+@bp.route('/oauth/profile', methods=['GET'])
+@require_oauth('profile')
+def profile():
+    user = current_token.user
+    logger.debug("[oauth] user " + user.name)
+    return jsonify({'id': user.name})
