@@ -70,25 +70,9 @@ services:
     networks:
       - mynet
 
-  dock:
+  test:
     image: docker-firefox
     command: "x11vnc -forever -usepw -create"
-    networks:
-      - mynet
-
-  idp:
-    image: linnil1/idp
-    restart: always
-    command: "python idp.py"
-    volumes:
-      - ./IDP:/app/IDP
-      - ./LoginWeb/database.db:/app/database.db
-      - ./certs:/certs
-    labels:
-      - "traefik.frontend.rule=Host:my.domain.ntu.edu.tw;PathPrefixStrip:/saml/"
-      - "traefik.port=8088"
-      - "traefik.enable=true"
-      - "traefik.backend=idp"
     networks:
       - mynet
 

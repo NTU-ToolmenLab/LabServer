@@ -44,7 +44,7 @@ docker pull traefik
 ## build OauthServer
 ```
 cd LabServer/OauthServer
-vim app.py # modify secrect_key and my.domain:443 and path 
+vim app.py # modify anythings in create_app
 docker build . -t linnil1/oauthserver
 docker run -it --rm -v $(pwd):/app/OauthServer linnil1/oauthserver flask initdb
 ```
@@ -60,41 +60,14 @@ Modify `std_add_user` in `app.py`, it is very easy.
 3. Add it by web (After init)
 If you are admin, go to `your.domain.name/adminpage` to modify.
 
+```
+cd ..
+```
+
 ## Control docker to start or stop
 ```
 cd DockerServer
 docker build . -t linnil1/dockerserver
-cd ..
-```
-
-## build example docker-firefox-vnc (for testing)
-```
-cd UserDocker
-docker build . -t linnil1/docker-firefox
-cd ..
-```
-
-## Build nextcloud
-```
-docker pull nextcloud:fpm
-docker pull nginx
-docker pull collabora/code
-docker pull mariadb
-cd Nextcloud
-vim nginx.conf # modify server_name and error_page port
-cd ..
-```
-
-## Build IDP
-you can see some difference of my version
-https://gist.github.com/linnil1/b782dc567b1f404efcdb71a643ddc7e4
-
-```
-cd IDP
-git clone https://github.com/IdentityPython/pysaml2.git
-vim idp_conf.py # modify my.domain:443
-vim idp.py #  modify "redirect_uri": redirect_uri.replace("http","https").replace(":443",":443/saml")
-docker build . -t linnil1/idp
 cd ..
 ```
 
@@ -118,25 +91,31 @@ docker build . -t linnil1/docker-vnc
 cd ..
 ```
 
-
-## build saml
-1. modify my.domain:443
-2. modify x509cers
-
+## build example docker-firefox-vnc (for testing, Not require)
 ```
-cd saml
-vim settings.json 
-cd ../..
+cd UserDocker
+docker build . -t linnil1/docker-firefox
+cd ..
 ```
 
+## Build nextcloud
+```
+docker pull nextcloud:fpm
+docker pull nginx
+docker pull collabora/code
+docker pull mariadb
+cd Nextcloud
+vim nginx.conf # modify server_name and error_page port
+cd ..
+```
 
 ## Modify docker-compose
+`vim docker-compose.yml`
+
 1. change host from 127.0.0.1 to my.domain
 2. change port from 443 and 8888 if you want
 3. nextcloud_db password
 4. nextcloud external data path
-
-vim docker-compose.yml
 
 ## Finally, you can start your server
 `docker-compose up -d`
@@ -149,23 +128,6 @@ Set admin and password, and choose mysql: hostname=nextclouddb, and the other ar
 
 enable "collabora" (Set https://my.domain.ntu.edu.tw:444)
 
-### SSO
-
-enable "SSO & SAML authentication" and set like this
-
-```
-"types": "authentication",
-"type": "saml",
-"general-idp0_display_name": "LoginName",
-"general-allow_multiple_user_back_ends": "1",
-"general-uid_mapping": "uid",
-"saml-attribute-mapping-displayName_mapping": "uid",
-"saml-attribute-mapping-quota_mapping": "quota",
-"idp-entityId": "myEntityID",
-"idp-singleSignOnService.url": "https:\/\/my.domain.ntu.edu.tw:443\/saml\/sso\/redirect",
-"idp-singleLogoutService.url": "https:\/\/my.domain.ntu.edu.tw:443\/saml\/slo\/redirect",
-```
-
 ### enable external storage
 Add External Storage
 ```
@@ -176,6 +138,42 @@ python3 adduser.py
 docker exec -it -u 1000 labserver_nextcloud_1 php occ files_external:import my_storages.json
 cd ..
 ```
+
+### enable oauth
+* Go to web https://my.domain.ntu.edu.tw:443/oauth/client (If you are admin)
+* Add client
+``` json
+{
+"client_id": "qgWmlggGT9Npuihb4ljLyBUd",
+"client_secret": "RfxyVQGTY2QUWT6Nj7mgwktXqwilZf3WkQ8DPfi4VUNUIG0r",
+"client_name": "testapp",
+"client_uri": "https://my.domain.ntu.edu.tw:444",
+"grant_types": ["authorization_code"],
+"redirect_uris": ["https://my.domain.ntu.edu.tw:444/apps/sociallogin/custom_oidc/testapp"],
+"response_types": ["code"],
+"scope": "profile",
+"token_endpoint_auth_method": "client_secret_post"
+}
+```
+
+* Go to web https://my.domain.ntu.edu.tw:444
+* Add app `social login`
+* Modify code in `Nextcloud//custom_apps/sociallogin/lib/Controller/LoginController.php`
+  I have issued this bug https://github.com/zorn-v/nextcloud-social-login/issues/46
+* Add client configuration (Custom Oauth2)
+``` init
+Internal_name: testapp
+API_Base_URL:  https://my.domain.ntu.edu.tw:443
+Authorize_url: https://my.domain.ntu.edu.tw:443/oauth/authorize
+Token_url:     https://my.domain.ntu.edu.tw:443/oauth/token
+Profile_url:   https://my.domain.ntu.edu.tw:443/oauth/profile
+Clinet_id:
+Clinet_Secret:
+Scope:         profile
+```
+
+You can substitude `testapp` to any you want.
+
 
 ## Contributer
 you can use
