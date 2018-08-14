@@ -78,6 +78,7 @@ services:
 
   idp:
     image: linnil1/idp
+    restart: always
     command: "python idp.py"
     volumes:
       - ./IDP:/app/IDP

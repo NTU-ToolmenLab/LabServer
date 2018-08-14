@@ -85,7 +85,7 @@ class Box(db.Model):
         rep = post(bp.sock + "/search", data={'key': self.docker_name}).json()
         if rep.get('error'):
             return {'name'  : self.box_name,
-                    'id': 'erro',
+                    'id': 'error',
                     'status': 'error'}
 
         self.docker_id = rep['id']

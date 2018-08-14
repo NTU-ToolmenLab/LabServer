@@ -2,7 +2,9 @@ from oauthserver.app import create_app
 import logging
 
 app = create_app({
-    'url': 'http://127.0.0.1:5000',
+    'bullet': """
+<p> Change Your Password Here <a href="/passwd">https://your.domain.ntu.edu.tw:443/passwd</a></p>
+""",
     'name': 'Lab304',
     # 'dockerserver': 'http://dockerserver:3476', # on docker
     'dockerserver': 'http://127.0.0.1:3476',

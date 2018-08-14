@@ -17,7 +17,7 @@ list
         <div class="alert alert-success" role="alert">
           <h3> Bulletin Board </h3>
           <br>
-          <p> Change Your Password Here <a href="{{ url_for('oauthserver.routes.ChangePassword') }}"> {{ config.url }}/passwd</a></p>
+          {{ config.bullet|safe }}
         </div>
 
         {% for data in container_list %}
