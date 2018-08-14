@@ -10,6 +10,8 @@ import datetime
 import time
 from flask_sqlalchemy import SQLAlchemy, sqlalchemy
 
+# use it without https
+# export AUTHLIB_INSECURE_TRANSPORT=1
 class TestDB(TestCase):
     def create_app(self):
         app = Flask(__name__)
@@ -504,6 +506,108 @@ class Test_box_list_docker(unittest.TestCase):
             'method': 'Resume'})
         self.assertTrue(a.ok)
         self.assertIn('running', a.text)
+class Test_redir(unittest.TestCase):
+    """
+    in `oauthserver/app.py` set `LoginView`
+    """
+    def test_ok(self):
+        a = requests.get("http://127.0.0.1:5000/")
+        self.assertTrue(a.ok)
+
+    def test_no_found(self):
+        a = requests.get("http://127.0.0.1:5000/api/hixx")
+        self.assertEqual(a.status_code, 404)
+
+    def test_redir(self):
+        a = requests.get("http://127.0.0.1:5000/api/hi")
+        self.assertEqual(a.status_code, 200)
+        self.assertEqual(a.url, "http://127.0.0.1:5000/?next=%2Fapi%2Fhi")
+
+    def test_redir_login(self):
+        a = requests.post("http://127.0.0.1:5000/?next=%2Fapi%2Fhi", data={
+            'userName': 'test',
+            'userPassword': 'test123'})
+        self.assertEqual(a.url, "http://127.0.0.1:5000/api/hi")
+
+    def test_redir_nexterr(self):
+        a = requests.post("http://127.0.0.1:5000/?next=%2Fapi%2Fhir", data={
+            'userName': 'test',
+            'userPassword': 'test123'})
+        self.assertEqual(a.url, "http://127.0.0.1:5000/api/hir")
+        self.assertEqual(a.status_code, 404)
+        
+    def test_redir_next_other(self):
+        a = requests.post("http://127.0.0.1:5000/?next=http%3a%2f%2fgoogle.com", data={
+            'userName': 'test',
+            'userPassword': 'test123'})
+        self.assertEqual(a.status_code, 400)
+
+    def test_redir_next_other(self):
+        s = requests.Session()
+        a = s.post("http://127.0.0.1:5000", data={
+            'userName': 'test',
+            'userPassword': 'test123'})
+        a = s.get("http://127.0.0.1:5000/?next=http%3a%2f%2fgoogle.com")
+        self.assertEqual(a.status_code, 200)
+        self.assertEqual(a.url, "http://127.0.0.1:5000/box/")
+        
+
+class Test_oauth(unittest.TestCase):
+    """
+    This should desable DockerServer and start your oauth client in :5001
+    """
+
+    def test_look_error(self):
+        a = requests.get("http://127.0.0.1:5000/api/hi")
+        self.assertEqual(a.url, "http://127.0.0.1:5000/?next=%2Fapi%2Fhi")
+
+    def test_look_noerror(self):
+        self.s = requests.Session()
+        self.s.post("http://127.0.0.1:5000", data={
+            'userName': 'test',
+            'userPassword': 'test123'})
+        a = self.s.get("http://127.0.0.1:5000/api/hi")
+        self.assertEqual(a.url, "http://127.0.0.1:5000/api/hi")
+
+    def test_look_ok(self):
+        self.s = requests.Session()
+        self.s.post("http://127.0.0.1:5000", data={
+            'userName': 'test',
+            'userPassword': 'test123'})
+        a = self.s.get("http://127.0.0.1:5000/oauth/client")
+        self.assertTrue(a.ok)
+
+    def test_look_client_ok(self):
+        a = requests.get("http://127.0.0.1:5001")
+        self.assertTrue(a.ok)
+
+    def test_look_client_login(self):
+        a = requests.get("http://127.0.0.1:5001/login")
+        self.assertTrue(a.url.startswith("http://127.0.0.1:5000/"))
+        self.assertTrue(a.ok)
+
+    def test_look_client_unknown_logout(self):
+        self.s = requests.Session()
+        self.s.post("http://127.0.0.1:5000", data={
+            'userName': 'test',
+            'userPassword': 'test123'})
+        a = self.s.get("http://127.0.0.1:5001/login")
+        a = self.s.get("http://127.0.0.1:5000/api/hi")
+        self.assertEqual(a.url, "http://127.0.0.1:5000/?next=%2Fapi%2Fhi")
+        self.assertTrue(a.ok)
+
+    def test_look_client_login_inserver(self):
+        self.s = requests.Session()
+        self.s.post("http://127.0.0.1:5000", data={
+            'userName': 'test',
+            'userPassword': 'test123'})
+        a = self.s.get("http://127.0.0.1:5001/login")
+        a = self.s.post(a.url, data={
+            'userName': 'test',
+            'userPassword': 'test123'})
+        self.assertNotEqual(a.status_code, 400)
+        self.assertEqual(a.url, "http://127.0.0.1:5001/")
+
 
 if __name__ == '__main__':
     unittest.main()

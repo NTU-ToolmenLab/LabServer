@@ -82,6 +82,10 @@ class Box(db.Model):
 
     def getStatus(self):
         print(self.box_name)
+        # test without dockerserver
+        # return {'name'  : self.box_name,
+        #         'id': 'erro',
+        #         'status': 'error'}
         rep = post(bp.sock + "/search", data={'key': self.docker_name}).json()
         if rep.get('error'):
             return {'name'  : self.box_name,
