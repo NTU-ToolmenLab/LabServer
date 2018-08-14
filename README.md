@@ -46,13 +46,13 @@ docker pull traefik
 cd LabServer/OauthServer
 vim app.py # modify secrect_key and my.domain:443 and path 
 docker build . -t linnil1/oauthserver
-docker run -it --rm -v $(pwd)/db.sqlite:/app/db.sqlite linnil1/oauthserver flask initdb
+docker run -it --rm -v $(pwd):/app/OauthServer linnil1/oauthserver flask initdb
 ```
 
 ## Add User and Container
 1. Add it by command line
-`docker run -it --rm -v $(pwd)/db.sqlite:/app/db.sqlite linnil1/oauthserver flask std_add_user`
-`docker run -it --rm -v $(pwd)/db.sqlite:/app/db.sqlite linnil1/oauthserver flask std_add_box`
+`docker run -it --rm -v $(pwd):/app/OauthServer linnil1/oauthserver flask std_add_user`
+`docker run -it --rm -v $(pwd):/app/OauthServer linnil1/oauthserver flask std_add_box`
 
 2. Add with code
 Modify `std_add_user` in `app.py`, it is very easy.

@@ -36,6 +36,12 @@ if app.config.get("logfile"):
     fh.setFormatter(formatter)
     logger.addHandler(fh)
 
+# authlib logger
+if app.debug:
+    logger = logging.getLogger('authlib')
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(ch)
+
 logging.debug('Start')
 
 @app.cli.command()

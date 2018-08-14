@@ -26,6 +26,10 @@ class User(db.Model, flask_login.UserMixin):
         self.password = passlib.hash.sha512_crypt.hash(password)
         db.session.commit()
 
+    # for oauth
+    def get_user_id(self):
+        return self.id
+
 @login_manager.user_loader
 def user_loader(id):
     return User.query.get(id)

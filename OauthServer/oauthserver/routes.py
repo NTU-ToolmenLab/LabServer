@@ -1,13 +1,26 @@
-from flask import Blueprint, request, session, abort, render_template, redirect, jsonify, url_for
+from flask import (Blueprint, request, session, 
+                  abort, render_template, redirect, jsonify, url_for)
 import flask_login
-from .models import getUserId, setPW
 import logging
+from urllib.parse import urlparse, urljoin
+
+from .models import getUserId, setPW
 from .adminpage import adminSet, adminView
+from .oauth2 import authorization, OAuth2Client, clientCreate, require_oauth
+from authlib.flask.oauth2 import current_token
 
 logger = logging.getLogger('oauthserver')
 bp = Blueprint(__name__, 'home')
 
-@bp.route('/', methods=('GET', 'POST'))
+# http://flask.pocoo.org/snippets/62/
+def is_safe_url(target):
+    ref_url = urlparse(request.host_url)
+    test_url = urlparse(urljoin(request.host_url, target))
+    return test_url.scheme in ('http', 'https') and \
+           ref_url.netloc == test_url.netloc
+
+
+@bp.route('/', methods=['GET', 'POST'])
 def Login():
     if request.method == 'GET':
         if flask_login.login_fresh():
@@ -19,7 +32,12 @@ def Login():
     else:
         user = requestParse(request)
         if user:
-            return redirect(url_for('oauthserver.box.List'))
+            nexturl = request.args.get('next')
+            logger.debug("Login with url " + str(nexturl))
+            if not is_safe_url(nexturl):
+                return abort(400)
+            # return redirect(url_for('oauthserver.box.List'))
+            return redirect(nexturl or url_for('oauthserver.box.List'))
             # return redirect(url_for('oauthserver.routes.hi')) # for test
         else:
             return render_template('Login.html', error="Fail to Login")
@@ -84,3 +102,45 @@ def AdminPage():
         return adminSet(request.form)
 
     return redirect(url_for('oauthserver.routes.Login'))
+
+
+# oauth2
+@bp.route('/oauth/client', methods=['GET', 'POST'])
+@flask_login.login_required
+def client():
+    nowUser = flask_login.current_user
+    if not nowUser.admin:
+        abort(401)
+    logger.debug("[oauth] client " + nowUser.name)
+
+    if request.method == 'GET':
+        return render_template('clients.html', clients=OAuth2Client.query.all())
+    clientCreate(request.form, nowUser)
+    return render_template('clients.html', clients=OAuth2Client.query.all())
+
+
+@bp.route('/oauth/authorize')
+@flask_login.login_required
+def authorize():
+    """ 
+    Need to ask grant and confirmed again, but I'm lazy
+    # grant = authorization.validate_consent_request(end_user=user)
+    """
+    nowUser = flask_login.current_user
+    grant = authorization.validate_consent_request(end_user=nowUser)
+    return authorization.create_authorization_response(grant_user=nowUser)
+
+@bp.route('/oauth/token', methods=['POST'])
+def issue_token():
+    return authorization.create_token_response()
+
+@bp.route('/oauth/revoke', methods=['POST'])
+def revoke_token():
+    return authorization.create_endpoint_response('revocation')
+
+@bp.route('/oauth/profile', methods=['GET'])
+@require_oauth('profile')
+def profile():
+    user = current_token.user
+    logger.debug("[oauth] user " + user.name)
+    return jsonify({'id': user.name})
