@@ -15,34 +15,12 @@ app = create_app({
     # 'SQLALCHEMY_DATABASE_URI': 'sqlite:////app/OauthServer/db.sqlite', # on docker
     # 'logfile': '/app/OauthServer/log', # on docker
     'logfile': './log',
+    'PREFERRED_URL_SCHEME': 'https'
 })
 
 
 logger = logging.getLogger('oauthserver')
-logger.setLevel(logging.DEBUG)
-
-# output to std
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
-# create formatter and add it to the handlers
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-ch.setFormatter(formatter)
-logger.addHandler(ch)
-
-# output to file
-if app.config.get("logfile"):
-    fh = logging.FileHandler(app.config['logfile'])
-    fh.setLevel(logging.DEBUG)
-    fh.setFormatter(formatter)
-    logger.addHandler(fh)
-
-# authlib logger
-if app.debug:
-    logger = logging.getLogger('authlib')
-    logger.setLevel(logging.DEBUG)
-    logger.addHandler(ch)
-
-logging.debug('Start')
+logger.debug('Start')
 
 @app.cli.command()
 def initdb():
@@ -53,6 +31,8 @@ def initdb():
     boxdb.drop_all()
     db.create_all()
     boxdb.create_all()
+    db.session.commit()
+    boxdb.session.commit()
     # testing
     # add_user("test", 'test123', admin=1)
     # add_user("test_user", 'test123123')

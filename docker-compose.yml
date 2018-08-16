@@ -3,7 +3,6 @@ services:
   traefik:
     image: traefik
     restart: always
-    command: --logLevel=INFO
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./traefik/traefik.toml:/etc/traefik/traefik.toml:ro

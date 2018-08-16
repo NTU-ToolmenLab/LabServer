@@ -1,5 +1,6 @@
 # https://docs.traefik.io/user-guide/docker-and-lets-encrypt/
 defaultEntryPoints = ["https","http"]
+logLevel = "INFO"
 
 [entryPoints]
   [entryPoints.http]
