@@ -47,6 +47,11 @@ def Login():
 def hi():
     return jsonify({"hi":True})
 
+@bp.route("/help") # help web
+@flask_login.login_required
+def help():
+    return render_template('help.html')
+
 def requestParse(request):
     name     = request.form.get('userName')
     password = request.form.get('userPassword')
@@ -144,5 +149,10 @@ def revoke_token():
 @require_oauth('profile')
 def profile():
     user = current_token.user
-    logger.debug("[oauth] user " + user.name)
-    return jsonify({'id': user.name})
+    name = user.name
+    logger.debug("[oauth] user " + name)
+    return jsonify({
+        'id': name,
+        'username': name,
+        'name': name,
+        'email': name + '@my.domain.ntu.edu.tw'})

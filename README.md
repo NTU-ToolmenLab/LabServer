@@ -60,6 +60,7 @@ Modify `std_add_user` in `app.py`, it is very easy.
 3. Add it by web (After init)
 If you are admin, go to `your.domain.name/adminpage` to modify.
 
+4. You can add `help.html` in `oauthserver/templates/`
 ```
 cd ..
 ```
@@ -121,8 +122,27 @@ cd ..
 `docker-compose up -d`
 
 ## NextCloud
+
+I provide two way to login NextCloud.
+One is from
+`my.domain.ntu.edu.tw:443/drive`
+the other is
+`my.domain.ntu.edu.tw:444`
+
+It need to start to same containers because collabora cannot use in reverse proxy.
+
 ### init
-Go in to web https://my.domain.ntu.edu.tw:444
+edit `NextCloud/nextcloud/config/config.php`
+```
+  'trusted_domains' =>
+  array (
+    0 => 'my.domain.ntu.edu.tw:443',
+    1 => 'my.domain.ntu.edu.tw:444',
+  ),
+  'overwritewebroot' => '/drive',
+```
+
+Go in to web https://my.domain.ntu.edu.tw:443/drive
 
 Set admin and password, and choose mysql: hostname=nextclouddb, and the other are same as docker-compose written
 
@@ -147,16 +167,16 @@ cd ..
 "client_id": "qgWmlggGT9Npuihb4ljLyBUd",
 "client_secret": "RfxyVQGTY2QUWT6Nj7mgwktXqwilZf3WkQ8DPfi4VUNUIG0r",
 "client_name": "testapp",
-"client_uri": "https://my.domain.ntu.edu.tw:444",
+"client_uri": "https://my.domain.ntu.edu.tw:443/drive/",
 "grant_types": ["authorization_code"],
-"redirect_uris": ["https://my.domain.ntu.edu.tw:444/apps/sociallogin/custom_oidc/testapp"],
+"redirect_uris": ["https://my.domain.ntu.edu.tw:443/drive/apps/sociallogin/custom_oidc/testapp"],
 "response_types": ["code"],
 "scope": "profile",
 "token_endpoint_auth_method": "client_secret_post"
 }
 ```
 
-* Go to web https://my.domain.ntu.edu.tw:444
+* Go to web https://my.domain.ntu.edu.tw:443/drive
 * Add app `social login`
 * Modify code in `Nextcloud//custom_apps/sociallogin/lib/Controller/LoginController.php`
   I have issued this bug https://github.com/zorn-v/nextcloud-social-login/issues/46

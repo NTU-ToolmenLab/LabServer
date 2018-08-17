@@ -6,6 +6,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./traefik/traefik.toml:/etc/traefik/traefik.toml:ro
+      - ./traefik/log/:/var/log/traefik/
       - ./certs:/certs
     ports:
       - "80:80"
@@ -108,6 +109,28 @@ services:
       - collabora
     networks:
       - mynet
+
+  nextcloud_web_http:
+    image: nginx
+    restart: always
+    external_links:
+      - nextcloud
+      - collabora
+    volumes:
+      - ./Nextcloud/nginx_http.conf:/etc/nginx/nginx.conf:ro
+      - ./Nextcloud/nextcloud:/var/www/html
+      - ./Nextcloud/log:/var/log/nginx/
+    labels:
+      - "traefik.frontend.rule=Host:my.domain.ntu.edu.tw;PathPrefixStrip:/drive/"
+      - "traefik.port=80"
+      - "traefik.enable=true"
+      - "traefik.backend=nextcloud"
+    depends_on:
+      - nextcloud
+      - collabora
+    networks:
+      - mynet
+
 
   nextcloud_db:
     image: mariadb

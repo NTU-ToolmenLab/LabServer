@@ -2,6 +2,19 @@
 defaultEntryPoints = ["https","http"]
 logLevel = "INFO"
 
+[file]
+  filename = "/etc/traefik/traefik.toml"
+  watch = true
+
+[traefikLog]
+  filePath = "/var/log/traefik/traefik.log"
+  format   = "json"
+
+[accessLog]
+  filePath = "/var/log/traefik/access.log"
+  format = "json"
+
+
 [entryPoints]
   [entryPoints.http]
   address = ":80"

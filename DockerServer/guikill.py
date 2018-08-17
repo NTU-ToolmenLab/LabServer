@@ -45,6 +45,8 @@ def getconts():
 def main():
     conts = getconts()
     for cont in conts:
+        if cont.status != 'running':
+            continue
         name = cont.name
         top = cont.top(ps_args='-A -o pid,pcpu,rss,time,command')
         scripts = []
