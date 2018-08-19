@@ -1,11 +1,11 @@
 import os
 from flask import Flask
 import logging
+from werkzeug.contrib.fixers import ProxyFix
 from .routes import bp
 from .models import db, login_manager
 from .box import bp as boxbp, db as boxdb
 from .oauth2 import config_oauth
-
 
 def create_app(config={}):
     app = Flask(__name__)
@@ -18,7 +18,7 @@ def create_app(config={}):
     setLog(app)
 
     login_manager.login_view = "oauthserver.routes.Login" # redir
-    app.wsgi_app = ReverseProxied(app.wsgi_app, app.config.get('PREFERRED_URL_SCHEME'))
+    app.wsgi_app = ProxyFix(app.wsgi_app)
     # os.environ['AUTHLIB_INSECURE_TRANSPORT'] = "1"
 
     # box
@@ -50,13 +50,3 @@ def setLog(app):
         logger = logging.getLogger('authlib')
         logger.setLevel(logging.DEBUG)
         logger.addHandler(ch)
-
-
-class ReverseProxied(object):
-    def __init__(self, app, http):
-        self.app = app
-        self.http = http
-
-    def __call__(self, environ, start_response):
-        environ['wsgi.url_scheme'] = self.http
-        return self.app(environ, start_response)

@@ -3,7 +3,10 @@ import logging
 
 app = create_app({
     'bullet': """
-<p> Change Your Password Here <a href="/passwd">https://your.domain.ntu.edu.tw:443/passwd</a></p>
+<p> <a href="/passwd">   Change Your Password </a></p>
+<p> <a href="/drive/">   NextCloud Drive      </a></p>
+<p> <a href="/monitor/"> Monitor Web          </a></p>
+<p> <a href="/help">     Help Web             </a></p>
 """,
     'name': 'Lab304',
     # 'dockerserver': 'http://dockerserver:3476', # on docker
@@ -15,7 +18,6 @@ app = create_app({
     # 'SQLALCHEMY_DATABASE_URI': 'sqlite:////app/OauthServer/db.sqlite', # on docker
     # 'logfile': '/app/OauthServer/log', # on docker
     'logfile': './log',
-    'PREFERRED_URL_SCHEME': 'https'
 })
 
 
