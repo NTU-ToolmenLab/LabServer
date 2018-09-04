@@ -92,7 +92,7 @@ watch = true
 # Optional
 # Default: true
 #
-exposedbydefault = true
+exposedbydefault = false
 
 # Use the IP address from the binded port instead of the inner network one.
 # For specific use-case :)
@@ -118,3 +118,21 @@ swarmmode = false
 #  cert = "/etc/ssl/docker.crt"
 #  key = "/etc/ssl/docker.key"
 #  insecureskipverify = true
+
+# Metrics definition
+[metrics]
+  # To enable Traefik to export internal metrics to Prometheus
+  [metrics.prometheus]
+    # Name of the related entry point
+    #
+    # Optional
+    # Default: "traefik"
+    #
+    entryPoint = "traefik"
+
+    # Buckets for latency metrics
+    #
+    # Optional
+    # Default: [0.1, 0.3, 1.2, 5]
+    #
+    buckets = [0.1,0.3,1.2,5.0]

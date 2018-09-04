@@ -65,8 +65,6 @@ services:
     volumes:
       - ./DockerServer:/app/
       - /var/run/docker.sock:/var/run/docker.sock:ro
-    labels:
-      - "traefik.enable=false"
     networks:
       - mynet
 
