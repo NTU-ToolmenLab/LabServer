@@ -22,7 +22,7 @@ services:
     volumes:
       - ./OauthServer:/app/OauthServer
     labels:
-      - "traefik.frontend.rule=Host:127.0.0.1"
+      - "traefik.frontend.rule=Host:my.domain.ntu.edu.tw"
       - "traefik.port=5000"
       - "traefik.enable=true"
       - "traefik.backend=oauthserver"
@@ -40,7 +40,7 @@ services:
       - ./my_vnc:/app/my_vnc
       - ./OauthServer/db.sqlite:/app/db.sqlite:ro
     labels:
-      - "traefik.frontend.rule=Host:127.0.0.1;PathPrefixStrip:/vnc/"
+      - "traefik.frontend.rule=Host:my.domain.ntu.edu.tw;PathPrefixStrip:/vnc/"
       - "traefik.port=6080"
       - "traefik.enable=true"
       - "traefik.backend=vnc"
@@ -69,8 +69,7 @@ services:
       - mynet
 
   test:
-    image: docker-firefox
-    command: "x11vnc -forever -usepw -create"
+    image: linnil1/docker-firefox
     networks:
       - mynet
 
@@ -93,7 +92,7 @@ services:
     image: nginx
     restart: always
     ports:
-      - 8888:443
+      - 444:443
     external_links:
       - nextcloud
       - collabora

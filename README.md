@@ -2,28 +2,29 @@
 Some application or dockerfiles run on server
 
 ## How to Build
+### PreRequire
+* docker
+* docker-compose
+* nvidia-docker
 
-### set python environment(Optional)
+### Clone from GITHUB
 ```
-sudo apt-get install python3-pip
-sudo pip3 install virtualenv
-virtualenv env
-source env/bin/active
+git clone https://github.com/linnil1/LabServer
+cd LabServer
 ```
 
 ### Create encrypt file
-
 1. Use Lets Encrypt it!
 **You should open port 80 for verification**
 
 ```
 docker pull certbot/certbot
-docker run --rm -it -p 80:80 -v $(pwd)/letsencrypt:/etc/letsencrypt certbot/certbot certonly --standalone
+docker run --rm -it -p 80:80 -v $PWD/letsencrypt:/etc/letsencrypt certbot/certbot certonly --standalone
 ```
 
 1.1. Renew it 
 
-`docker run --rm -it -p 80:80 -p 443:443 -v $(pwd)/letsencrypt:/etc/letsencrypt certbot/certbot renew`
+`docker run --rm -it -p 80:80 -p 443:443 -v $PWD/letsencrypt:/etc/letsencrypt certbot/certbot renew`
 
 Then copy to `certs/`
 
@@ -38,21 +39,38 @@ openssl req -new -x509 -nodes -sha1 -days 365 -key privkey.pem -out fullchain.pe
 cd ..
 ```
 
-## Add traefik
-docker pull traefik
+## Some variable
+`vim run.sh` to edit top few lines.
 
-## build OauthServer
-```
-cd LabServer/OauthServer
-vim app.py # modify anythings in create_app
-docker build . -t linnil1/oauthserver
-docker run -it --rm -v $(pwd):/app/OauthServer linnil1/oauthserver flask initdb
-```
+## OauthServer
+### change Nmae of Oauthserver
+`vim OauthServer/app.py`
 
-## Add User and Container
+and change `Lab304` to what you want.
+
+## docker_compose network
+If you are familiar with Dockernetworking,
+you can change your networking in `docker-compose.yml`.
+
+## Run script
+`sudo bash run.sh`
+
+## OauthServer
+Add User and Container
+
 1. Add it by command line
-`docker run -it --rm -v $(pwd):/app/OauthServer linnil1/oauthserver flask std_add_user`
-`docker run -it --rm -v $(pwd):/app/OauthServer linnil1/oauthserver flask std_add_box`
+`docker run -it --rm -v $PWD/OauthServer:/app/OauthServer linnil1/oauthserver flask std_add_user`
+`docker run -it --rm -v $PWD/OauthServer:/app/OauthServer linnil1/oauthserver flask std_add_box`
+
+For example:
+`docker run -it --rm -v $PWD/OauthServer:/app/OauthServer linnil1/oauthserver flask std_add_box`
+
+and fill 
+```
+user = linnil1
+box = labserver_test_1
+docker = labserver_test_1
+```
 
 2. Add with code
 Modify `std_add_user` in `app.py`, it is very easy.
@@ -61,95 +79,47 @@ Modify `std_add_user` in `app.py`, it is very easy.
 If you are admin, go to `your.domain.name/adminpage` to modify.
 
 4. You can add `help.html` in `oauthserver/templates/`
-```
-cd ..
-```
 
-## Control docker to start or stop
-```
-cd DockerServer
-docker build . -t linnil1/dockerserver
-cd ..
-```
-
-## Build VNC
-```
-cd my_vnc
-git clone https://github.com/novnc/noVNC.git
-cd noVNC
-```
-
-Build it by npm (I do it at another mechine).
-
-```
-npm install
-./utils/use_require.js --with-app --as commonjs
-mv build ../
-cd ..
-git clone https://github.com/novnc/websockify
-cat token_plugin.py >> websockify/websockify/token_plugins.py
-docker build . -t linnil1/docker-vnc
-cd ..
-```
-
-## build example docker-firefox-vnc (for testing, Not require)
-```
-cd UserDocker
-docker build . -t linnil1/docker-firefox
-cd ..
-```
-
-## Build nextcloud
-```
-docker pull nextcloud:fpm
-docker pull nginx
-docker pull collabora/code
-docker pull mariadb
-cd Nextcloud
-vim nginx.conf # modify server_name and error_page port
-cd ..
-```
-
-## Modify docker-compose
-`vim docker-compose.yml`
-
-1. change host from 127.0.0.1 to my.domain
-2. change port from 443 and 8888 if you want
-3. nextcloud_db password
-4. nextcloud external data path
 
 ## Finally, you can start your server
 `docker-compose up -d`
 
+## VNC
+If you want to do more fancy things, like auto login for vnc password.
+you can add `my_vnc/app/ui.js` with
+```
+var xmlHttp = new XMLHttpRequest();
+xmlHttp.onreadystatechange = function() {
+    if (xmlHttp.readyState == 4 && xmlHttp.status == 200) {
+        password = xmlHttp.responseText;
+        // do somethings
+    }
+}
+var tokenname = window.location.search;
+tokenname = tokenname.substr(17);
+xmlHttp.open("POST", "https://my.domain.ntu.edu.tw:443/box/vnctoken?token=" + tokenname, true); // true for asynchronous 
+xmlHttp.send(null);
+```
+
 ## NextCloud
 
+### init
+(Already done in `run.sh`)
+
 I provide two way to login NextCloud.
+
 One is from
 `my.domain.ntu.edu.tw:443/drive`
-the other is
+
+the other is (because collabora not work in reverse proxy)
 `my.domain.ntu.edu.tw:444`
 
-It need to start to same containers because collabora cannot use in reverse proxy.
+and enable `collabora`, `social login`, `external storage` for you.
 
-### init
-edit `NextCloud/nextcloud/config/config.php`
-```
-  'trusted_domains' =>
-  array (
-    0 => 'my.domain.ntu.edu.tw:443',
-    1 => 'my.domain.ntu.edu.tw:444',
-  ),
-  'overwritewebroot' => '/drive',
-```
-
-Go in to web https://my.domain.ntu.edu.tw:443/drive
-
-Set admin and password, and choose mysql: hostname=nextclouddb, and the other are same as docker-compose written
-
-enable "collabora" (Set https://my.domain.ntu.edu.tw:444)
+I issued social login [bug](https://github.com/zorn-v/nextcloud-social-login/issues/46).
 
 ### enable external storage
-Add External Storage
+Add External Storage by python
 ```
 cd Nextcloud
 pip3 install requests
@@ -176,10 +146,8 @@ cd ..
 }
 ```
 
-* Go to web https://my.domain.ntu.edu.tw:443/drive
-* Add app `social login`
+* Go to web https://my.domain.ntu.edu.tw:443/drive/settings/admin/sociallogin
 * Modify code in `Nextcloud//custom_apps/sociallogin/lib/Controller/LoginController.php`
-  I have issued this bug https://github.com/zorn-v/nextcloud-social-login/issues/46
 * Add client configuration (Custom Oauth2)
 ``` init
 Internal_name: testapp

@@ -1,6 +1,6 @@
-FROM python:3.6-slim
+FROM python:3.7-slim
 RUN pip3 install numpy
-RUN mkdir /app/myvnc
+RUN mkdir -p /app/myvnc
 RUN touch /app/db.sqlite
 
 WORKDIR /app/my_vnc

@@ -9,15 +9,15 @@ app = create_app({
 <p> <a href="/help">     Help Web             </a></p>
 """,
     'name': 'Lab304',
-    # 'dockerserver': 'http://dockerserver:3476', # on docker
-    'dockerserver': 'http://127.0.0.1:3476',
     'SECRET_KEY': 'secret',
     'OAUTH2_REFRESH_TOKEN_GENERATOR': True,
     'SQLALCHEMY_TRACK_MODIFICATIONS': False,
-    'SQLALCHEMY_DATABASE_URI': 'sqlite:////tmp/db.sqlite',
-    # 'SQLALCHEMY_DATABASE_URI': 'sqlite:////app/OauthServer/db.sqlite', # on docker
-    # 'logfile': '/app/OauthServer/log', # on docker
-    'logfile': './log',
+    # 'dockerserver': 'http://127.0.0.1:3476', # local
+    # 'SQLALCHEMY_DATABASE_URI': 'sqlite:////tmp/db.sqlite', # local
+    # 'logfile': './log', # local
+    'dockerserver': 'http://dockerserver:3476', # on docker
+    'SQLALCHEMY_DATABASE_URI': 'sqlite:////app/OauthServer/db.sqlite', # on docker
+    'logfile': '/app/OauthServer/log', # on docker
 })
 
 
@@ -43,6 +43,8 @@ def initdb():
 @app.cli.command()
 def std_add_user():
     from oauthserver.models import add_user
+    from getpass import getpass
+    import time
     name = input("Username ")
     passwd = getpass()
     passwd1 = getpass("Password Again: ")
