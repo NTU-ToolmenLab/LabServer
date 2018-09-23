@@ -1,0 +1,18 @@
+externalIP: <ip>
+rbac:
+  enabled: true
+dashboard:
+  enabled: true
+
+kubernetes:
+  namespaces:
+  - default
+  - kube-system
+  ingressClass: traefik
+
+ssl:
+  enabled: true
+  enforced: true
+  insecureSkipVerify: true
+  defaultCert: <cert>
+  defaultKey: <key>

@@ -1,0 +1,16 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: nextcloud-ingress
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.frontend.rule.type: PathPrefixStrip
+    traefik.protocol: https
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /drive
+        backend:
+          serviceName: nextcloud-web
+          servicePort: 443
