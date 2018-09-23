@@ -74,12 +74,10 @@ services:
       - mynet
 
   nextcloud:
-    image: nextcloud:fpm
+    image: linnil1/nextcloudfpm
     restart: always
     volumes:
       - ./Nextcloud/nextcloud:/var/www/html
-      - ./Nextcloud/etcpasswd:/etc/passwd
-      - ./Nextcloud/etcgroup:/etc/group
       - /path/external_data:/external_data
     depends_on:
       - nextcloud_db

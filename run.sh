@@ -41,6 +41,10 @@ cat token_plugin.py >> websockify/websockify/token_plugins.py
 docker build . -t linnil1/docker-vnc
 cd ..
 
+## Build nextcloud
+echo "Build nextcloud with id 1000:1000"
+docker build Nextcloud -t linnil1/nextcloudfpm
+
 ## Build example
 echo "Add example"
 docker build UserDocker -t linnil1/docker-firefox
