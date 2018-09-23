@@ -1,0 +1,39 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nextcloud-fpm-svc
+spec:
+  selector:
+    name: nextcloud-pod
+  ports:
+  - port: 9000
+    targetPort: 9000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nextcloud-fpm-dep
+spec:
+  selector:
+    matchLabels:
+      name: nextcloud-pod
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: nextcloud-pod
+    spec:
+      containers:
+      - name: nextcloud-docker
+        image: linnil1/nextcloudfpm
+        ports:
+        - containerPort: 9000
+          protocol: TCP
+        volumeMounts:
+        - name: nextcloud-html
+          mountPath: /var/www/html
+      volumes:
+      - name: nextcloud-html
+        hostPath: 
+          path: ~/LabServer/Nextcloud/nextcloud1

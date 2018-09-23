@@ -1,0 +1,35 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nextcloud-collabora-svc
+spec:
+  selector:
+    name: nextcloud-collabora
+  ports:
+  - port: 9980
+    targetPort: 9980
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nextcloud-collabora-dep
+spec:
+  selector:
+    matchLabels:
+      name: nextcloud-collabora
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: nextcloud-collabora
+    spec:
+      containers:
+      - name: nextcloud-collabora
+        image: collabora/code
+        ports:
+        - containerPort: 9980
+          protocol: TCP
+        env:
+        - name: domain
+          value: my.domain.ntu.edu.tw

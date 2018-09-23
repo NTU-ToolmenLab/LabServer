@@ -1,0 +1,59 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nextcloud-web
+spec:
+  selector:
+    name: nextcloud-nginx
+  type: LoadBalancer
+  ports:
+  - port: 443
+    targetPort: 443
+    protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nextcloud-web-dep
+spec:
+  selector:
+    matchLabels:
+      name: nextcloud-nginx
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: nextcloud-nginx
+    spec:
+      containers:
+      - name: nextcloud-nginx
+        image: nginx
+
+        ports:
+        - containerPort: 443
+          protocol: TCP
+        volumeMounts:
+        - name: certs
+          mountPath: /certs
+          readOnly: true
+        - name: nextcloud-nginx
+          mountPath: /etc/nginx/nginx.conf
+          readOnly: true
+        - name: nextcloud-html
+          mountPath: /var/www/html
+        - name: nextcloud-log
+          mountPath: /var/log/nginx/
+      volumes:
+      - name: certs
+        hostPath: 
+          path: ~/LabServer/certs
+      - name: nextcloud-nginx
+        hostPath: 
+          path: ~/LabServer/Nextcloud/nginx-k8s.conf
+      - name: nextcloud-html
+        hostPath: 
+          path: ~/LabServer/Nextcloud/nextcloud1
+      - name: nextcloud-log
+        hostPath: 
+          path: ~/LabServer/Nextcloud/log
