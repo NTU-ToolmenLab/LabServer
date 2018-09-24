@@ -1,0 +1,39 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: oauthserver-web
+spec:
+  selector:
+    name: oauthserver-pod
+  ports:
+  - port: 5000
+    targetPort: 5000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oauthserver-dep
+spec:
+  selector:
+    matchLabels:
+      name: oauthserver-pod
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: oauthserver-pod
+    spec:
+      containers:
+      - name: oauthserver
+        image: registry-svc.default.svc.cluster.local:5002/linnil1/oauthserver
+        ports:
+        - containerPort: 5000
+          protocol: TCP
+        volumeMounts:
+        - name: oauthserver-volume
+          mountPath: /app/OauthServer
+      volumes:
+      - name: oauthserver-volume
+        hostPath: 
+          path: ~/LabServer/OauthServer

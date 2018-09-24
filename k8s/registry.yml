@@ -1,0 +1,39 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: registry-svc
+spec:
+  selector:
+    name: registry-pod
+  ports:
+  - port: 5002
+    targetPort: 5000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: registry-dep
+spec:
+  selector:
+    matchLabels:
+      name: registry-pod
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: registry-pod
+    spec:
+      containers:
+      - name: registry
+        image: registry
+        ports:
+        - containerPort: 5000
+          protocol: TCP
+        volumeMounts:
+        - name: registry-volume
+          mountPath: /var/lib/registry
+      volumes:
+      - name: registry-volume
+        hostPath: 
+          path: ~/reg

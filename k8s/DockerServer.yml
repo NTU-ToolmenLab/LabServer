@@ -1,0 +1,44 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dockerserver-svc
+spec:
+  selector:
+    name: dockerserver-pod
+  ports:
+  - port: 3476
+    targetPort: 3476
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dockerserver-dep
+spec:
+  selector:
+    matchLabels:
+      name: dockerserver-pod
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: dockerserver-pod
+    spec:
+      containers:
+      - name: dockerserver
+        image: registry-svc.default.svc.cluster.local:5002/linnil1/dockerserver
+        ports:
+        - containerPort: 3476
+          protocol: TCP
+        volumeMounts:
+        - name: dockerserver-volume
+          mountPath: /app/DockerServer
+        - name: docker-sock
+          mountPath: /var/run/docker.sock
+      volumes:
+      - name: docker-sock
+        hostPath: 
+          path: /var/run/docker.sock
+      - name: dockerserver-volume
+        hostPath: 
+          path: ~/LabServer/DockerServer
