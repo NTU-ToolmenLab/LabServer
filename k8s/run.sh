@@ -7,6 +7,8 @@ home='\/home\/ubuntu'
 echo "Change ip and cert and key"
 vim traefik.yml
 
+docker build myapi_k8s -t registry-svc.default.svc.cluster.local:5002/linnil1/myapi_k8s
+
 # domain and port
 echo "Change domain name and port and sql password"
 sed -i "s/my.domain.ntu.edu.tw/$domain_name/g" ../Nextcloud/nginx*

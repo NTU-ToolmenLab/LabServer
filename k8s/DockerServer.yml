@@ -11,14 +11,13 @@ spec:
     targetPort: 3476
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: DaemonSet
 metadata:
   name: dockerserver-dep
 spec:
   selector:
     matchLabels:
       name: dockerserver-pod
-  replicas: 1
   template:
     metadata:
       labels:
