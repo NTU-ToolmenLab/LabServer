@@ -2,6 +2,10 @@ domain_name='my.domain.ntu.edu.tw'
 mysql_root_passowrd='mysql_root_password'
 mysql_passowrd='mysql_password'
 home='\/home\/ubuntu'
+LABNAS_IP=192.168.1.3
+HOMENAS_IP=192.168.1.4
+LABNAS_PATH=\/path
+HOMENAS_PATH=\/path
 
 # test
 echo "Change ip and cert and key"

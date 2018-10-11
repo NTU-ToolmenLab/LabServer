@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test
+  labels:
+    UserDocker: "true"
+spec:
+  containers:
+  - name: test
+    image: nvidia/cuda:9.0-cudnn7-devel-ubuntu16.04
+    # imagePullPolicy: Always
+    command: [tail]
+    args: ['-f', '/dev/null']
+    ports:
+    - containerPort: 22
+    - containerPort: 5900
+    volumeMounts:
+    - name: labnas
+      mountPath: /home/nas
+    - name: homenas
+      mountPath: /home/ubuntu
+      subPath: guest
+  nodeSelector:
+    kubernetes.io/hostname: 
+  volumes:
+  - name: labnas
+    persistentVolumeClaim:
+      claimName: nfs-labnas
+  - name: homenas
+    persistentVolumeClaim:
+      claimName: nfs-homenas
