@@ -2,7 +2,7 @@ from flask_testing import TestCase
 import unittest
 from flask import Flask
 from models import User, db, add_user
-from box import db as boxdb, Box, add_box
+from box_models import db as boxdb, Box, add_box
 import requests
 import passlib.hash
 from lxml import html
@@ -628,6 +628,77 @@ class Test_oauth_client(unittest.TestCase):
         self.assertTrue(a.ok)
         self.assertIn('testmyapp', a.text)
 
+class Test_add(unittest.TestCase):
+    def setUp(self):
+        self.s = requests.Session()
+        self.s.post("http://127.0.0.1:5000", data={
+            'userName': 'test',
+            'userPassword': 'test123'})
+
+    def test_look_ok(self):
+        a = self.s.get("http://127.0.0.1:5000/box/")
+        self.assertTrue(a.ok)
+
+    def test_create_error(self):
+        rep = self.s.get("http://127.0.0.1:5000/box/")
+        self.assertIn('1/2', rep.text)
+
+        rep = self.s.post("http://127.0.0.1:5000/box/create", data=
+                {'node': 'server1',
+                 'image': 'ubuntu:16.04'})
+        self.assertEqual(rep.status_code, 403)
+
+    def test_create(self):
+        while True:
+            rep = self.s.get("http://127.0.0.1:5000/box/")
+            if '1/2' in rep.text:
+                break
+            rep = self.s.post("http://127.0.0.1:5000/box/api", data=
+                    {'method': 'Delete',
+                     'id': html.fromstring(rep.text).xpath("//input[@name='id']")[0].value})
+
+        self.assertIn('1/2', rep.text)
+
+        rep = self.s.post("http://127.0.0.1:5000/box/create", data=
+                {'node': 'server1',
+                 'image': 'test_image'})
+        self.assertIn('2/2', rep.text)
+
+        rep = self.s.post("http://127.0.0.1:5000/box/api", data=
+                {'method': 'Delete',
+                 'id': html.fromstring(rep.text).xpath("//input[@name='id']")[0].value})
+        self.assertNotIn('2/2', rep.text)
+
+    def test_create_excessed(self):
+        rep = self.s.get("http://127.0.0.1:5000/box/")
+        self.assertIn('1/2', rep.text)
+
+        rep = self.s.post("http://127.0.0.1:5000/box/create", data=
+                {'node': 'server1',
+                 'image': 'test_image'})
+        rep = self.s.post("http://127.0.0.1:5000/box/create", data=
+                {'node': 'server1',
+                 'image': 'test_image'})
+        rep = self.s.post("http://127.0.0.1:5000/box/create", data=
+                {'node': 'server1',
+                 'image': 'test_image'})
+        self.assertEqual(rep.status_code, 403)
+        rep = self.s.get("http://127.0.0.1:5000/box/")
+        rep = self.s.post("http://127.0.0.1:5000/box/api", data=
+                {'method': 'Delete',
+                 'id': html.fromstring(rep.text).xpath("//input[@name='id']")[0].value})
+        rep = self.s.post("http://127.0.0.1:5000/box/api", data=
+                {'method': 'Delete',
+                 'id': html.fromstring(rep.text).xpath("//input[@name='id']")[0].value})
+
+    def test_create_error_node(self):
+        rep = self.s.get("http://127.0.0.1:5000/box/")
+        self.assertIn('1/2', rep.text)
+
+        rep = self.s.post("http://127.0.0.1:5000/box/create", data=
+                {'node': 'server1',
+                 'image': 'test_image'})
+        self.assertEqual(rep.status_code, 403)
 
 if __name__ == '__main__':
     unittest.main()

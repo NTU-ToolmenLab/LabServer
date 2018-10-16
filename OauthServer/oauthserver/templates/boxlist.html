@@ -26,19 +26,66 @@ list
             <div class="card-body">
               <h5 class="card-title"> status: {{ data.status }} </h5>
               <p class="card-text"> {{ data.text }} </p>
+              <p class="card-text"> node: {{ data.node}} </p>
 
-              <form action="{{ url_for('oauthserver.box.api')}}" method="post">
-                <input type="hidden"   name="id"     value="{{data.id}}"/>
+              <form action="{{ url_for('oauthserver.box_models.api')}}" method="post">
+                <input type="hidden"   name="name"     value="{{data.name}}"/>
                 <div class="btn-group" role="group">
-                  <input type="submit" name="method" value="Resume"  class="btn btn-outline-primary"/>
+                  <input type="submit" name="method" value="Start"  class="btn btn-outline-primary"/>
                   <input type="submit" name="method" value="Restart" class="btn btn-outline-warning"/>
-                  <input type="submit" name="method" value="Stop"    class="btn btn-outline-danger" />
+                  <input type="submit" name="method" value="Delete"    class="btn btn-outline-danger" />
                 </div>
               </form>
             </div>
-            <div class="card-footer text-muted"> {{ data.id[:10] }} </div>
+            <div class="card-footer text-muted"> {{ data.name }} </div>
           </div>
         {% endfor %}
+        {% if create_param.quota - create_param.use_quota > 0 %}
+          <form action="{{ url_for('oauthserver.box_models.create')}}" method="post">
+            <div class="card my-3">
+              <div class="card-header"> Create New Environment {{create_param.use_quota + 1}}/{{create_param.quota}} </div>
+              <div class="card-body">
+                <div class="form-group">
+                  <label for="image">Choose Environment</label>
+                  <select class="form-control" name="image">
+                  {% for image in create_param.image %}
+                    <option> {{image}} </option>
+                  {% endfor %}
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="node">Choose Server</label>
+                  <select class="form-control" name="node">
+                  {% for node in create_param.node %}
+                    <option> {{node}} </option>
+                  {% endfor %}
+                  </select>
+                </div>
+                <div class="btn-group" role="group">
+                  <input type="submit" value="Create" class="btn btn-outline-primary"/>
+                </div>
+              </div>
+            </div>
+          </form>
+        {% endif %}
+
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">Environment</th>
+              <th scope="col">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for image in image_list %}
+              <tr>
+                <td>{{ image.name }}</td>
+                <td>{{ image.description }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
       </div>
     </div>
   </div>
