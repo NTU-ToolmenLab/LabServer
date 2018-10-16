@@ -25,7 +25,7 @@ def Login():
     if request.method == 'GET':
         if flask_login.login_fresh():
             logger.debug("Skip Login")
-            return redirect(url_for('oauthserver.box.List'))
+            return redirect(url_for('oauthserver.box_models.List'))
             # return redirect(url_for('oauthserver.routes.hi')) # for test
         else:
             return render_template('Login.html')
@@ -37,7 +37,7 @@ def Login():
             if not is_safe_url(nexturl):
                 return abort(400)
             # return redirect(url_for('oauthserver.box.List'))
-            return redirect(nexturl or url_for('oauthserver.box.List'))
+            return redirect(nexturl or url_for('oauthserver.box_models.List'))
             # return redirect(url_for('oauthserver.routes.hi')) # for test
         else:
             return render_template('Login.html', error="Fail to Login")
@@ -91,7 +91,7 @@ def ChangePassword():
         return render_template('changePassword.html', error=rep)
 
     logger.info(nowUser.name + " ChangePassword OK")
-    return redirect(url_for('oauthserver.box.List'))
+    return redirect(url_for('oauthserver.box_models.List'))
     # return redirect(url_for('oauthserver.routes.hi')) # for test
 
 @bp.route("/adminpage", methods=['GET', 'POST'])

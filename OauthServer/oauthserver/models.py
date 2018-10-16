@@ -16,6 +16,8 @@ class User(db.Model, flask_login.UserMixin):
     password = db.Column(db.String(300), nullable=False)
     passtime = db.Column(db.Float, default=0)
     admin = db.Column(db.Boolean(32), default=0, nullable=False)
+    quota = db.Column(db.Integer, default=0)
+    use_quota = db.Column(db.Integer, default=0)
 
     def __str__(self):
         return '<User {}>'.format(self.name)
@@ -52,13 +54,14 @@ def setPW(user, oldone, newone):
     db.session.commit()
     return "ok"
 
-def add_user(name, passwd='', time=0, admin=0):
+def add_user(name, passwd='', time=0, admin=0, quota=0):
     logger.info("Add User " + name)
     u = User.query.filter_by(name=name).first()
     assert(not u)
     u = User(name=name,
              passtime=time,
-             admin=admin)
+             admin=admin,
+             quota=quota)
     u.setPassword(passwd)
     db.session.add(u)
     db.session.commit()
