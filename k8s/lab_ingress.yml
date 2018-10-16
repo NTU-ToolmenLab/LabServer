@@ -12,7 +12,7 @@ spec:
       paths:
       - path: /drive/
         backend:
-          serviceName: nextcloud-web
+          serviceName: nextcloud-nginx
           servicePort: 443
 ---
 apiVersion: extensions/v1beta1

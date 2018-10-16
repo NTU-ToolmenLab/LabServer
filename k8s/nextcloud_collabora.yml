@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: nextcloud-collabora-svc
+  name: nextcloud-collabora
 spec:
   selector:
     name: nextcloud-collabora
@@ -13,7 +13,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nextcloud-collabora-dep
+  name: nextcloud-collabora
 spec:
   selector:
     matchLabels:

@@ -31,9 +31,10 @@ spec:
         - containerPort: 5000
           protocol: TCP
         volumeMounts:
-        - name: registry-volume
+        - name: volume
           mountPath: /var/lib/registry
+          subPath: registry_data
       volumes:
-      - name: registry-volume
-        hostPath: 
-          path: ~/reg
+      - name: volume
+        persistentVolumeClaim:
+          claimName: nfs-labserver

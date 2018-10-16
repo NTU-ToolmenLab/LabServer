@@ -2,10 +2,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: myvnc-web
+  name: myvnc
 spec:
   selector:
-    name: myvnc-pod
+    name: myvnc
   ports:
   - port: 6080
     targetPort: 6080
@@ -13,16 +13,16 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: myvnc-dep
+  name: myvnc
 spec:
   selector:
     matchLabels:
-      name: myvnc-pod
+      name: myvnc
   replicas: 1
   template:
     metadata:
       labels:
-        name: myvnc-pod
+        name: myvnc
     spec:
       containers:
       - name: myvnc
@@ -31,14 +31,13 @@ spec:
         - containerPort: 6080
           protocol: TCP
         volumeMounts:
-        - name: myvnc-volume
+        - name: volume
           mountPath: /app/my_vnc
-        - name: lab304-db
+          subPath: my_vnc
+        - name: volume
           mountPath: /app/db.sqlite
+          subPath: OauthServer/db.sqlite
       volumes:
-      - name: myvnc-volume
-        hostPath: 
-          path: ~/LabServer/my_vnc
-      - name: lab304-db
-        hostPath: 
-          path: ~/LabServer/OauthServer/db.sqlite
+      - name: volume
+        persistentVolumeClaim:
+          claimName: nfs-labserver

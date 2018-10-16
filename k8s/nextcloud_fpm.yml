@@ -2,10 +2,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: nextcloud-fpm-svc
+  name: nextcloud-fpm
 spec:
   selector:
-    name: nextcloud-pod
+    name: nextcloud-fpm
   ports:
   - port: 9000
     targetPort: 9000
@@ -13,27 +13,28 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nextcloud-fpm-dep
+  name: nextcloud-fpm
 spec:
   selector:
     matchLabels:
-      name: nextcloud-pod
+      name: nextcloud-fpm
   replicas: 1
   template:
     metadata:
       labels:
-        name: nextcloud-pod
+        name: nextcloud-fpm
     spec:
       containers:
-      - name: nextcloud-docker
+      - name: nextcloud-fpm
         image: registry-svc.default.svc.cluster.local:5002/linnil1/nextcloudfpm
         ports:
         - containerPort: 9000
           protocol: TCP
         volumeMounts:
-        - name: nextcloud-html
+        - name: volume
           mountPath: /var/www/html
+          subPath: Nextcloud/nextcloud
       volumes:
-      - name: nextcloud-html
-        hostPath: 
-          path: ~/LabServer/Nextcloud/nextcloud1
+      - name: volume
+        persistentVolumeClaim:
+          claimName: nfs-labserver

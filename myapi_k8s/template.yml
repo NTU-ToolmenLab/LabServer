@@ -21,7 +21,7 @@ spec:
       mountPath: /home/ubuntu
       subPath: guest
   nodeSelector:
-    kubernetes.io/hostname: 
+    kubernetes.io/hostname: lab304-server2
   volumes:
   - name: labnas
     persistentVolumeClaim:

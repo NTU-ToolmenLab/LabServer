@@ -4,10 +4,15 @@ rbac:
 dashboard:
   enabled: true
 
+metrics:
+  prometheus:
+    enabled: true
+
 kubernetes:
   namespaces:
   - default
   - kube-system
+  - monitor
   ingressClass: traefik
 
 ssl:

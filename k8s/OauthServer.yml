@@ -2,10 +2,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: oauthserver-web
+  name: oauthserver
 spec:
   selector:
-    name: oauthserver-pod
+    name: oauthserver
   ports:
   - port: 5000
     targetPort: 5000
@@ -13,16 +13,16 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: oauthserver-dep
+  name: oauthserver
 spec:
   selector:
     matchLabels:
-      name: oauthserver-pod
+      name: oauthserver
   replicas: 1
   template:
     metadata:
       labels:
-        name: oauthserver-pod
+        name: oauthserver
     spec:
       containers:
       - name: oauthserver
@@ -31,9 +31,10 @@ spec:
         - containerPort: 5000
           protocol: TCP
         volumeMounts:
-        - name: oauthserver-volume
+        - name: volume
           mountPath: /app/OauthServer
+          subPath: OauthServer
       volumes:
-      - name: oauthserver-volume
-        hostPath: 
-          path: ~/LabServer/OauthServer
+      - name: volume
+        persistentVolumeClaim:
+          claimName: nfs-labserver

@@ -50,12 +50,13 @@ spec:
         - containerPort: 3476
           protocol: TCP
         volumeMounts:
-        - name: myapi-k8s
+        - name: volume
           mountPath: /app
+          subPath: myapi_k8s
       volumes:
-      - name: myapi-k8s
-        hostPath: 
-          path: /nashome/server/LabServer/k8s/myapi_k8s
+      - name: volume
+        persistentVolumeClaim:
+          claimName: nfs-labserver
       nodeSelector:
         kubernetes.io/hostname: lab304-server2
 ---
