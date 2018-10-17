@@ -96,11 +96,11 @@ def goRedir(node, subpath):
 # args: name, (image, node, labnas=True, homenas=True, homepath)
 @app.route('/create', methods=['POST'])
 def create():
-    template = yaml.load(open('template.yml'))
+    template = yaml.load(open('/app/template.yml'))
     template['metadata']['name'] = request.form['name']
     app.logger.info("Create " + request.form['name'])
     if request.form.get('image'):
-        template['spec']['image'] = request.form.get('image')
+        template['spec']['containers'][0]['image'] = request.form.get('image')
     if request.form.get('node') and checkNode(request.form.get('node')):
         template['spec']['nodeSelector']['kubernetes.io/hostname'] = request.form.get('node')
 

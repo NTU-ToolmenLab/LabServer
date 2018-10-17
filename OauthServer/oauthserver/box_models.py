@@ -17,6 +17,7 @@ def record_params(setup_state):
         bp.usek8s = True
     else:
         bp.sock = setup_state.app.config['dockerserver']
+    bp.imagehub = setup_state.app.config['image_hub']
 
 
 class Box(db.Model):
@@ -44,26 +45,22 @@ class Box(db.Model):
                 'image': self.image,
                 'status': 'Testing'}
 
-    def api(self, name, **kwrags):
-        if name not in ['start', 'restart', 'stop', 'passwd', 'delete']:
+    def api(self, method, **kwrags):
+        if method not in ['start', 'restart', 'stop', 'passwd', 'delete']:
             abort(403)
 
+        name = self.docker_name
+        url = bp.sock + '/' + method
         if bp.usek8s:
-            if name == 'stop':
+            if method == 'stop':
                 abort(403)
-
-        if bp.usek8s:
-            if name == 'delete': # not handle in dockerServer
-                url = bp.sock + '/delete'
-            else:
-                url = bp.sock + '/{}/{}'.format(self.node, name)
-            rep = post(url, data={'name': self.docker_name, **kwrags}).json()
-        else:
-            rep = post(bp.sock + "/" + name,
-                    data={'id': self.docker_id, **kwrags}).json()
+            if method != 'delete': # delete not handle in dockerserver
+                name = self.docker_id
+                url = bp.sock + '/{}/{}'.format(self.node, method)
+        rep = post(url, data={'name': name, **kwrags}).json()
 
         if rep.get('error'):
-            abort(403)
+            abort(409)
 
 
 class Image(db.Model):

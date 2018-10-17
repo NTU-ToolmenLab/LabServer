@@ -16,6 +16,7 @@ app = create_app({
     # 'SQLALCHEMY_DATABASE_URI': 'sqlite:////tmp/db.sqlite', # local
     # 'logfile': './log', # local
     'myapik8s': 'http://myapi-k8s.default.svc.cluster.local:3476',
+    'image_hub': 'registry-svc.default.svc.cluster.local:5002/linnil1/serverbox:',
     # 'dockerserver': 'http://dockerserver:3476', # on docker
     'SQLALCHEMY_DATABASE_URI': 'sqlite:////app/OauthServer/db.sqlite', # on docker
     'logfile': '/app/OauthServer/log', # on docker
@@ -39,7 +40,8 @@ def initdb():
     # testing
     add_user("test", 'test123', admin=1, quota=2)
     # add_box("test", 'testbox')
-    add_image('user', 'nvidia/cuda:9.0-cudnn7-devel-ubuntu16.04', 'image_text')
+    add_image('user', 'learn3.0', 'cuda9.0 cudnn7 python3 tensorflow1.11 keras2.2.4 pytorch0.4.1')
+    add_image('user', 'learn3.1', 'cuda9.0 cudnn7 python3 caffe2')
 
 @app.cli.command()
 def std_add_user():

@@ -1,7 +1,7 @@
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: ingress-nextcloud
+  name: nextcloud
   annotations:
     kubernetes.io/ingress.class: traefik
     traefik.frontend.rule.type: PathPrefixStrip
@@ -18,7 +18,7 @@ spec:
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: ingress-vnc
+  name: vnc
   annotations:
     kubernetes.io/ingress.class: traefik
     traefik.frontend.rule.type: PathPrefixStrip
@@ -28,13 +28,13 @@ spec:
       paths:
       - path: /vnc/
         backend:
-          serviceName: myvnc-web
+          serviceName: myvnc
           servicePort: 6080
 ---
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: ingress-oauthserver
+  name: oauthserver
   annotations:
     kubernetes.io/ingress.class: traefik
 spec:
@@ -43,6 +43,6 @@ spec:
       paths:
       - path: /
         backend:
-          serviceName: oauthserver-web
+          serviceName: oauthserver
           servicePort: 5000
 

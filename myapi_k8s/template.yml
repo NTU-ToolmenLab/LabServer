@@ -9,8 +9,8 @@ spec:
   - name: test
     image: nvidia/cuda:9.0-cudnn7-devel-ubuntu16.04
     # imagePullPolicy: Always
-    command: [tail]
-    args: ['-f', '/dev/null']
+    # command: [tail]
+    # args: ['-f', '/dev/null']
     ports:
     - containerPort: 22
     - containerPort: 5900

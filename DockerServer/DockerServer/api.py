@@ -25,7 +25,7 @@ def Ok():
 
 @app.route('/search', methods=['POST'])
 def search():
-    query = request.form.get('key')
+    query = request.form.get('name')
     container = getContainer(query)
         
     return jsonify({
@@ -37,29 +37,29 @@ def search():
 
 @app.route('/start', methods=['POST'])
 def start():
-    cid = request.form.get('id')
-    container = getContainer(cid)
+    name = request.form.get('name')
+    container = getContainer(name)
     container.start()
     return Ok()
 
 @app.route('/stop', methods=['POST'])
 def stop():
-    cid = request.form.get('id')
-    container = getContainer(cid)
+    name = request.form.get('name')
+    container = getContainer(name)
     container.stop()
     return Ok()
 
 @app.route('/restart', methods=['POST'])
 def restart():
-    cid = request.form.get('id')
-    container = getContainer(cid)
+    name = request.form.get('name')
+    container = getContainer(name)
     container.restart()
     return Ok()
 
 @app.route('/passwd', methods=['POST'])
 def passwd():
-    cid = request.form.get('id')
-    container = getContainer(cid)
+    name = request.form.get('name')
+    container = getContainer(name)
     if not container.attrs['State']['Running']:
         abort(404)
     pw = request.form.get('pw')

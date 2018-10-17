@@ -3,6 +3,7 @@ import flask_login
 import logging
 import requests
 import time
+import re
 from oauthserver.models import db as user_db
 from oauthserver.box_models import db as db, Box, Image, bp
 
@@ -50,9 +51,9 @@ def api():
     if data.get('method') == 'Start':
         if not nowUser.admin or box.user == nowUser.name:
             box.api('passwd', pw=nowUser.password)
-
         return redirect("/vnc/?path=vnc/?token=" + box.docker_name) # on docker
-    if data.get('method') == 'Delete':
+
+    elif data.get('method') == 'Delete':
         nowUser.use_quota -= 1
         db.session.delete(box)
         user_db.session.commit()
@@ -81,19 +82,25 @@ def create():
     rep = requests.post(bp.sock + '/create', data={
         'name': name,
         'node': data.get('node'),
-        # 'image': box.image
+        'image': bp.imagehub + data.get('image'),
         'homepath': nowUser.name,
         'labnas': 'True',
         'homenas': 'True'}).json()
     if str(rep['status']) != '200':
         abort(409, str(rep))
-    time.sleep(1) # wait for create
-    rep = requests.post(bp.sock + '/listpod', data={'name': name}).json()
+
+    for i in range(10):
+        time.sleep(1) # wait for create
+        rep = requests.post(bp.sock + '/listpod', data={'name': name}).json()
+        if rep['status'] == 'Running':
+            break
+    else:
+        abort(409)
 
     box = Box(box_name=name,
               docker_ip=rep['ip'],
               docker_name=name,
-              docker_id=rep['id'],
+              docker_id=re.findall(r'\w+$', rep['id'])[0],
               user=nowUser.name,
               image=data.get('image'),
               node=data.get('node'))

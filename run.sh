@@ -35,7 +35,7 @@ git clone https://github.com/novnc/websockify
 git clone https://github.com/novnc/noVNC.git
 docker run -it --rm -v $PWD/noVNC:/project node:8.11-alpine sh -c ' \
   cd /project && npm install . && ./utils/use_require.js --with-app --as commonjs'
-sudo mv noVNC/build ../
+sudo mv noVNC/build ./
 sudo cp build/vnc.html build/index.html
 cat token_plugin.py >> websockify/websockify/token_plugins.py
 docker build . -t linnil1/docker-vnc
