@@ -6,7 +6,8 @@ import yaml
 config.load_incluster_config()
 v1 = client.CoreV1Api()
 app = Flask(__name__)
-ns = 'default'
+# ns = 'default'
+ns = 'user'
 label = 'UserDocker'
 
 

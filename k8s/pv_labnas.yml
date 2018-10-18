@@ -18,6 +18,7 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: nfs-labnas
+  namespace: user
 spec:
   storageClassName: nfs-labnas
   accessModes:

@@ -3,6 +3,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: nextcloud-fpm
+  namespace: user
 spec:
   selector:
     name: nextcloud-fpm
@@ -14,6 +15,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: nextcloud-fpm
+  namespace: user
 spec:
   selector:
     matchLabels:
@@ -31,10 +33,17 @@ spec:
         - containerPort: 9000
           protocol: TCP
         volumeMounts:
-        - name: volume
+        - name: homenas
           mountPath: /var/www/html
-          subPath: Nextcloud/nextcloud
+          subPath: server/LabServer/Nextcloud/nextcloud
+        - name: homenas
+          mountPath: /external_data
+        - name: labnas
+          mountPath: /external_nas
       volumes:
-      - name: volume
+      - name: labnas
         persistentVolumeClaim:
-          claimName: nfs-labserver
+          claimName: nfs-labnas
+      - name: homenas
+        persistentVolumeClaim:
+          claimName: nfs-homenas

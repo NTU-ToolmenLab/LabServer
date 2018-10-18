@@ -18,6 +18,7 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: nfs-homenas
+  namespace: user
 spec:
   storageClassName: nfs-homenas
   accessModes:

@@ -51,21 +51,28 @@ docker-compose up -d
 
 ## configure nextcloud
 echo "NextCloud setup"
+# k8s
+# app=kubectl
+# nextcloudapp=$(kubectl get pod -l name=nextcloud-fpm -o name)
+# nextclouddb='nextcloud-db.default.svc.cluster.local'
+app=docker
+nextcloudapp='labserver_nextcloud_1'
+nextclouddb='nextcloud-db'
 sudo chown 1000:1000 Nextcloud/nextcloud
-docker exec -u 1000 -it labserver_nextcloud_1 php occ maintenance:install \
+$app exec -u 1000 -it $nextcloudapp php occ maintenance:install \
       --database=mysql \
       --database-name=nextcloud \
-      --database-host=nextclouddb \
+      --database-host=$nextclouddb \
       --database-pass=$mysql_passowrd \
       --database-user=nextcloud \
       --admin-user=$nextcloud_user \
       --admin-pass=$nextcloud_user_password
-docker exec -u 1000 -it labserver_nextcloud_1 php occ config:system:set trusted_domains 0  --value=$domain_name:$domain_port
-docker exec -u 1000 -it labserver_nextcloud_1 php occ config:system:set trusted_domains 1  --value=$domain_name:$nextcloud_port
-docker exec -u 1000 -it labserver_nextcloud_1 php occ config:system:set overwritewebroot   --value=drive
-docker exec -u 1000 -it labserver_nextcloud_1 php occ config:system:set lost_password_link --value=disabled
-docker exec -u 1000 -it labserver_nextcloud_1 php occ app:install richdocuments
-docker exec -u 1000 -it labserver_nextcloud_1 php occ app:install sociallogin
-docker exec -u 1000 -it labserver_nextcloud_1 php occ app:enable files_external
+$app exec -u 1000 -it $nextcloudapp php occ config:system:set trusted_domains 0  --value=$domain_name:$domain_port
+$app exec -u 1000 -it $nextcloudapp php occ config:system:set trusted_domains 1  --value=$domain_name:$nextcloud_port
+$app exec -u 1000 -it $nextcloudapp php occ config:system:set overwritewebroot   --value=drive
+$app exec -u 1000 -it $nextcloudapp php occ config:system:set lost_password_link --value=disabled
+$app exec -u 1000 -it $nextcloudapp php occ app:install richdocuments
+$app exec -u 1000 -it $nextcloudapp php occ app:install sociallogin
+$app exec -u 1000 -it $nextcloudapp php occ app:enable files_external
 sudo sed -i  "s/\$provider\.'-'\.//g" ./Nextcloud/nextcloud/custom_apps/sociallogin/lib/Controller/LoginController.php
-docker exec -u 1000 -it labserver_nextcloud_1 php occ config:app:set richdocuments wopi_url --value=https://$domain_name:$nextcloud_port
+$app exec -u 1000 -it $nextcloudapp php occ config:app:set richdocuments wopi_url --value=https://$domain_name:$nextcloud_port

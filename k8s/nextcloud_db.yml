@@ -5,7 +5,7 @@ metadata:
   name: nextcloud-db
 spec:
   selector:
-    name: nextcloud-db-pod
+    name: nextcloud-db
   ports:
   - port: 3306
     targetPort: 3306

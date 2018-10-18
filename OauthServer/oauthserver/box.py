@@ -4,8 +4,8 @@ import logging
 import requests
 import time
 import re
-from oauthserver.models import db as user_db
-from oauthserver.box_models import db as db, Box, Image, bp
+from .models import db as user_db, User
+from .box_models import db as db, Box, Image, bp
 
 
 logger = logging.getLogger('oauthserver')
@@ -37,7 +37,7 @@ def api():
     if nowUser.admin:
         box = Box.query.filter_by(docker_name=data['name']).first()
     else:
-        box = Box.query.filter_by(user=nowUser.name, docker_id=data['name']).first()
+        box = Box.query.filter_by(user=nowUser.name, docker_name=data['name']).first()
 
     if not box:
         abort(403)
@@ -54,7 +54,8 @@ def api():
         return redirect("/vnc/?path=vnc/?token=" + box.docker_name) # on docker
 
     elif data.get('method') == 'Delete':
-        nowUser.use_quota -= 1
+        u = User.query.filter_by(name=box.user).first()
+        u.use_quota -= 1
         db.session.delete(box)
         user_db.session.commit()
         db.session.commit()
@@ -89,7 +90,7 @@ def create():
     if str(rep['status']) != '200':
         abort(409, str(rep))
 
-    for i in range(10):
+    for i in range(60):
         time.sleep(1) # wait for create
         rep = requests.post(bp.sock + '/listpod', data={'name': name}).json()
         if rep['status'] == 'Running':
