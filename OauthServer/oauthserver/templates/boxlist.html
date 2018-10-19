@@ -30,7 +30,7 @@ list
               <p class="card-text"> image: {{ data.image }} </p>
 
               <form action="{{ url_for('oauthserver.box_models.api')}}" method="post">
-                <input type="hidden"   name="name"     value="{{data.name}}"/>
+                <input type="hidden"   name="name"     value="{{data.realname}}"/>
                 <div class="btn-group" role="group">
                   <input type="submit" name="method" value="Start"  class="btn btn-outline-primary"/>
                   <input type="submit" name="method" value="Restart" class="btn btn-outline-warning"/>
@@ -38,7 +38,7 @@ list
                 </div>
               </form>
             </div>
-            <div class="card-footer text-muted"> {{ data.name }} </div>
+            <div class="card-footer text-muted"> {{ data.realname }} </div>
           </div>
         {% endfor %}
         {% if create_param.quota - create_param.use_quota > 0 %}
@@ -47,6 +47,13 @@ list
               <div class="card-header"> Create New Environment {{create_param.use_quota + 1}}/{{create_param.quota}} </div>
               <div class="card-body">
                 <div class="form-group">
+                  <label for="name">Name (optional)</label>
+                  <div class="input-group mb-3">
+                    <div class="input-group-prepend">
+                      <span class="input-group-text">{{ current_user.name + '_'}}</span>
+                    </div>
+                    <input type="text" class="form-control" name="name">
+                  </div>
                   <label for="image">Choose Environment</label>
                   <select class="form-control" name="image">
                   {% for image in create_param.image %}

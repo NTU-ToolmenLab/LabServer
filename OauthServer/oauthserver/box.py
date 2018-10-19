@@ -6,6 +6,8 @@ import time
 import re
 from .models import db as user_db, User
 from .box_models import db as db, Box, Image, bp
+import shutil
+import os
 
 
 logger = logging.getLogger('oauthserver')
@@ -59,6 +61,7 @@ def api():
         db.session.delete(box)
         user_db.session.commit()
         db.session.commit()
+        piperDelete(box.box_name)
 
     return redirect(url_for('oauthserver.box_models.List'))
 
@@ -78,10 +81,18 @@ def create():
     if not data.get('node') or data.get('node') not in getNodes():
         abort(403)
 
-    name = nowUser.name.replace('_', '-') + str(time.time()).replace('.','')
+    realname = nowUser.name + str(time.time()).replace('.','')
+    name = realname
+
+    if data.get('name'):
+        name = nowUser.name + '_' + data['name']
+        if not re.match(r'^\w+$', name):
+            abort(403)
+        if Box.query.filter_by(box_name=name).first():
+            abort(403)
 
     rep = requests.post(bp.sock + '/create', data={
-        'name': name,
+        'name': realname,
         'node': data.get('node'),
         'image': bp.imagehub + data.get('image'),
         'homepath': nowUser.name,
@@ -92,7 +103,7 @@ def create():
 
     for i in range(60):
         time.sleep(1) # wait for create
-        rep = requests.post(bp.sock + '/listpod', data={'name': name}).json()
+        rep = requests.post(bp.sock + '/listpod', data={'name': realname}).json()
         if rep['status'] == 'Running':
             break
     else:
@@ -100,7 +111,7 @@ def create():
 
     box = Box(box_name=name,
               docker_ip=rep['ip'],
-              docker_name=name,
+              docker_name=realname,
               docker_id=re.findall(r'\w+$', rep['id'])[0],
               user=nowUser.name,
               image=data.get('image'),
@@ -110,6 +121,8 @@ def create():
 
     nowUser.use_quota += 1
     user_db.session.commit()
+
+    piperCreate(box.box_name, box.docker_ip)
 
     return redirect(url_for('oauthserver.box_models.List'))
 
@@ -153,3 +166,13 @@ def getNodes():
     req = requests.get(bp.sock + '/listnode').json()
     nodes = [i['name'] for i in req]
     return nodes
+
+def piperCreate(name, ip):
+    sshfolder = bp.sshpiper + name + '/'
+    sshpip =  sshfolder + "sshpiper_upstream"
+    os.makedirs(sshfolder, exist_ok=True)
+    open(sshpip, "w").write("ubuntu@" + ip)
+    os.chmod(sshpip, 0o600)
+
+def piperDelete(name):
+    shutil.rmtree(bp.sshpiper + name, ignore_errors=True)

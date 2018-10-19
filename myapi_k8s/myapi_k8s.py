@@ -6,7 +6,6 @@ import yaml
 config.load_incluster_config()
 v1 = client.CoreV1Api()
 app = Flask(__name__)
-# ns = 'default'
 ns = 'user'
 label = 'UserDocker'
 
@@ -94,11 +93,12 @@ def goRedir(node, subpath):
     return not_found()
 
 
-# args: name, (image, node, labnas=True, homenas=True, homepath)
+# args: name, (image, node, labnas=True, homenas=True, homepath, inittar)
 @app.route('/create', methods=['POST'])
 def create():
     template = yaml.load(open('/app/template.yml'))
     template['metadata']['name'] = request.form['name']
+    template['metadata']['namespace'] = ns
     app.logger.info("Create " + request.form['name'])
     if request.form.get('image'):
         template['spec']['containers'][0]['image'] = request.form.get('image')
@@ -118,6 +118,11 @@ def create():
     for vol in template['spec']['containers'][0]['volumeMounts']:
         if vol['name'] == 'homenas' and request.form.get('homepath'):
             vol['subPath'] = request.form.get('homepath')
+    for vol in template['spec']['initContainers'][0]['volumeMounts']:
+        if not vol.get('readOnly') and request.form.get('homepath'):
+            vol['subPath'] = request.form.get('homepath')
+        if not vol.get('readOnly') and request.form.get('inittar'):
+            vol['subPath'] = request.form.get('inittar')
 
     rep = v1.create_namespaced_pod(ns, template)
     return ok()

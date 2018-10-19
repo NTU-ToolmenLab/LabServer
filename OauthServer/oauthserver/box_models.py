@@ -16,8 +16,9 @@ def record_params(setup_state):
         bp.sock = setup_state.app.config.get('myapik8s')
         bp.usek8s = True
     else:
-        bp.sock = setup_state.app.config['dockerserver']
-    bp.imagehub = setup_state.app.config['image_hub']
+        bp.sock = setup_state.app.config.get('dockerserver')
+    bp.imagehub = setup_state.app.config.get('image_hub')
+    bp.sshpiper = setup_state.app.config.get('sshpiper')
 
 
 class Box(db.Model):
@@ -41,6 +42,7 @@ class Box(db.Model):
     def getStatus(self):
         # TODO update before get status
         return {'name': self.box_name,
+                'realname': self.docker_name,
                 'node': self.node,
                 'image': self.image,
                 'status': 'Testing'}

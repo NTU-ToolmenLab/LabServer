@@ -11,6 +11,7 @@ my_vnc/build/
 OauthServer/db.sqlite
 OauthServer/oauthserver/templates/help.html
 registry_data/
+sshpiper/
 
 # log
 log

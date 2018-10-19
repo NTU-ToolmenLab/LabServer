@@ -13,13 +13,14 @@ app = create_app({
     'OAUTH2_REFRESH_TOKEN_GENERATOR': True,
     'SQLALCHEMY_TRACK_MODIFICATIONS': False,
     # 'dockerserver': 'http://127.0.0.1:3476', # local
+    # 'dockerserver': 'http://dockerserver:3476', # on docker
     # 'SQLALCHEMY_DATABASE_URI': 'sqlite:////tmp/db.sqlite', # local
+    'SQLALCHEMY_DATABASE_URI': 'sqlite:////app/OauthServer/db.sqlite', # on docker
     # 'logfile': './log', # local
+    'logfile': '/app/OauthServer/log', # on docker
     'myapik8s': 'http://myapi-k8s.default.svc.cluster.local:3476',
     'image_hub': 'registry-svc.default.svc.cluster.local:5002/linnil1/serverbox:',
-    # 'dockerserver': 'http://dockerserver:3476', # on docker
-    'SQLALCHEMY_DATABASE_URI': 'sqlite:////app/OauthServer/db.sqlite', # on docker
-    'logfile': '/app/OauthServer/log', # on docker
+    'sshpiper': '/app/sshpiper/',
 })
 
 
