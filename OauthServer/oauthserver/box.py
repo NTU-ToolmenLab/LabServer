@@ -86,7 +86,8 @@ def create():
 
     if data.get('name'):
         name = nowUser.name + '_' + data['name']
-        if not re.match(r'^\w+$', name):
+        # https://github.com/tg123/sshpiper/blob/3243906a19e2e63f7a363050843109aa5caf6b91/sshpiperd/upstream/workingdir/workingdir.go#L36
+        if not re.match(r'^[a-z_][-a-z0-9_]{0,31}$', name):
             abort(403)
         if Box.query.filter_by(box_name=name).first():
             abort(403)

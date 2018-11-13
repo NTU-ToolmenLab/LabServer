@@ -53,7 +53,7 @@ def std_add_user():
     passwd = getpass()
     passwd1 = getpass("Password Again: ")
     admin = int(input('Is admin (Y/n)') == 'Y')
-    quota = int(input('Quota'))
+    quota = int(input('Quota: '))
     assert(passwd == passwd1 and len(passwd) >= 8)
     return add_user(name, passwd, time.time(), admin, quota)
 
