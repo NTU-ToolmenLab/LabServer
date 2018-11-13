@@ -18,6 +18,7 @@ def record_params(setup_state):
         bp.usek8s = True
     else:
         bp.sock = setup_state.app.config.get('dockerserver')
+        bp.usek8s = False
     bp.imagehub = setup_state.app.config.get('image_hub')
     bp.sshpiper = setup_state.app.config.get('sshpiper')
 
@@ -64,7 +65,7 @@ class Box(db.Model):
                 url = bp.sock + '/{}/{}'.format(self.node, method)
         rep = post(url, data={'name': name, **kwrags}).json()
 
-        if rep.get('error'):
+        if str(rep.get('status')) != '200':
             abort(409)
 
 

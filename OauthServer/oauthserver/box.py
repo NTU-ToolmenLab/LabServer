@@ -104,8 +104,8 @@ def create():
 
     for i in range(60):
         time.sleep(1) # wait for create
-        rep = requests.post(bp.sock + '/listpod', data={'name': realname}).json()
-        if rep['status'] == 'Running':
+        rep = requests.post(bp.sock + '/search', data={'name': realname}).json()
+        if rep['status'].lower() == 'running':
             break
     else:
         abort(409)
@@ -113,7 +113,7 @@ def create():
     box = Box(box_name=name,
               docker_ip=rep['ip'],
               docker_name=realname,
-              docker_id=re.findall(r'\w+$', rep['id'])[0],
+              docker_id=rep['id'],
               user=nowUser.name,
               image=data.get('image'),
               node=data.get('node'))
@@ -164,6 +164,8 @@ def getImages():
 
 def getNodes():
     # return ['n1', 'n2', 'n3'] # test
+    if not bp.usek8s:
+        return ['server']
     req = requests.get(bp.sock + '/listnode').json()
     nodes = [i['name'] for i in req]
     return nodes

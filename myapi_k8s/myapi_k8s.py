@@ -1,6 +1,7 @@
 from kubernetes import client, config
 from flask import Flask, jsonify, redirect, request, abort
 import yaml
+import re
 
 
 config.load_incluster_config()
@@ -72,7 +73,8 @@ def parsePod(pod):
         'status': pod.status.phase,
         'reason': pod.status.reason,
         'start': pod.status.start_time,
-        'id': pod.status.container_statuses[0].container_id,
+        # id container docker://
+        'id': re.findall(r'\w+$', pod.status.container_statuses[0].container_id)[0],
         'ip': pod.status.pod_ip,
         'node': pod.spec.node_name,
     }
@@ -137,7 +139,7 @@ def delete():
     return ok()
 
 
-@app.route('/listpod', methods=['POST'])
+@app.route('/search', methods=['POST'])
 def listPod():
     if request.form.get('name'):
         rep = checkLabel(request.form.get('name'))
