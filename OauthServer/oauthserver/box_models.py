@@ -13,14 +13,24 @@ bp = Blueprint(__name__, 'box')
 # to get app config
 @bp.record
 def record_params(setup_state):
-    if setup_state.app.config.get('myapik8s'):
-        bp.sock = setup_state.app.config.get('myapik8s')
+    config = setup_state.app.config
+    if config.get('myapik8s'):
+        bp.sock = config.get('myapik8s')
         bp.usek8s = True
     else:
-        bp.sock = setup_state.app.config.get('dockerserver')
+        bp.sock = config.get('dockerserver')
         bp.usek8s = False
-    bp.imagehub = setup_state.app.config.get('image_hub')
-    bp.sshpiper = setup_state.app.config.get('sshpiper')
+    bp.images = config.get('registry_images')
+    bp.backup = config.get('registry_backup')
+    bp.sshpiper = config.get('sshpiper')
+
+    if config.get('registry_password'):
+        bp.registry_user = dict(
+            username=config.get('registry_user'),
+            password=config.get('registry_password'),
+            registry=config.get('registry_url'))
+    else:
+        bp.registry_user = None
 
 
 class Box(db.Model):
@@ -43,30 +53,44 @@ class Box(db.Model):
         return '<Box {}>'.format(docker_name)
 
     def getStatus(self):
-        # TODO update before get status
+        rep = post(bp.sock + '/search', data={'name': self.docker_name}).json()
         return {'name': self.box_name,
                 'realname': self.docker_name,
                 'node': self.node,
                 'date': (self.date + datetime.timedelta(hours=8)).strftime('%Y/%m/%d %X'),
-                'image': self.image,
-                'status': 'Testing'}
+                'image': self.image.split(':')[-1],
+                'status': str(rep['status']).lower()}
 
-    def api(self, method, **kwrags):
-        if method not in ['start', 'restart', 'stop', 'passwd', 'delete']:
-            abort(403)
-
+    def api(self, method, check=True, **kwargs):
+        # deal with url
         name = self.docker_name
-        url = bp.sock + '/' + method
+        base_url = bp.sock
         if bp.usek8s:
-            if method == 'stop':
-                abort(403)
             if method != 'delete': # delete not handle in dockerserver
                 name = self.docker_id
-                url = bp.sock + '/{}/{}'.format(self.node, method)
-        rep = post(url, data={'name': name, **kwrags}).json()
+                base_url = bp.sock + '/{}'.format(self.node)
+        url = base_url + '/' + method
 
-        if str(rep.get('status')) != '200':
+        # deal with methods
+        if bp.usek8s or True: # test
+            if method == 'stop':
+                self.commit(check=False)
+                self.api('delete')
+                return
+
+        if 'name' in kwargs:
+            name = kwargs['name']
+            del kwargs['name']
+        rep = post(url, data={'name': name, **kwargs}).json()
+
+        if method == 'delete': # not need to check
+            check = False
+        if check and str(rep.get('status')) != '200':
             abort(409)
+
+    def commit(self, **kwargs):
+        self.api('commit', newname=bp.backup + self.docker_name, **kwargs)
+        self.api('prune')
 
 
 class Image(db.Model):

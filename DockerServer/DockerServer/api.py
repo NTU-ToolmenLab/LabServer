@@ -14,7 +14,7 @@ client = docker.from_env()
 def Error(e):
     message = {
         'status': 500,
-        'message': 'Internal Error'
+        'message': str(e) or 'Internal Error'
     }
     resp = jsonify(message)
     resp.status_code = 500
@@ -139,7 +139,6 @@ def push():
     for r in rep.split('\n'):
         if r and ast.literal_eval(r).get('error'):
             return jsonify({'error': ast.literal_eval(r).get('error')})
-    client.images.remove(name)
     return Ok()
 
 
@@ -182,6 +181,19 @@ def delete():
     container = getContainer(name)
     container.stop()
     container.remove()
+    return Ok()
+
+
+@app.route('/deleteImage', methods=['POST'])
+def deleteImage():
+    name = request.form.get('name')
+    client.images.remove(name)
+    return Ok()
+
+
+@app.route('/prune', methods=['POST'])
+def prune():
+    client.images.prune()
     return Ok()
 
 

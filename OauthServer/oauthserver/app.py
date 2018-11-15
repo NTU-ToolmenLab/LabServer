@@ -4,13 +4,20 @@ import logging
 from werkzeug.contrib.fixers import ProxyFix
 from .routes import bp
 from .models import db, login_manager
-from .box import bp as boxbp, db as boxdb
+from .box import bp as boxbp, db as boxdb, goCommit
 from .oauth2 import config_oauth
+from apscheduler.schedulers.background import BackgroundScheduler
+
 
 def create_app(config={}):
     app = Flask(__name__)
     app.debug=True
+    config['registry_images'] = config.get('registry_url') + '/' +  \
+                                config.get('registry_images') + ':'
+    config['registry_backup'] = config.get('registry_url') + '/' +  \
+                                config.get('registry_backup') + ':'
     app.config.update(config)
+    app.config.update({'SCHEDULER_API_ENABLED': True})
     app.register_blueprint(bp, url_prefix='')
     db.init_app(app)
     login_manager.init_app(app)
@@ -20,6 +27,10 @@ def create_app(config={}):
     login_manager.login_view = "oauthserver.routes.Login" # redir
     app.wsgi_app = ProxyFix(app.wsgi_app)
     # os.environ['AUTHLIB_INSECURE_TRANSPORT'] = "1"
+
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(goCommit, "interval", [app], **config['commit_interval'])
+    scheduler.start()
 
     # box
     app.register_blueprint(boxbp, url_prefix='/box/')

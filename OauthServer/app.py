@@ -12,15 +12,20 @@ app = create_app({
     'SECRET_KEY': 'secret',
     'OAUTH2_REFRESH_TOKEN_GENERATOR': True,
     'SQLALCHEMY_TRACK_MODIFICATIONS': False,
-    # 'dockerserver': 'http://127.0.0.1:3476', # local
-    # 'dockerserver': 'http://dockerserver:3476', # on docker
+    # 'dockerserver': 'http://127.0.0.1:3476',  # local
     # 'SQLALCHEMY_DATABASE_URI': 'sqlite:////tmp/db.sqlite', # local
-    'SQLALCHEMY_DATABASE_URI': 'sqlite:////app/OauthServer/db.sqlite', # on docker
-    # 'logfile': './log', # local
-    'logfile': '/app/OauthServer/log', # on docker
-    'myapik8s': 'http://myapi-k8s.default.svc.cluster.local:3476',
-    'image_hub': 'registry-svc.default.svc.cluster.local:5002/linnil1/serverbox:',
+    # 'logfile': './log',                       # local
+    'dockerserver': 'http://dockerserver:3476', # Use when not kubernetes
+    # 'myapik8s': 'http://myapi-k8s.default.svc.cluster.local:3476',
+    'SQLALCHEMY_DATABASE_URI': 'sqlite:////app/OauthServer/db.sqlite',
+    'logfile': '/app/OauthServer/log',
     'sshpiper': '/app/sshpiper/',
+    'commit_interval': {'seconds': 3},
+    'registry_url': 'registry-svc.default.svc.cluster.local:5002',      # can be empty string
+    'registry_user': 'user',                   # optinoal when you need private registry
+    'registry_password': '',           # optinoal when you need private registry
+    'registry_backup': 'user/backup',
+    'registry_images': 'linnil1/serverbox',
 })
 
 
