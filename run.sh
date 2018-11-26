@@ -5,6 +5,7 @@ nextcloud_user='admin'
 nextcloud_user_password='password'
 mysql_root_passowrd='mysql_root_password'
 mysql_passowrd='mysql_password'
+portus_password='portus_password'
 
 # domain and port
 echo "Change domain name and port and sql password"
@@ -17,6 +18,14 @@ sed -i "s/:443/:$domain_port/g" Nextcloud/nginx.conf
 # sql
 sed -i "s/MYSQL_ROOT_PASSWORD=/MYSQL_ROOT_PASSWORD=$mysql_root_password/g" docker-compose.yml
 sed -i "s/MYSQL_PASSWORD=/MYSQL_PASSWORD=$mysql_password/g" docker-compose.yml
+
+# portus certs
+sed -i "s/dbpw:/dbpw: $mysql_passowrd/g" k8s/portus_config.yml
+sed -i "s/secretkey:/secretkey: $portus_password/g" k8s/portus_config.yml
+openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -subj "/C=TW/CN=registry.default.svc.cluster.local" -keyout ./Portus/certs/privkey.pem -out ./Portus/certs/cert.pem
+sudo mkdir -p /etc/docker/certs.d/registry.default.svc.cluster.local
+sudo cp ./Portus/certs/cert.pem /etc/docker/certs.d/registry.default.svc.cluster.local/ca.crt
+openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -subj "/C=TW/CN=portus.default.svc.cluster.local" -keyout ./Portus/certs/portus_privkey.pem -out ./Portus/certs/portus_cert.pem
 
 # build oauth
 echo "BUILD OauthServer"
