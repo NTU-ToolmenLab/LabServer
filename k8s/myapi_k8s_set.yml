@@ -42,7 +42,7 @@ spec:
       serviceAccountName: myapi-k8s
       containers:
       - name: myapi-k8s
-        image: registry-svc.default.svc.cluster.local:5002/linnil1/myapi_k8s
+        image: registry.default.svc.cluster.local/linnil1/myapi_k8s
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3476

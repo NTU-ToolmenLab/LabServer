@@ -26,7 +26,9 @@ spec:
     spec:
       containers:
       - name: oauthserver
-        image: registry-svc.default.svc.cluster.local:5002/linnil1/oauthserver
+        image: registry.default.svc.cluster.local/linnil1/oauthserver
+        # command: [tail]
+        # args: ['-f', '/dev/null']
         ports:
         - containerPort: 5000
           protocol: TCP

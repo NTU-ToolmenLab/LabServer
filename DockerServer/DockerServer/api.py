@@ -42,8 +42,11 @@ def Ok():
 def getContainer(query, one=True):
     try:
         container = client.containers.get(query)
+        """
+        # for k8s label is in another containers
         if label not in container.labels:
             abort(404)
+        """
         return container
     except docker.errors.NotFound:
         abort(404)
@@ -187,7 +190,7 @@ def delete():
 @app.route('/deleteImage', methods=['POST'])
 def deleteImage():
     name = request.form.get('name')
-    client.images.remove(name)
+    client.images.remove(name, force=True)
     return Ok()
 
 

@@ -67,14 +67,17 @@ def checkNode(node):
 
 
 def parsePod(pod):
+    dockerid = ''
+    # container_id has prefix docker://
+    if pod.status.container_statuses[0].container_id:
+        dockerid = re.findall(r'\w+$', pod.status.container_statuses[0].container_id)[0]
     return {
         'name': pod.metadata.name,
         'image': pod.spec.containers[0].image,
         'status': pod.status.phase,
         'reason': pod.status.reason,
         'start': pod.status.start_time,
-        # id container docker://
-        'id': re.findall(r'\w+$', pod.status.container_statuses[0].container_id)[0],
+        'id': dockerid,
         'ip': pod.status.pod_ip,
         'node': pod.spec.node_name,
     }

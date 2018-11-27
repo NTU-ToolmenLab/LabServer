@@ -25,7 +25,7 @@ spec:
     spec:
       containers:
       - name: dockerserver
-        image: registry-svc.default.svc.cluster.local:5002/linnil1/dockerserver
+        image: registry.default.svc.cluster.local/linnil1/dockerserver
         ports:
         - containerPort: 3476
           protocol: TCP

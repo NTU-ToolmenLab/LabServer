@@ -9,7 +9,7 @@ spec:
   initContainers:
   - name: add-files-to-home
     image: busybox
-    command: ['sh', '-c', 'chown 1000:1000 /home/ubuntu && chmod 700 /home/ubuntu && tar xf /all.tar -C /home/ubuntu']
+    command: ['sh', '-c', 'rm /tmp -rf && mkdir /tmp && chown 1000:1000 /home/ubuntu && chmod 700 /home/ubuntu && tar xf /all.tar -C /home/ubuntu']
     volumeMounts:
     - name: homenas
       mountPath: /home/ubuntu

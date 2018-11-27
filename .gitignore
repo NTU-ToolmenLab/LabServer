@@ -12,6 +12,8 @@ OauthServer/db.sqlite
 OauthServer/oauthserver/templates/help.html
 registry_data/
 sshpiper/
+Portus/db
+Portus/registry
 
 # log
 log

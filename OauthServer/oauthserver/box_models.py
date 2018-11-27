@@ -72,7 +72,7 @@ class Box(db.Model):
         url = base_url + '/' + method
 
         # deal with methods
-        if bp.usek8s or True: # test
+        if bp.usek8s:
             if method == 'stop':
                 self.commit(check=False)
                 self.api('delete')
