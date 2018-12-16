@@ -23,9 +23,10 @@ sed -i "s/MYSQL_PASSWORD=/MYSQL_PASSWORD=$mysql_password/g" docker-compose.yml
 sed -i "s/dbpw:/dbpw: $mysql_passowrd/g" k8s/portus_config.yml
 sed -i "s/secretkey:/secretkey: $portus_password/g" k8s/portus_config.yml
 openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -subj "/C=TW/CN=registry.default.svc.cluster.local" -keyout ./Portus/certs/privkey.pem -out ./Portus/certs/cert.pem
+openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -subj "/C=TW/CN=portus.default.svc.cluster.local" -keyout ./Portus/certs/portus_privkey.pem -out ./Portus/certs/portus_cert.pem
 sudo mkdir -p /etc/docker/certs.d/registry.default.svc.cluster.local
 sudo cp ./Portus/certs/cert.pem /etc/docker/certs.d/registry.default.svc.cluster.local/ca.crt
-openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -subj "/C=TW/CN=portus.default.svc.cluster.local" -keyout ./Portus/certs/portus_privkey.pem -out ./Portus/certs/portus_cert.pem
+sudo cp ./Portus/certs/portus_cert.pem /etc/docker/certs.d/registry.default.svc.cluster.local/client.crt
 
 # build oauth
 echo "BUILD OauthServer"
