@@ -33,7 +33,7 @@ def api():
     logger.debug(nowUser.name + " api " + str(data))
 
     if not data.get('name'):
-        abort(403)
+        abort(403, 'What is your environment name')
 
     if nowUser.admin:
         box = Box.query.filter_by(docker_name=data['name']).first()
@@ -41,9 +41,9 @@ def api():
         box = Box.query.filter_by(user=nowUser.name, docker_name=data['name']).first()
 
     if not box:
-        abort(403)
+        abort(403, 'Cannot find your environment')
     if data.get('method') not in myMap.keys():
-        abort(403)
+        abort(403, 'How can you show this error')
 
     logger.info("boxapi " + nowUser.name + " " + data['method'] + " " + data['name'])
     box.api(myMap[data['method']])
@@ -82,12 +82,14 @@ def create():
     data = request.form
     logger.debug(nowUser.name + " create " + str(data))
 
-    if not data.get('image') or not data.get('node'):
-        abort(403)
+    if not data.get('image'):
+        abort(403, 'No such environment')
+    if not data.get('node'):
+        abort(403, 'No such server')
     if nowUser.use_quota >= nowUser.quota:
-        abort(403)
+        abort(403, 'Quota = 0')
     if not data.get('node') or data.get('node') not in getNodes():
-        abort(403)
+        abort(403, 'No such server')
 
     realname = nowUser.name + str(time.time()).replace('.','')
     name = realname
@@ -99,16 +101,16 @@ def create():
         image = bp.backup + data.get('image')
         name = realname = data.get('image')
     else:
-        abort(403)
+        abort(403, 'No such environment')
     if data.get('name'):
         name = nowUser.name + '_' + data['name']
         # https://github.com/tg123/sshpiper/blob/3243906a19e2e63f7a363050843109aa5caf6b91/sshpiperd/upstream/workingdir/workingdir.go#L36
         if not re.match(r'^[a-z_][-a-z0-9_]{0,31}$', name):
-            abort(403)
+            abort(403, 'Your name does not follow the rule')
     if Box.query.filter_by(box_name=name).first():
-        abort(403)
+        abort(403, 'Already have environment')
     if Box.query.filter_by(docker_name=realname).first():
-        abort(403)
+        abort(403, 'Already have environment')
 
     rep = requests.post(bp.sock + '/create', data={
         'name': realname,
@@ -118,7 +120,7 @@ def create():
         'labnas': 'True',
         'homenas': 'True'}).json()
     if str(rep['status']) != '200':
-        abort(409, str(rep))
+        abort(500, str(rep))
 
     for i in range(60):
         time.sleep(1) # wait for create
@@ -126,7 +128,7 @@ def create():
         if rep['status'].lower() == 'running':
             break
     else:
-        abort(409)
+        abort(500, 'Cannot start your environment')
 
     box = Box(box_name=name,
               docker_ip=rep['ip'],

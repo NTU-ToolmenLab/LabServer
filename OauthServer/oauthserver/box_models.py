@@ -1,4 +1,4 @@
-from flask import Blueprint, abort
+from flask import Blueprint, abort, render_template
 from flask_sqlalchemy import SQLAlchemy
 import logging
 from requests import post
@@ -33,6 +33,16 @@ def record_params(setup_state):
         bp.registry_user = None
 
 
+@bp.errorhandler(403)
+def userForbidden(e):
+    return render_template('error.html', code=403, text=e.description), 403
+
+
+@bp.errorhandler(500)
+def serverError(e):
+    return render_template('error.html', code=500, text=e.description), 500
+
+
 class Box(db.Model):
     __tablename__ = 'box'
     id = db.Column(db.Integer, primary_key=True)
@@ -62,6 +72,10 @@ class Box(db.Model):
                 'status': str(rep['status']).lower()}
 
     def api(self, method, check=True, **kwargs):
+        """ 
+        There are many mothods:
+        start, stop, delete, restart, deleteImage
+        """
         # deal with url
         name = self.docker_name
         base_url = bp.sock
@@ -83,10 +97,10 @@ class Box(db.Model):
             del kwargs['name']
         rep = post(url, data={'name': name, **kwargs}).json()
 
-        if method == 'delete': # not need to check
+        if method in ['delete', 'deleteImage']: # not need to check
             check = False
         if check and str(rep.get('status')) != '200':
-            abort(409)
+            abort(500, 'Server API error')
 
     def commit(self, **kwargs):
         self.api('commit', newname=bp.backup + self.docker_name, **kwargs)
