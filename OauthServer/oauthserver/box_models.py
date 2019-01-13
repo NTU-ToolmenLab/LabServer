@@ -48,9 +48,9 @@ class Box(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     box_name = db.Column(db.String(32), nullable=False)
     box_text = db.Column(db.String(256))
-    docker_ip = db.Column(db.String(32)) # add in runtime
+    docker_ip = db.Column(db.String(32))  # add after creation
     docker_name = db.Column(db.String(32), nullable=False)
-    docker_id = db.Column(db.String(64)) # add in runtime
+    docker_id = db.Column(db.String(64))  # add after creation
     # relationship is not very helpful to my project
     # user = db.relationship('User')
     # user.name
@@ -67,12 +67,13 @@ class Box(db.Model):
         return {'name': self.box_name,
                 'realname': self.docker_name,
                 'node': self.node,
-                'date': (self.date + datetime.timedelta(hours=8)).strftime('%Y/%m/%d %X'),
+                'date': (self.date + datetime.timedelta(hours=8)
+                        ).strftime('%Y/%m/%d %X'),
                 'image': self.image.split(':')[-1],
                 'status': str(rep['status']).lower()}
 
     def api(self, method, check=True, **kwargs):
-        """ 
+        """
         There are many mothods:
         start, stop, delete, restart, deleteImage
         """
@@ -80,7 +81,7 @@ class Box(db.Model):
         name = self.docker_name
         base_url = bp.sock
         if bp.usek8s:
-            if method != 'delete': # delete not handle in dockerserver
+            if method != 'delete':  # delete not handle in dockerserver for k8s
                 name = self.docker_id
                 base_url = bp.sock + '/{}'.format(self.node)
         url = base_url + '/' + method
@@ -91,14 +92,14 @@ class Box(db.Model):
                 self.commit(check=False)
                 self.api('delete')
                 return
+        if method in ['delete', 'deleteImage']:  # not need to check
+            check = False
 
         if 'name' in kwargs:
             name = kwargs['name']
             del kwargs['name']
         rep = post(url, data={'name': name, **kwargs}).json()
 
-        if method in ['delete', 'deleteImage']: # not need to check
-            check = False
         if check and str(rep.get('status')) != '200':
             abort(500, 'Server API error')
 
@@ -120,9 +121,8 @@ class Image(db.Model):
 
 def add_box(user, docker_name, box_name, image, node=''):
     logger.info("Add box " + user + ' -> ' + docker_name)
-    assert(not Box.query.filter_by(
-        docker_name = docker_name,
-        user = user).first())
+    assert(not Box.query.filter_by(docker_name=docker_name,
+                                   user=user).first())
 
     # no check for user is exist or not
     # assert(User.query.filter_by(name=user).first())
@@ -135,11 +135,11 @@ def add_box(user, docker_name, box_name, image, node=''):
     db.session.add(box)
     db.session.commit()
 
+
 def add_image(user, name, description=''):
     logger.info('Add image ' + user + ' -> ' + name)
-    assert(not Image.query.filter_by(
-        name = name,
-        user = user).first())
+    assert(not Image.query.filter_by(name=name,
+                                     user=user).first())
 
     image = Image(name=name, user=user, description=description)
     db.session.add(image)

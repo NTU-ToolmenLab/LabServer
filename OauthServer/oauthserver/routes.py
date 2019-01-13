@@ -1,5 +1,5 @@
-from flask import (Blueprint, request, session, 
-                  abort, render_template, redirect, jsonify, url_for)
+from flask import (Blueprint, request, session,
+                   abort, render_template, redirect, jsonify, url_for)
 import flask_login
 import logging
 from urllib.parse import urlparse, urljoin
@@ -11,6 +11,7 @@ from authlib.flask.oauth2 import current_token
 
 logger = logging.getLogger('oauthserver')
 bp = Blueprint(__name__, 'home')
+
 
 # http://flask.pocoo.org/snippets/62/
 def is_safe_url(target):
@@ -26,7 +27,6 @@ def Login():
         if flask_login.login_fresh():
             logger.debug("Skip Login")
             return redirect(url_for('oauthserver.box_models.List'))
-            # return redirect(url_for('oauthserver.routes.hi')) # for test
         else:
             return render_template('Login.html')
     else:
@@ -36,21 +36,23 @@ def Login():
             logger.debug("Login with url " + str(nexturl))
             if not is_safe_url(nexturl):
                 return abort(400)
-            # return redirect(url_for('oauthserver.box.List'))
             return redirect(nexturl or url_for('oauthserver.box_models.List'))
-            # return redirect(url_for('oauthserver.routes.hi')) # for test
         else:
             return render_template('Login.html', error="Fail to Login")
 
-@bp.route("/api/hi") # for test
+
+# for test
+@bp.route("/api/hi")
 @flask_login.login_required
 def hi():
-    return jsonify({"hi":True})
+    return jsonify({'hi': True})
 
-@bp.route("/help") # help web
+
+@bp.route("/help")  # help web
 @flask_login.login_required
 def help():
     return render_template('help.html')
+
 
 def requestParse(request):
     name     = request.form.get('userName')
@@ -63,6 +65,7 @@ def requestParse(request):
     flask_login.login_user(user)
     return user
 
+
 @bp.route("/logout")
 @flask_login.login_required
 def Logout():
@@ -70,6 +73,7 @@ def Logout():
     logger.info(nowUser.name + " Logout")
     flask_login.logout_user()
     return redirect(url_for('oauthserver.routes.Login'))
+
 
 @bp.route("/passwd", methods=['GET', 'POST'])
 @flask_login.login_required
@@ -92,7 +96,7 @@ def ChangePassword():
 
     logger.info(nowUser.name + " ChangePassword OK")
     return redirect(url_for('oauthserver.box_models.List'))
-    # return redirect(url_for('oauthserver.routes.hi')) # for test
+
 
 @bp.route("/adminpage", methods=['GET', 'POST'])
 @flask_login.login_required
@@ -127,7 +131,7 @@ def client():
 @bp.route('/oauth/authorize')
 @flask_login.login_required
 def authorize():
-    """ 
+    """
     Need to ask grant and confirmed again, but I'm lazy
     # grant = authorization.validate_consent_request(end_user=user)
     """
@@ -136,14 +140,17 @@ def authorize():
     grant = authorization.validate_consent_request(end_user=nowUser)
     return authorization.create_authorization_response(grant_user=nowUser)
 
+
 @bp.route('/oauth/token', methods=['POST'])
 def issue_token():
     logger.debug("[oauth] token " + str(request.form))
     return authorization.create_token_response()
 
+
 @bp.route('/oauth/revoke', methods=['POST'])
 def revoke_token():
     return authorization.create_endpoint_response('revocation')
+
 
 @bp.route('/oauth/profile', methods=['GET'])
 @require_oauth('profile')

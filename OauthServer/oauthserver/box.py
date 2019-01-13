@@ -1,4 +1,4 @@
-from flask import request, abort, render_template, redirect, jsonify, url_for, current_app
+from flask import request, abort, render_template, redirect, url_for
 import flask_login
 import logging
 import requests
@@ -12,18 +12,20 @@ import os
 
 logger = logging.getLogger('oauthserver')
 myMap = {
-    'Start' : "start",
-    'Stop'   : "stop",
-    'Delete' : "delete",
+    'Start': "start",
+    'Stop': "stop",
+    'Delete': "delete",
     'Restart': "restart"}
+
 
 @bp.route('/')
 @flask_login.login_required
 def List():
     return render_template('boxlist.html',
-            container_list = getList(),
-            create_param = getCreate(), 
-            image_list = getImages())
+                           container_list=getList(),
+                           create_param=getCreate(),
+                           image_list=getImages())
+
 
 @bp.route('/api', methods=['POST'])
 @flask_login.login_required
@@ -34,12 +36,11 @@ def api():
 
     if not data.get('name'):
         abort(403, 'What is your environment name')
-
     if nowUser.admin:
         box = Box.query.filter_by(docker_name=data['name']).first()
     else:
-        box = Box.query.filter_by(user=nowUser.name, docker_name=data['name']).first()
-
+        box = Box.query.filter_by(user=nowUser.name,
+                                  docker_name=data['name']).first()
     if not box:
         abort(403, 'Cannot find your environment')
     if data.get('method') not in myMap.keys():
@@ -53,8 +54,7 @@ def api():
     if data.get('method') == 'Start':
         if not nowUser.admin or box.user == nowUser.name:
             box.api('passwd', pw=nowUser.password)
-        return redirect("/vnc/?path=vnc/?token=" + box.docker_name) # on docker
-
+        return redirect("/vnc/?path=vnc/?token=" + box.docker_name)  # on docker
     elif data.get('method') == 'Stop':
         if bp.registry_user:
             box.api('push', name=backupname, **bp.registry_user)
@@ -65,7 +65,6 @@ def api():
         db.session.add(image)
         db.session.commit()
         boxDelete(box)
-
     elif data.get('method') == 'Delete':
         Image.query.filter_by(user=box.user, name=box.docker_name).delete()
         box.api('deleteImage', name=backupname)
@@ -91,7 +90,7 @@ def create():
     if not data.get('node') or data.get('node') not in getNodes():
         abort(403, 'No such server')
 
-    realname = nowUser.name + str(time.time()).replace('.','')
+    realname = nowUser.name + str(time.time()).replace('.', '')
     name = realname
     image = ''
 
@@ -182,11 +181,13 @@ def getList():
     boxes = [box.getStatus() for box in boxes_ori]
     return boxes
 
+
 def getCreate():
     nowUser = flask_login.current_user
     images = [i.name for i in getImages()]
-    return {'quota': nowUser.quota, 'use_quota': nowUser.use_quota, 
+    return {'quota': nowUser.quota, 'use_quota': nowUser.use_quota,
             'image': images, 'node': getNodes()}
+
 
 def getImages():
     nowUser = flask_login.current_user
@@ -197,6 +198,7 @@ def getImages():
         images.extend(Image.query.filter_by(user=nowUser.name).all())
         return images
 
+
 def getNodes():
     # return ['n1', 'n2', 'n3'] # test
     if not bp.usek8s:
@@ -205,15 +207,18 @@ def getNodes():
     nodes = [i['name'] for i in req]
     return nodes
 
+
 def piperCreate(name, ip):
     sshfolder = bp.sshpiper + name + '/'
-    sshpip =  sshfolder + "sshpiper_upstream"
+    sshpip = sshfolder + "sshpiper_upstream"
     os.makedirs(sshfolder, exist_ok=True)
     open(sshpip, "w").write("ubuntu@" + ip)
     os.chmod(sshpip, 0o600)
 
+
 def piperDelete(name):
     shutil.rmtree(bp.sshpiper + name, ignore_errors=True)
+
 
 # ugly methods: pass app into here
 def goCommit(app):

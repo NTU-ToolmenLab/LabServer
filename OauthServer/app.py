@@ -20,8 +20,8 @@ app = create_app({
     'SQLALCHEMY_DATABASE_URI': 'sqlite:////app/OauthServer/db.sqlite',
     'logfile': '/app/OauthServer/log',
     'sshpiper': '/app/sshpiper/',
-    'commit_interval': {'minutes': 1},
-    # 'registry_url': 'server:5000',                           # can be empty string
+    'commit_interval': {'days': 1},
+    # 'registry_url': 'server:5000',           # can be empty string
     'registry_url': 'registry.default.svc.cluster.local',      # can be empty string
     'registry_user': 'user',                   # optinoal when you need private registry
     'registry_password': '',           # optinoal when you need private registry
@@ -32,6 +32,7 @@ app = create_app({
 
 logger = logging.getLogger('oauthserver')
 logger.debug('Start')
+
 
 @app.cli.command()
 def initdb():
@@ -50,6 +51,7 @@ def initdb():
     add_image('user', 'learn3.0', 'cuda9.0 cudnn7 python3 tensorflow1.11 keras2.2.4 pytorch0.4.1')
     add_image('user', 'learn3.1', 'cuda9.0 cudnn7 python3 caffe2')
 
+
 @app.cli.command()
 def std_add_user():
     from oauthserver.models import add_user
@@ -63,6 +65,7 @@ def std_add_user():
     assert(passwd == passwd1 and len(passwd) >= 8)
     return add_user(name, passwd, time.time(), admin, quota)
 
+
 @app.cli.command()
 def std_add_box():
     from oauthserver.box_models import add_box
@@ -72,6 +75,7 @@ def std_add_box():
     node = input("node")
     image = input("image")
     add_box(user, docker_name, box_name, image, node)
+
 
 @app.cli.command()
 def std_add_image():

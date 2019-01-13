@@ -11,7 +11,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 def create_app(config={}):
     app = Flask(__name__)
-    app.debug=True
+    app.debug = True
     config['registry_images'] = config.get('registry_url') + '/' +  \
                                 config.get('registry_images') + ':'
     config['registry_backup'] = config.get('registry_url') + '/' +  \
@@ -24,7 +24,7 @@ def create_app(config={}):
     config_oauth(app)
     setLog(app)
 
-    login_manager.login_view = "oauthserver.routes.Login" # redir
+    login_manager.login_view = "oauthserver.routes.Login"  # redir
     app.wsgi_app = ProxyFix(app.wsgi_app)
     # os.environ['AUTHLIB_INSECURE_TRANSPORT'] = "1"
 
@@ -37,6 +37,7 @@ def create_app(config={}):
     boxdb.init_app(app)
     return app
 
+
 def setLog(app):
     logger = logging.getLogger('oauthserver')
     logger.setLevel(logging.DEBUG)
@@ -45,7 +46,8 @@ def setLog(app):
     ch = logging.StreamHandler()
     ch.setLevel(logging.DEBUG)
     # create formatter and add it to the handlers
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     ch.setFormatter(formatter)
     logger.addHandler(ch)
 

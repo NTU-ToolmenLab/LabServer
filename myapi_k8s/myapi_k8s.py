@@ -32,11 +32,13 @@ def internal_eroor(error=None):
     resp.status_code = 500
     return resp
 
+
 def ok():
     return jsonify({
         'status': 200,
         'message': 'ok'
     })
+
 
 def listDockerServer():
     pods = v1.list_pod_for_all_namespaces(watch=False)
@@ -44,8 +46,8 @@ def listDockerServer():
     for pod in list(pods.items):
         if pod.spec.containers[0].name == 'dockerserver':
             dockerserver.append(pod)
-    pods = [{ 'name': pod.spec.node_name,
-              'ip': pod.status.pod_ip } for pod in dockerserver]
+    pods = [{'name': pod.spec.node_name,
+             'ip': pod.status.pod_ip} for pod in dockerserver]
     return pods
 
 
@@ -94,7 +96,7 @@ def goRedir(node, subpath):
     app.logger.info(subpath)
     for pod in listDockerServer():
         if pod['name'] == node:
-            return redirect('http://' + pod['ip'] + ':3476/' +  subpath, code=307)
+            return redirect('http://' + pod['ip'] + ':3476/' + subpath, code=307)
     return not_found()
 
 
@@ -154,4 +156,4 @@ def listPod():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=3476) # , debug=True)
+    app.run(host='0.0.0.0', port=3476)  # , debug=True)

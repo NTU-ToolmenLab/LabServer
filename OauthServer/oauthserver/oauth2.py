@@ -3,7 +3,6 @@ from authlib.flask.oauth2.sqla import (
     OAuth2ClientMixin,
     OAuth2AuthorizationCodeMixin,
     OAuth2TokenMixin,
-
     create_query_client_func,
     create_save_token_func,
     create_revocation_endpoint,
@@ -17,6 +16,7 @@ import logging
 from .models import db, User
 
 logger = logging.getLogger('oauthserver')
+
 
 class OAuth2Client(db.Model, OAuth2ClientMixin):
     __tablename__ = 'oauth2_client'
@@ -104,7 +104,8 @@ def config_oauth(app):
 def clientCreate(form, user):
     if form.get("delete_client_id"):
         logger.debug("[oauth] oauth client delete by " + user.name)
-        db.session.delete(OAuth2Client.query.filter_by(client_id=form['delete_client_id']).first())
+        db.session.delete(OAuth2Client.query.filter_by(
+                          client_id=form['delete_client_id']).first())
         db.session.commit()
         return
     logger.debug("[oauth] oauth client created by " + user.name)

@@ -12,23 +12,28 @@ models = {'box': {
              'model': User,
              'db': userdb}}
 
+
 def adminView():
     tables = []
     for m in models:
         tables.append(
-            { "name": m,
-              "table": [{ k: v for k, v in dict(a.__dict__).items() if not k.startswith('_')}
-                        for a in models[m]['model'].query.all()]})
+            {"name": m,
+             "table": [{k: v for k, v in dict(a.__dict__).items()
+                        if not k.startswith('_')}
+                       for a in models[m]['model'].query.all()]})
     for t in tables:
         if not t['table']:
-            t['table'] = [{ k: None for k in dict(models[m]['model'].__dict__) if not k.startswith('_')}]
+            t['table'] = [{k: None for k in dict(models[m]['model'].__dict__)
+                           if not k.startswith('_')}]
     return render_template('adminpage.html', tables=tables)
+
 
 def adminSet(form):
     # parse form
     if form.get('table') not in models:
         return adminView()
-    formwords = {i:form[i].strip() for i in form if i not in ['table', 'method']}
+    formwords = {i: form[i].strip() for i in form
+                 if i not in ['table', 'method']}
     print(formwords)
 
     cls = models[form['table']]['model']
