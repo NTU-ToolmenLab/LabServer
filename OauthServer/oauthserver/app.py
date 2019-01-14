@@ -4,9 +4,10 @@ import logging
 from werkzeug.contrib.fixers import ProxyFix
 from .routes import bp
 from .models import db, login_manager
-from .box import bp as boxbp, db as boxdb, goCommit
+# from .box_models import bp as boxbp, db as boxdb
 from .oauth2 import config_oauth
 from apscheduler.schedulers.background import BackgroundScheduler
+from celery import Celery
 
 
 def create_app(config={}):
@@ -28,14 +29,27 @@ def create_app(config={}):
     app.wsgi_app = ProxyFix(app.wsgi_app)
     # os.environ['AUTHLIB_INSECURE_TRANSPORT'] = "1"
 
-    scheduler = BackgroundScheduler()
-    scheduler.add_job(goCommit, "interval", [app], **config['commit_interval'])
-    scheduler.start()
+    # redis
+    celery = make_celery(app)
+    return app, celery
 
-    # box
-    app.register_blueprint(boxbp, url_prefix='/box/')
-    boxdb.init_app(app)
-    return app
+
+def make_celery(app):
+    celery = Celery(
+        app.import_name,
+        backend=app.config['celery_result_backend'],
+        broker=app.config['celery_broker_url']
+    )
+    celery.conf.beat_schedule = app.config['celery_schedule']
+    # celery.conf.update(app.config)
+
+    class ContextTask(celery.Task):
+        def __call__(self, *args, **kwargs):
+            with app.app_context():
+                return self.run(*args, **kwargs)
+
+    celery.Task = ContextTask
+    return celery
 
 
 def setLog(app):

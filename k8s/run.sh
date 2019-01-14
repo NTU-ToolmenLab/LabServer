@@ -30,6 +30,7 @@ sed -i "s/\$LABSERVER_PATH/$LABSERVER_PATH/g" pv.yml
 
 kubectl create -f pv.yml -f pv_user.yml
 kubectl create -f portus.yml -f portus_config.yml -f portus_db.yml -f portus_registry.yml 
+# docker login registy.default.svc.cluster.local
 kubectl create -f nextcloud_fpm.yml -f nextcloud_web.yml -f nextcloud_collabora.yml -f nextcloud_db.yml
 kubectl create -f OauthServer.yml -f myapi_k8s_set.yml -f DockerServer.yml -f my_vnc.yml -f sshpiper.yml -f lab_ingress.yml 
 

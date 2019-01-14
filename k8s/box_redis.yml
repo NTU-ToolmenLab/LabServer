@@ -1,0 +1,32 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: box-redis
+spec:
+  selector:
+    name: box-redis
+  ports:
+  - port: 6379
+    targetPort: 6379
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: box-redis
+spec:
+  selector:
+    matchLabels:
+      name: box-redis
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: box-redis
+    spec:
+      containers:
+      - name: box-redis
+        image: redis:5
+        ports:
+        - containerPort: 6379
+          protocol: TCP

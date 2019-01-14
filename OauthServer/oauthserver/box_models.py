@@ -63,25 +63,29 @@ class Box(db.Model):
         return '<Box {}>'.format(docker_name)
 
     def getStatus(self):
-        rep = post(bp.sock + '/search', data={'name': self.docker_name}).json()
+        status = self.box_text
+        if not status:
+            rep = post(bp.sock + '/search', data={'name': self.docker_name}).json()
+            status = str(rep['status']).lower()
         return {'name': self.box_name,
                 'realname': self.docker_name,
                 'node': self.node,
                 'date': (self.date + datetime.timedelta(hours=8)
                         ).strftime('%Y/%m/%d %X'),
                 'image': self.image.split(':')[-1],
-                'status': str(rep['status']).lower()}
+                'status': status}
 
     def api(self, method, check=True, **kwargs):
         """
         There are many mothods:
-        start, stop, delete, restart, deleteImage
+        start, stop, delete, restart, push, deleteImage
         """
         # deal with url
         name = self.docker_name
         base_url = bp.sock
         if bp.usek8s:
-            if method != 'delete':  # delete not handle in dockerserver for k8s
+            # Not handle in dockerserver for k8s
+            if method != 'delete':
                 name = self.docker_id
                 base_url = bp.sock + '/{}'.format(self.node)
         url = base_url + '/' + method
@@ -102,6 +106,8 @@ class Box(db.Model):
 
         if check and str(rep.get('status')) != '200':
             abort(500, 'Server API error')
+
+        return rep
 
     def commit(self, **kwargs):
         self.api('commit', newname=bp.backup + self.docker_name, **kwargs)

@@ -6,6 +6,7 @@ import time
 import re
 from .models import db as user_db, User
 from .box_models import db as db, Box, Image, bp
+from oauthserver import celery
 import shutil
 import os
 
@@ -55,21 +56,19 @@ def api():
         if not nowUser.admin or box.user == nowUser.name:
             box.api('passwd', pw=nowUser.password)
         return redirect("/vnc/?path=vnc/?token=" + box.docker_name)  # on docker
+
     elif data.get('method') == 'Stop':
-        if bp.registry_user:
-            box.api('push', name=backupname, **bp.registry_user)
-            box.api('deleteImage', name=backupname)
         Image.query.filter_by(user=box.user, name=box.docker_name).delete()
         image = Image(name=box.docker_name, user=box.user,
                       description="Stopped " + box.box_name)
         db.session.add(image)
         db.session.commit()
-        boxDelete(box)
+        boxPush.delay(box.id, backupname)
+
     elif data.get('method') == 'Delete':
         Image.query.filter_by(user=box.user, name=box.docker_name).delete()
-        box.api('deleteImage', name=backupname)
         db.session.commit()
-        boxDelete(box)
+        imageDelete.delay(box.id, backupname)
 
     return redirect(url_for('oauthserver.box_models.List'))
 
@@ -121,39 +120,21 @@ def create():
     if str(rep['status']) != '200':
         abort(500, str(rep))
 
-    for i in range(60):
-        time.sleep(1) # wait for create
-        rep = requests.post(bp.sock + '/search', data={'name': realname}).json()
-        if rep['status'].lower() == 'running':
-            break
-    else:
-        abort(500, 'Cannot start your environment')
-
+    # async, wait for creation
     box = Box(box_name=name,
-              docker_ip=rep['ip'],
               docker_name=realname,
-              docker_id=rep['id'],
               user=nowUser.name,
               image=image,
+              box_text='Creating',
               node=data.get('node'))
     db.session.add(box)
     db.session.commit()
+    boxCreate.delay(box.id)
 
+    # user
     nowUser.use_quota += 1
     user_db.session.commit()
-
-    piperCreate(box.box_name, box.docker_ip)
-
     return redirect(url_for('oauthserver.box_models.List'))
-
-
-def boxDelete(box):
-    u = User.query.filter_by(name=box.user).first()
-    u.use_quota -= 1
-    db.session.delete(box)
-    user_db.session.commit()
-    db.session.commit()
-    piperDelete(box.box_name)
 
 
 @bp.route('/vnctoken', methods=['POST'])
@@ -220,12 +201,82 @@ def piperDelete(name):
     shutil.rmtree(bp.sshpiper + name, ignore_errors=True)
 
 
-# ugly methods: pass app into here
-def goCommit(app):
+def boxDelete(box):
+    u = User.query.filter_by(name=box.user).first()
+    u.use_quota -= 1
+    db.session.delete(box)
+    user_db.session.commit()
+    db.session.commit()
+    piperDelete(box.box_name)
+
+
+# run commit every day
+@celery.task()
+def goCommit():
     logger.debug("Commit now")
-    with app.app_context():
-        boxes = Box.query.all()
-        for box in boxes:
-            st = box.getStatus()
-            if str(st['status']).lower() == 'running':
-                box.commit()
+    boxes = Box.query.all()
+    for box in boxes:
+        st = box.getStatus()
+        if str(st['status']).lower() == 'running':
+            box.commit()
+
+
+# There are three type of operation is time-consuming
+# Create (Download Image and start container)
+# Backup (Upload Image)
+# Delete (Delete pod in k8s)
+@celery.task()
+def boxCreate(id):
+    box = Box.query.get(id)
+    for i in range(60 * 10):  # 10 min
+        time.sleep(1)
+        rep = requests.post(bp.sock + '/search', data={'name': box.docker_name}).json()
+        if rep['status'].lower() == 'running':
+            break
+    else:
+        abort(500, 'Cannot start your environment')
+
+    box.docker_ip = rep['ip']
+    box.docker_id = rep['id']
+    box.box_text = ''
+    db.session.commit()
+
+    piperCreate(box.box_name, box.docker_ip)
+
+
+@celery.task()
+def boxPush(id, backupname):
+    box = Box.query.get(id)
+    if not bp.registry_user:
+        boxDelete(box)
+        return
+
+    box.box_text = 'Backuping'
+    db.session.commit()
+    try:
+        box.api('push', name=backupname, **bp.registry_user)
+    except Exception as e:
+        box.box_text = str("Backup Error")
+        db.session.commit()
+        return
+    imageDelete.delay(id, backupname)
+
+
+@celery.task()
+def imageDelete(id, backupname):
+    box = Box.query.get(id)
+    box.box_text = 'Deleting ENV copy'
+    db.session.commit()
+    box.api('deleteImage', name=backupname)
+
+    box.box_text = 'Deleting ENV'
+    db.session.commit()
+    for i in range(60 * 10):  # 10 min
+        time.sleep(1)
+        rep = requests.post(bp.sock + '/search', data={'name': box.docker_name}).json()
+        if str(rep['status']) == '404':
+            break
+    else:  # do not delte in database if cannot delete it in real world.
+        return
+
+    boxDelete(box)

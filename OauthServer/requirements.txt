@@ -6,4 +6,5 @@ Authlib
 passlib
 lxml
 requests
-apscheduler
+redis
+celery
