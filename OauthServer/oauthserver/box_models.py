@@ -78,7 +78,7 @@ class Box(db.Model):
     def api(self, method, check=True, **kwargs):
         """
         There are many mothods:
-        start, stop, delete, restart, push, deleteImage
+        start, stop, delete, restart
         """
         # deal with url
         name = self.docker_name
@@ -96,12 +96,9 @@ class Box(db.Model):
                 self.commit(check=False)
                 self.api('delete')
                 return
-        if method in ['delete', 'deleteImage']:  # not need to check
+        if method == 'delete':
             check = False
 
-        if 'name' in kwargs:
-            name = kwargs['name']
-            del kwargs['name']
         rep = post(url, data={'name': name, **kwargs}).json()
 
         if check and str(rep.get('status')) != '200':
@@ -123,6 +120,23 @@ class Image(db.Model):
 
     def __str__(self):
         return '<Image {}>'.format(self.name)
+
+
+def otherAPI(method, node=None, check=True, **kwargs):
+    """
+    There are many mothods:
+    push, deleteImage, search, create, listnode
+    """
+    base_url = bp.sock
+    if bp.usek8s and method in ['push', 'deleteImage']:
+        base_url = bp.sock + '/{}'.format(node)
+    url = base_url + '/' + method
+    rep = post(url, data=kwargs).json()
+
+    if check and str(rep.get('status')) != '200':
+        abort(500, 'Server API error')
+
+    return rep
 
 
 def add_box(user, docker_name, box_name, image, node=''):

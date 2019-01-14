@@ -4,9 +4,7 @@ import logging
 from werkzeug.contrib.fixers import ProxyFix
 from .routes import bp
 from .models import db, login_manager
-# from .box_models import bp as boxbp, db as boxdb
 from .oauth2 import config_oauth
-from apscheduler.schedulers.background import BackgroundScheduler
 from celery import Celery
 
 

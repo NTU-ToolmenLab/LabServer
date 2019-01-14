@@ -18,6 +18,7 @@ Portus/registry
 # log
 log
 *.log
+celerybeat-schedule
 
 # github
 my_vnc/websockify/

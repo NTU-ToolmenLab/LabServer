@@ -1,11 +1,10 @@
 from flask import request, abort, render_template, redirect, url_for
 import flask_login
 import logging
-import requests
 import time
 import re
 from .models import db as user_db, User
-from .box_models import db as db, Box, Image, bp
+from .box_models import db as db, Box, Image, bp, otherAPI
 from oauthserver import celery
 import shutil
 import os
@@ -58,14 +57,10 @@ def api():
         return redirect("/vnc/?path=vnc/?token=" + box.docker_name)  # on docker
 
     elif data.get('method') == 'Stop':
-        Image.query.filter_by(user=box.user, name=box.docker_name).delete()
-        image = Image(name=box.docker_name, user=box.user,
-                      description="Stopped " + box.box_name)
-        db.session.add(image)
-        db.session.commit()
         boxPush.delay(box.id, backupname)
 
     elif data.get('method') == 'Delete':
+        # delete database before really deleted it
         Image.query.filter_by(user=box.user, name=box.docker_name).delete()
         db.session.commit()
         imageDelete.delay(box.id, backupname)
@@ -110,15 +105,13 @@ def create():
     if Box.query.filter_by(docker_name=realname).first():
         abort(403, 'Already have environment')
 
-    rep = requests.post(bp.sock + '/create', data={
-        'name': realname,
-        'node': data.get('node'),
-        'image': image,
-        'homepath': nowUser.name,
-        'labnas': 'True',
-        'homenas': 'True'}).json()
-    if str(rep['status']) != '200':
-        abort(500, str(rep))
+    rep = otherAPI('create',
+                   name=realname,
+                   node=data.get('node'),
+                   image=image,
+                   homepath=nowUser.name,
+                   labnas='True',
+                   homenas='True')
 
     # async, wait for creation
     box = Box(box_name=name,
@@ -145,7 +138,8 @@ def vncToken():
     if nowUser.admin:
         box = Box.query.filter_by(docker_name=docker_name).first()
     else:
-        box = Box.query.filter_by(user=nowUser.name, docker_name=docker_name).first()
+        box = Box.query.filter_by(user=nowUser.name,
+                                  docker_name=docker_name).first()
     if not box:
         abort(403)
     return "password_of_vnc"
@@ -184,7 +178,7 @@ def getNodes():
     # return ['n1', 'n2', 'n3'] # test
     if not bp.usek8s:
         return ['server']
-    req = requests.get(bp.sock + '/listnode').json()
+    req = otherAPI('listnode', check=False)
     nodes = [i['name'] for i in req]
     return nodes
 
@@ -230,7 +224,7 @@ def boxCreate(id):
     box = Box.query.get(id)
     for i in range(60 * 10):  # 10 min
         time.sleep(1)
-        rep = requests.post(bp.sock + '/search', data={'name': box.docker_name}).json()
+        rep = otherAPI('search', name=box.docker_name, check=False)
         if rep['status'].lower() == 'running':
             break
     else:
@@ -244,6 +238,8 @@ def boxCreate(id):
     piperCreate(box.box_name, box.docker_ip)
 
 
+# After stop, the pod is deleted
+# Now, you push to image to registy and delete the image
 @celery.task()
 def boxPush(id, backupname):
     box = Box.query.get(id)
@@ -254,7 +250,12 @@ def boxPush(id, backupname):
     box.box_text = 'Backuping'
     db.session.commit()
     try:
-        box.api('push', name=backupname, **bp.registry_user)
+        otherAPI('push', name=backupname, node=box.node, **bp.registry_user)
+        Image.query.filter_by(user=box.user, name=box.docker_name).delete()
+        image = Image(name=box.docker_name, user=box.user,
+                      description="Stopped " + box.box_name)
+        db.session.add(image)
+        db.session.commit()
     except Exception as e:
         box.box_text = str("Backup Error")
         db.session.commit()
@@ -267,13 +268,13 @@ def imageDelete(id, backupname):
     box = Box.query.get(id)
     box.box_text = 'Deleting ENV copy'
     db.session.commit()
-    box.api('deleteImage', name=backupname)
+    otherAPI('deleteImage', name=backupname, node=box.node, check=False)
 
     box.box_text = 'Deleting ENV'
     db.session.commit()
     for i in range(60 * 10):  # 10 min
         time.sleep(1)
-        rep = requests.post(bp.sock + '/search', data={'name': box.docker_name}).json()
+        rep = otherAPI('search', name=box.docker_name, check=False)
         if str(rep['status']) == '404':
             break
     else:  # do not delte in database if cannot delete it in real world.

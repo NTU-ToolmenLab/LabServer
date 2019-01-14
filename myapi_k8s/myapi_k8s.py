@@ -85,7 +85,7 @@ def parsePod(pod):
     }
 
 
-@app.route('/listnode')
+@app.route('/listnode', methods=['POST'])
 def getDockerServer():
     return jsonify(listDockerServer())
 
