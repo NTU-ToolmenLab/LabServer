@@ -78,7 +78,7 @@ class Box(db.Model):
     def api(self, method, check=True, **kwargs):
         """
         There are many mothods:
-        start, stop, delete, restart
+        start, stop, delete, restart, passwd
         """
         # deal with url
         name = self.docker_name
@@ -122,14 +122,14 @@ class Image(db.Model):
         return '<Image {}>'.format(self.name)
 
 
-def otherAPI(method, node=None, check=True, **kwargs):
+def otherAPI(method, docker_node=None, check=True, **kwargs):
     """
     There are many mothods:
     push, deleteImage, search, create, listnode
     """
     base_url = bp.sock
     if bp.usek8s and method in ['push', 'deleteImage']:
-        base_url = bp.sock + '/{}'.format(node)
+        base_url = bp.sock + '/{}'.format(docker_node)
     url = base_url + '/' + method
     rep = post(url, data=kwargs).json()
 

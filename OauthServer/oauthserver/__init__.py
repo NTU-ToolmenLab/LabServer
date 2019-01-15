@@ -28,7 +28,7 @@ def initdb():
     db.session.commit()
     boxdb.session.commit()
     # testing
-    add_user("linnil1", 'test123', admin=1, quota=2)
+    add_user("linnil1", 'test123', groupid=1, quota=2)
     # add_box("test", 'testbox')
     add_image('user', 'learn3.0', 'cuda9.0 cudnn7 python3 tensorflow1.11 keras2.2.4 pytorch0.4.1')
     add_image('user', 'learn3.1', 'cuda9.0 cudnn7 python3 caffe2')
@@ -42,10 +42,10 @@ def std_add_user():
     name = input("Username ")
     passwd = getpass()
     passwd1 = getpass("Password Again: ")
-    admin = int(input('Is admin (Y/n)') == 'Y')
+    groupid = int(input('Group: (Interger)'))
     quota = int(input('Quota: '))
     assert(passwd == passwd1 and len(passwd) >= 8)
-    return add_user(name, passwd, time.time(), admin, quota)
+    return add_user(name, passwd, time.time(), groupid, quota)
 
 
 @app.cli.command()

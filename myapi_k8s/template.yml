@@ -33,6 +33,9 @@ spec:
     - name: homenas
       mountPath: /home/ubuntu
       subPath: guest
+    - name: homenas
+      mountPath: /home/share
+      subPath: share
     - name: dshm
       mountPath: /dev/shm
   nodeSelector:

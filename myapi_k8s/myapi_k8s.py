@@ -123,7 +123,7 @@ def create():
             del vol['persistentVolumeClaim']
 
     for vol in template['spec']['containers'][0]['volumeMounts']:
-        if vol['name'] == 'homenas' and request.form.get('homepath'):
+        if vol['name'] == 'homenas' and vol['subPath'] == 'guest' and request.form.get('homepath'):
             vol['subPath'] = request.form.get('homepath')
     for vol in template['spec']['initContainers'][0]['volumeMounts']:
         if not vol.get('readOnly') and request.form.get('homepath'):

@@ -102,7 +102,7 @@ def ChangePassword():
 @flask_login.login_required
 def AdminPage():
     nowUser = flask_login.current_user
-    if not nowUser.admin:
+    if nowUser.groupid != 1:
         abort(401)
     logger.info(nowUser.name + " AdminPage")
     if request.method == 'GET':
@@ -118,7 +118,7 @@ def AdminPage():
 @flask_login.login_required
 def client():
     nowUser = flask_login.current_user
-    if not nowUser.admin:
+    if nowUser.groupid != 1:
         abort(401)
     logger.debug("[oauth] client " + nowUser.name)
 

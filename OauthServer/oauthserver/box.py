@@ -36,7 +36,7 @@ def api():
 
     if not data.get('name'):
         abort(403, 'What is your environment name')
-    if nowUser.admin:
+    if nowUser.groupid == 1:
         box = Box.query.filter_by(docker_name=data['name']).first()
     else:
         box = Box.query.filter_by(user=nowUser.name,
@@ -52,7 +52,7 @@ def api():
     # special case
     backupname = bp.backup + box.docker_name
     if data.get('method') == 'Start':
-        if not nowUser.admin or box.user == nowUser.name:
+        if nowUser.groupid != 1 or box.user == nowUser.name:
             box.api('passwd', pw=nowUser.password)
         return redirect("/vnc/?path=vnc/?token=" + box.docker_name)  # on docker
 
@@ -77,8 +77,6 @@ def create():
 
     if not data.get('image'):
         abort(403, 'No such environment')
-    if not data.get('node'):
-        abort(403, 'No such server')
     if nowUser.use_quota >= nowUser.quota:
         abort(403, 'Quota = 0')
     if not data.get('node') or data.get('node') not in getNodes():
@@ -135,7 +133,7 @@ def create():
 def vncToken():
     nowUser = flask_login.current_user
     docker_name = request.args.get('token')
-    if nowUser.admin:
+    if nowUser.groupid == 1:
         box = Box.query.filter_by(docker_name=docker_name).first()
     else:
         box = Box.query.filter_by(user=nowUser.name,
@@ -145,11 +143,10 @@ def vncToken():
     return "password_of_vnc"
 
 
-
 def getList():
     nowUser = flask_login.current_user
     logger.info("list " + nowUser.name)
-    if nowUser.admin:
+    if nowUser.groupid == 1:
         boxes_ori = Box.query.all()
     else:
         boxes_ori = Box.query.filter_by(user=nowUser.name).all()
@@ -166,7 +163,7 @@ def getCreate():
 
 def getImages():
     nowUser = flask_login.current_user
-    if nowUser.admin:
+    if nowUser.groupid == 1:
         return Image.query.all()
     else:
         images = Image.query.filter_by(user='user').all()
@@ -250,7 +247,7 @@ def boxPush(id, backupname):
     box.box_text = 'Backuping'
     db.session.commit()
     try:
-        otherAPI('push', name=backupname, node=box.node, **bp.registry_user)
+        otherAPI('push', name=backupname, docker_node=box.node, **bp.registry_user)
         Image.query.filter_by(user=box.user, name=box.docker_name).delete()
         image = Image(name=box.docker_name, user=box.user,
                       description="Stopped " + box.box_name)
@@ -268,7 +265,7 @@ def imageDelete(id, backupname):
     box = Box.query.get(id)
     box.box_text = 'Deleting ENV copy'
     db.session.commit()
-    otherAPI('deleteImage', name=backupname, node=box.node, check=False)
+    otherAPI('deleteImage', name=backupname, docker_node=box.node, check=False)
 
     box.box_text = 'Deleting ENV'
     db.session.commit()
@@ -277,7 +274,10 @@ def imageDelete(id, backupname):
         rep = otherAPI('search', name=box.docker_name, check=False)
         if str(rep['status']) == '404':
             break
-    else:  # do not delte in database if cannot delete it in real world.
+    else:
+        box.box_text = 'Delete again later or Cannot Delete'
+        db.session.commit()
+        # do not delte in database if cannot delete it in real world.
         return
 
     boxDelete(box)
