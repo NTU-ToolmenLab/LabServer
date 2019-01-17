@@ -8,7 +8,7 @@ config = {
 <p> <a href="/help">     Help Web             </a></p>
 """,
     'name': 'Lab304',
-    'SECRET_KEY': '',
+    'SECRET_KEY': '{{ secretkey }}',
     'OAUTH2_REFRESH_TOKEN_GENERATOR': True,
     'SQLALCHEMY_TRACK_MODIFICATIONS': False,
     # 'dockerserver': 'http://127.0.0.1:3476',               # local
@@ -22,7 +22,7 @@ config = {
     # 'registry_url': 'server:5000',           # can be empty string
     'registry_url': 'registry.default.svc.cluster.local',      # can be empty string
     'registry_user': 'user',                   # optinoal when you need private registry
-    'registry_password': '',           # optinoal when you need private registry
+    'registry_password': '{{ registry_password }}',           # optinoal when you need private registry
     'registry_backup': 'user/backup',
     'registry_images': 'linnil1/serverbox',
     'celery_broker_url': 'redis://box-redis.default.svc.cluster.local:6379',

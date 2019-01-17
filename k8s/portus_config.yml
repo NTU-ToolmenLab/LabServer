@@ -6,8 +6,8 @@ data:
   fqdn: portus.default.svc.cluster.local
   dbhost: portus-db.default.svc.cluster.local
   dbname: portus_production
-  dbpw: 
+  dbpw: {{ portus_db_password }}
   dbpool: '5'
-  secretkey: 
+  secretkey: {{ portus_secretkey }}
   key: /certs/portus_privkey.pem
   cert: /certs/portus_cert.pem

@@ -225,7 +225,9 @@ def boxCreate(id):
         if rep['status'].lower() == 'running':
             break
     else:
-        abort(500, 'Cannot start your environment')
+        box.box_text = 'Cannot start your environment'
+        db.session.commit()
+        return
 
     box.docker_ip = rep['ip']
     box.docker_id = rep['id']

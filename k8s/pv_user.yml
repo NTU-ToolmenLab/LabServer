@@ -3,7 +3,6 @@ kind: Namespace
 metadata:
   name: user
 ---
-
 apiVersion: v1
 kind: PersistentVolume
 metadata:
@@ -16,9 +15,8 @@ spec:
   capacity:
     storage: 10Ti
   nfs:
-    server: $HOMENAS_IP
-    path: $HOMENAS_PATH
-
+    server: {{ HOMENAS_IP }}
+    path: {{ HOMENAS_PATH }}
 ---
 kind: PersistentVolumeClaim
 apiVersion: v1
@@ -33,7 +31,6 @@ spec:
     requests:
       storage: 10Ti
 ---
-
 apiVersion: v1
 kind: PersistentVolume
 metadata:
@@ -46,8 +43,8 @@ spec:
   capacity:
     storage: 10Ti
   nfs:
-    server: $LABNAS_IP
-    path: $LABNAS_PATH
+    server: {{ LABNAS_IP }}
+    path: {{ LABNAS_PATH }}
 ---
 kind: PersistentVolumeClaim
 apiVersion: v1

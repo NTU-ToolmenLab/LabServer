@@ -10,8 +10,8 @@ spec:
   capacity:
     storage: 1Ti
   nfs:
-    server: $LABSERVER_IP
-    path: $LABSERVER_PATH
+    server: {{ LABSERVER_IP }}
+    path: {{ LABSERVER_PATH }}
 
 ---
 kind: PersistentVolumeClaim
