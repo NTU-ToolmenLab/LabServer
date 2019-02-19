@@ -65,8 +65,11 @@ class Box(db.Model):
     def getStatus(self):
         status = self.box_text
         if not status:
-            rep = post(bp.sock + '/search', data={'name': self.docker_name}).json()
+            rep = otherAPI('search', name=self.docker_name, check=False)
             status = str(rep['status']).lower()
+            if status == 'running' and self.docker_ip != rep['ip']:
+                status = 'Not Consist IP'
+
         return {'name': self.box_name,
                 'realname': self.docker_name,
                 'node': self.node,

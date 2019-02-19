@@ -51,7 +51,7 @@ def setStorage(name):
         "options": {
             "encrypt": True,
             "previews": True,
-            "enable_sharing": False,
+            "enable_sharing": True,
             "filesystem_check_changes": 1,
             "encoding_compatibility": False
         },
