@@ -1,13 +1,24 @@
-# LabServer
-Some application or dockerfiles run on server
+# LabServer With K8S
+
+The advantage of this labserver is that user can access GPU resources
+with prebuild docker images(which contain pytorch, keras and caffe2),
+they can also choose which server to start their containers.
+
+After starting containers, they access it by ssh(sshpiper) or vnc(noVNC) we provided,
+the vnc is a graphical user interface that can run in any browser without install anything.
+
+With the help of Docker and Kubernetes, this system should be safe, secure and reliable.
+
+Moreover, this repo provide more applications like Nextcloud(Drive), Grafana(Monitor)
+to make life easier.
+
+## Related repo
+[Dockerfile](https://github.com/armorsun/Lab304-server)
+[Monitor](https://github.com/linnil1/LabServer_monitork)
 
 ## How to Build
-### PreRequire
-* docker
-* docker-compose
-* nvidia-docker
 
-### Clone from GITHUB
+### Clone from Github 
 ```
 git clone https://github.com/linnil1/LabServer
 cd LabServer
@@ -15,7 +26,7 @@ cd LabServer
 
 ### Create encrypt file
 1. Use Lets Encrypt it!
-**You should open port 80 for verification**
+**You should open port 80 and 443 for verification**
 
 ```
 docker pull certbot/certbot
@@ -30,7 +41,7 @@ Then copy to `certs/`
 
 `cp letsencrypt/live/my.domain.ntu.edu.tw/* certs/`
 
-2. Do it Yourself
+2. Self-signed
 ```
 cd certs
 openssl genrsa 1024 > privkey.pem
@@ -39,54 +50,61 @@ openssl req -new -x509 -nodes -sha1 -days 365 -key privkey.pem -out fullchain.pe
 cd ..
 ```
 
-## Some variable
-`vim run.sh` to edit top few lines.
+### build dockerfile
+`bash setup.sh`
 
-## OauthServer
-### change Nmae of Oauthserver
-`vim OauthServer/app.py`
+### build with k8s
+You can initize your new server with this note
+https://hackmd.io/V40UgNo3S4mp4cUtT3yY-g#
 
-and change `Lab304` to what you want.
-
-## docker_compose network
-If you are familiar with Dockernetworking,
-you can change your networking in `docker-compose.yml`.
-
-## Run script
-`sudo bash run.sh`
-
-## OauthServer
-Add User and Container
-
-1. Add it by command line
-`docker run -it --rm -v $PWD/OauthServer:/app/OauthServer linnil1/oauthserver flask std_add_user`
-`docker run -it --rm -v $PWD/OauthServer:/app/OauthServer linnil1/oauthserver flask std_add_box`
-
-For example:
-`docker run -it --rm -v $PWD/OauthServer:/app/OauthServer linnil1/oauthserver flask std_add_box`
-
-and fill 
+Then install
+* docker
+* nvidia-docker
+* kubernetes
 ```
-user = linnil1
-box = labserver_test_1
-docker = labserver_test_1
+cd install
+./k8s-install-master.sh
 ```
 
-2. Add with code
-Modify `std_add_user` in `app.py`, it is very easy.
+Add more servers as slave.
 
-3. Add it by web (After init)
+Change the `nodes` in `k8s-install-worker.sh`,
+and you should make sure that `ssh server` can work without entering password.
+```
+./k8s-install-worker.sh
+```
+
+The next step: setup all services and deployments.
+
+see `k8s/README.md`
+
+### build with dockercompsoe
+
+see `README-dockercompose.md`.
+
+**It has been not maintained now.**
+
+
+## Some note of this system
+
+### OauthServer
+This app has two features:
+1. Oauth Server
+2. A interface that can start or stop your containers.
+
+1.  Run this code to add more users.
+```
+docker run -it --rm -v $PWD/OauthServer:/app/OauthServer linnil1/oauthserver flask std-add-user
+```
+2. Add it by web (After init)
 If you are admin, go to `your.domain.name/adminpage` to modify.
 
-4. You can add `help.html` in `oauthserver/templates/`
 
+You can add `help.html` in `Oauthserver/oauthserver/templates/`
 
-## Finally, you can start your server
-`docker-compose up -d`
-
-## VNC
+### VNC
 If you want to do more fancy things, like auto login for vnc password.
-you can add `my_vnc/app/ui.js` with
+you can add `my_vnc/noVNC/app/ui.js` with
 ```
 var xmlHttp = new XMLHttpRequest();
 xmlHttp.onreadystatechange = function() {
@@ -101,41 +119,13 @@ xmlHttp.open("POST", "https://my.domain.ntu.edu.tw:443/box/vnctoken?token=" + to
 xmlHttp.send(null);
 ```
 
-## NextCloud
-
-### init
-(Already done in `run.sh`)
-
-I provide two way to login NextCloud.
-
-One is from
-`my.domain.ntu.edu.tw:443/drive`
-
-the other is (because collabora not work in reverse proxy)
-`my.domain.ntu.edu.tw:444`
-
-and enable `collabora`, `social login`, `external storage` for you.
-
-I issued social login [bug](https://github.com/zorn-v/nextcloud-social-login/issues/46).
-
-### enable external storage
-Add External Storage by python
-```
-cd Nextcloud
-pip3 install requests
-vim adduser.py # set user_list
-python3 adduser.py
-docker exec -it -u 1000 labserver_nextcloud_1 php occ files_external:import my_storages.json
-cd ..
-```
-
-### enable oauth
+### Nextcloud Enable Oauth
 * Go to web https://my.domain.ntu.edu.tw:443/oauth/client (If you are admin)
 * Add client
 ``` json
 {
-"client_id": "qgWmlggGT9Npuihb4ljLyBUd",
-"client_secret": "RfxyVQGTY2QUWT6Nj7mgwktXqwilZf3WkQ8DPfi4VUNUIG0r",
+"client_id": "",
+"client_secret": "",
 "client_name": "testapp",
 "client_uri": "https://my.domain.ntu.edu.tw:443/drive/",
 "grant_types": ["authorization_code"],
@@ -163,7 +153,15 @@ Scope:         profile
 You can substitude `testapp` to any you want.
 
 
-## Contributer
-you can use
-`git add -p xx`
-to add modified things
+### Nextcloud set external storage by Python
+``` shell
+cd Nextcloud
+pip3 install requests
+vim adduser.py
+python3 adduser.py
+docker exec -it -u 1000 labserver_nextcloud_1 php occ files_external:import my_storages.json
+cd ..
+```
+
+## Contribute
+you can use `git add -p xx` to commit modified changes.

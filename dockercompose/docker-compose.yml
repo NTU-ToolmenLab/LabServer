@@ -68,11 +68,6 @@ services:
     networks:
       - mynet
 
-  test:
-    image: linnil1/docker-firefox
-    networks:
-      - mynet
-
   nextcloud:
     image: nextcloud:fpm
     restart: always
