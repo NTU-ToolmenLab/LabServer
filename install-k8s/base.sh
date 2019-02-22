@@ -39,6 +39,15 @@ sudo apt install -y docker-ce=18.06.0~ce~3-0~ubuntu kubectl kubelet kubeadm kube
 
 # Set parameters and Reload the Docker daemon configuration
 # sudo pkill -SIGHUP dockerd
-cp daemon.json /etc/docker/daemon.json
+
+echo "Setting network"
+if ! sudo ufw status | grep -q inactive; then
+    sudo ufw allow 30000:32676/tcp
+    sudo ufw allow 2379,2380/tcp
+    sudo ufw allow 10250/tcp
+
+sudo ln -fs /run/systemd/resolve/resolv.conf /etc/resolv.conf
+echo "nameserver 10.96.0.10" | sudo tee --append  /etc/resolv.conf
+
+sudo cp daemon.json /etc/docker/daemon.json
 sudo systemctl restart docker
-echo "source <(kubectl completion bash)" >> ~/.bashrc

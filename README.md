@@ -57,6 +57,13 @@ cd ..
 You can initize your new server with this note
 https://hackmd.io/V40UgNo3S4mp4cUtT3yY-g#
 
+And you need to add nameserver 10.96.0.10 to network setting(ex. netplan)
+
+```
+nameservers:
+    addresses: [10.96.0.10, 8.8.8.8]
+```
+
 Then install
 * docker
 * nvidia-docker
@@ -162,6 +169,11 @@ python3 adduser.py
 docker exec -it -u 1000 labserver_nextcloud_1 php occ files_external:import my_storages.json
 cd ..
 ```
+
+### Firewall Security
+Be careful if you enable ufw, which may block the ports that k8s needs.
+
+see https://github.com/freach/kubernetes-security-best-practice/blob/master/README.md.
 
 ## Contribute
 you can use `git add -p xx` to commit modified changes.

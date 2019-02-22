@@ -50,6 +50,11 @@ fi
 
 echo -n "checking master node status..."
 
+if ! sudo ufw status | grep -q inactive; then
+    sudo ufw allow 6443/tcp
+    sudo ufw allow 80,443/tcp
+    sudo ufw allow 10251,10252/tcp
+
 ready=false
 while [ $ready == false ]
 do
@@ -61,3 +66,5 @@ do
 	fi
 	sleep 1
 done
+
+echo "source <(kubectl completion bash)" >> ~/.bashrc

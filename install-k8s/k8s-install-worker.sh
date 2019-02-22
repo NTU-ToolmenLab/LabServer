@@ -4,13 +4,12 @@ set -e
 nodes=( "server1" )
 node_num=${#nodes[*]}
 
-# token=$(sudo kubeadm token list | grep "kubeadm init" | awk '{print $1}')
-token=$(sudo kubeadm token generate)
+token=$(sudo kubeadm token create)
 token_ca_cert_hash=$(openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | openssl rsa -pubin -outform der 2>/dev/null | openssl dgst -sha256 -hex | sed 's/^.* //')
 master_ip=$(ip addr | grep 'MASTER' -A2 | tail -n1 | awk '{print $2}' | cut -f1 -d'/')
 
 echo "creating worker installation script"
-cat base.sh >> k8s-install-worker-tmp.sh
+cat base.sh > k8s-install-worker-tmp.sh
 cat << EOF >> k8s-install-worker-tmp.sh
 sudo kubeadm join $master_ip:6443 --token $token --discovery-token-ca-cert-hash sha256:$token_ca_cert_hash
 EOF
@@ -20,8 +19,11 @@ do
     mkdir -p kube_log
 	echo "Node: ${nodes[$i]} is joining cluser..."
     # need to set remote server do not need password to execute sudo
-    scp daemon.json ${nodes[$i]}:~/
-	ssh ${nodes[$i]} < k8s-install-worker-tmp.sh > kube_log/"${nodes[$i]}_$(date +'%Y-%m-%d_%H-%M-%S').log" 2>&1 &
+    logfile=kube_log/"${nodes[$i]}_$(date +'%Y-%m-%d_%H-%M-%S').log"
+    scp daemon.json ${nodes[$i]}:~/ >> $logfile
+	scp k8s-install-worker-tmp.sh ${nodes[$i]}:~/ >> $logfile
+    # bug: no sync when installing
+	ssh -t ${nodes[$i]} "bash k8s-install-worker-tmp.sh" | tee --append $logfile 2>&1
 done
 
 times=1
@@ -46,4 +48,4 @@ done
 
 echo "Done"
 
-rm -f k8s-install-worker-tmp.sh
+# rm -f k8s-install-worker-tmp.sh
