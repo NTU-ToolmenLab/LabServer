@@ -68,6 +68,9 @@ class Box(db.Model):
             rep = otherAPI('search', name=self.docker_name, check=False)
             status = str(rep['status']).lower()
             if status == 'running' and self.docker_ip != rep['ip']:
+                # self.docker_ip = rep['ip']
+                # self.docker_id = rep['id']
+                # db.session.commit()
                 status = 'Not Consist IP'
 
         return {'name': self.box_name,
@@ -81,7 +84,7 @@ class Box(db.Model):
     def api(self, method, check=True, **kwargs):
         """
         There are many mothods:
-        start, stop, delete, restart, passwd
+        start, stop, delete, restart, passwd, rescue
         """
         # deal with url
         name = self.docker_name
@@ -91,27 +94,34 @@ class Box(db.Model):
             if method != 'delete':
                 name = self.docker_id
                 base_url = bp.sock + '/{}'.format(self.node)
-        url = base_url + '/' + method
 
-        # deal with methods
-        if bp.usek8s:
+            # deal with methods
             if method == 'stop':
                 self.commit(check=False)
                 self.api('delete')
                 return
+
+            # rescue
+            if method == 'rescue':
+                self.api('delete')
+                return
+
+        url = base_url + '/' + method
+
         if method == 'delete':
             check = False
 
         rep = post(url, data={'name': name, **kwargs}).json()
 
         if check and str(rep.get('status')) != '200':
+            logger.error("ERROR " + url + str(kwargs) + str(rep))
             abort(500, 'Server API error')
 
         return rep
 
     def commit(self, **kwargs):
         self.api('commit', newname=bp.backup + self.docker_name, **kwargs)
-        self.api('prune')
+        self.api('prune', check=False)
 
 
 class Image(db.Model):
@@ -128,15 +138,16 @@ class Image(db.Model):
 def otherAPI(method, docker_node=None, check=True, **kwargs):
     """
     There are many mothods:
-    push, deleteImage, search, create, listnode
+    push, deleteImage, search, create, listnode, searchimage
     """
     base_url = bp.sock
-    if bp.usek8s and method in ['push', 'deleteImage']:
+    if bp.usek8s and method in ['push', 'deleteImage', 'searchimage']:
         base_url = bp.sock + '/{}'.format(docker_node)
     url = base_url + '/' + method
     rep = post(url, data=kwargs).json()
 
     if check and str(rep.get('status')) != '200':
+        logger.error("ERROR " + url + str(kwargs) + str(rep))
         abort(500, 'Server API error')
 
     return rep

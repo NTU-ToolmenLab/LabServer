@@ -78,6 +78,17 @@ def search():
     return jsonify(output)
 
 
+@app.route('/searchimage', methods=['POST'])
+def searchImage():
+    query = request.form.get('name')
+    output = []
+
+    img = client.images.get(query)
+    output = img.tags[0]
+
+    return jsonify(output)
+
+
 @app.route('/start', methods=['POST'])
 def start():
     name = request.form.get('name')

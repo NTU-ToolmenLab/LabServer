@@ -15,6 +15,7 @@ myMap = {
     'Start': "start",
     'Stop': "stop",
     'Delete': "delete",
+    'Rescue': "rescue",
     'Restart': "restart"}
 
 
@@ -65,6 +66,20 @@ def api():
         db.session.commit()
         imageDelete.delay(box.id, backupname)
 
+    # rescue = delete + create(locally)
+    elif data.get('method') == 'Rescue':
+        name = box.box_name
+        node = box.node
+        docker_name = box.docker_name
+
+        image = backupname
+        # if no backup
+        if type(otherAPI('searchimage', docker_node=node, name=image,
+                check=False)) is not str:
+            image = box.image
+
+        rescue.delay(box.id, nowUser.id, name, node, docker_name, image)
+
     return redirect(url_for('oauthserver.box_models.List'))
 
 
@@ -103,12 +118,20 @@ def create():
     if Box.query.filter_by(docker_name=realname).first():
         abort(403, 'Already have environment')
 
+    createAPI(nowUser, name, data.get('node'), realname, image)
+
+
+@celery.task()
+def createAPI(nowUser, name, node, realname, image):
+    homepath = nowUser.name
+    labnas = 'True'
+
     rep = otherAPI('create',
                    name=realname,
-                   node=data.get('node'),
+                   node=node,
                    image=image,
-                   homepath=nowUser.name,
-                   labnas='True',
+                   homepath=homepath,
+                   labnas=labnas,
                    homenas='True')
 
     # async, wait for creation
@@ -117,14 +140,15 @@ def create():
               user=nowUser.name,
               image=image,
               box_text='Creating',
-              node=data.get('node'))
+              node=node)
     db.session.add(box)
     db.session.commit()
-    boxCreate.delay(box.id)
 
     # user
     nowUser.use_quota += 1
     user_db.session.commit()
+    boxCreate.delay(box.id)
+
     return redirect(url_for('oauthserver.box_models.List'))
 
 
@@ -268,7 +292,11 @@ def imageDelete(id, backupname):
     box.box_text = 'Deleting ENV copy'
     db.session.commit()
     otherAPI('deleteImage', name=backupname, docker_node=box.node, check=False)
+    envDelete(id)
 
+
+def envDelete(id):
+    box = Box.query.get(id)
     box.box_text = 'Deleting ENV'
     db.session.commit()
     for i in range(60 * 10):  # 10 min
@@ -283,3 +311,11 @@ def imageDelete(id, backupname):
         return
 
     boxDelete(box)
+
+
+# Can not chain?
+# ugly method
+@celery.task()
+def rescue(bid, uid, name, node, docker_name, image):
+    envDelete(bid)
+    createAPI(User.query.get(uid), name, node, docker_name, image)
