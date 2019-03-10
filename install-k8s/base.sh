@@ -42,9 +42,14 @@ sudo apt install -y docker-ce=18.06.0~ce~3-0~ubuntu kubectl kubelet kubeadm kube
 
 echo "Setting network"
 if ! sudo ufw status | grep -q inactive; then
+    # kube services
     sudo ufw allow 30000:32676/tcp
+    # etcd client
     sudo ufw allow 2379,2380/tcp
+    # healthcheck
     sudo ufw allow 10250/tcp
+    # calico
+    sudo ufw allow 109/tcp
 
 sudo ln -fs /run/systemd/resolve/resolv.conf /etc/resolv.conf
 echo "nameserver 10.96.0.10" | sudo tee --append  /etc/resolv.conf

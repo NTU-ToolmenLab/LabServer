@@ -51,8 +51,11 @@ fi
 echo -n "checking master node status..."
 
 if ! sudo ufw status | grep -q inactive; then
+    # kube API
     sudo ufw allow 6443/tcp
+    # web
     sudo ufw allow 80,443/tcp
+    # kube-scheduler controller
     sudo ufw allow 10251,10252/tcp
 
 ready=false

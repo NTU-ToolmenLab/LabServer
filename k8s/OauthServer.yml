@@ -32,6 +32,9 @@ spec:
                 gunicorn -b 0.0.0.0:5000 oauthserver:app --reload --access-logfile /app/OauthServer/access.log']
         # command: [tail]
         # args: ['-f', '/dev/null']
+        env:
+        - name: FLASK_APP
+          value: oauthserver
         ports:
         - containerPort: 5000
           protocol: TCP
