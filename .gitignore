@@ -14,6 +14,11 @@ registry_data/
 sshpiper/
 Portus/db
 Portus/registry
+harbor/database
+harbor/jobservice
+harbor/redis
+harbor/registry
+harbor/tls.*
 
 # log
 log
@@ -23,3 +28,4 @@ celerybeat-schedule
 # github
 my_vnc/websockify/
 my_vnc/noVNC/
+harbor/harbor-helm

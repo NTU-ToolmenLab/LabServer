@@ -1,0 +1,26 @@
+persistence:
+  persistentVolumeClaim:
+    registry:
+      existingClaim: nfs-labserver
+      subPath: harbor/registry
+    jobservice:
+      existingClaim: nfs-labserver
+      subPath: harbor/jobservice
+    database:
+      existingClaim: nfs-labserver
+      subPath: harbor/database
+    redis:
+      existingClaim: nfs-labserver
+      subPath: harbor/redis
+
+expose:
+  type: clusterIP
+  tls:
+    secretName: harbor-tls
+
+externalURL: http://harbor-harbor-core.default.svc.cluster.local
+
+chartmuseum:
+  enabled: false
+clair:
+  enabled: false
