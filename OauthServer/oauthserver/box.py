@@ -74,8 +74,7 @@ def api():
 
         image = backupname
         # if no backup
-        if type(otherAPI('searchimage', docker_node=node, name=image,
-                check=False)) is not str:
+        if not box.getImage():
             image = box.image
 
         rescue.delay(box.id, nowUser.id, name, node, docker_name, image)
@@ -318,4 +317,4 @@ def envDelete(id):
 @celery.task()
 def rescue(bid, uid, name, node, docker_name, image):
     envDelete(bid)
-    createAPI(User.query.get(uid), name, node, docker_name, image)
+    createAPI(uid, name, node, docker_name, image)

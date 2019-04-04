@@ -84,7 +84,8 @@ def searchImage():
     output = []
 
     img = client.images.get(query)
-    output = img.tags[0]
+    output = {'tag': img.tags[0],
+              'date': img.attrs['Metadata']['LastTagTime']}
 
     return jsonify(output)
 

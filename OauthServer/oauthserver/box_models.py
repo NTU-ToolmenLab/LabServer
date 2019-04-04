@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 import logging
 from requests import post
 import datetime
+from dateutil.parser import parse
 
 
 db = SQLAlchemy()
@@ -57,7 +58,8 @@ class Box(db.Model):
     user = db.Column(db.String(32), nullable=False)
     node = db.Column(db.String(32), nullable=False)
     image = db.Column(db.String(64), nullable=False)
-    date = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    create_date = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    commit_date = db.Column(db.DateTime)
 
     def __str__(self):
         return '<Box {}>'.format(docker_name)
@@ -76,8 +78,10 @@ class Box(db.Model):
         return {'name': self.box_name,
                 'realname': self.docker_name,
                 'node': self.node,
-                'date': (self.date + datetime.timedelta(hours=8)
+                'date': (self.create_date + datetime.timedelta(hours=8)
                         ).strftime('%Y/%m/%d %X'),
+                'commit': self.commit_date.strftime('%Y/%m/%d %X') \
+                          if self.commit_date else None,
                 'image': self.image.split(':')[-1],
                 'status': status}
 
@@ -121,7 +125,16 @@ class Box(db.Model):
 
     def commit(self, **kwargs):
         self.api('commit', newname=bp.backup + self.docker_name, **kwargs)
+        self.commit_date = self.getImage()
+        db.session.commit()
         self.api('prune', check=False)
+
+    def getImage(self):
+        backupname = bp.backup + self.docker_name
+        img = otherAPI('searchimage', docker_node=self.node,
+                                      name=backupname,
+                                      check=False)
+        return parse(img['date']) if img else None
 
 
 class Image(db.Model):

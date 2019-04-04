@@ -8,3 +8,4 @@ lxml
 requests
 redis
 celery
+python-dateutil
