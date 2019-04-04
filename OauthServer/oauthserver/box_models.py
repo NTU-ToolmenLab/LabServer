@@ -89,31 +89,14 @@ class Box(db.Model):
         """
         There are many mothods:
         start, stop, delete, restart, passwd, rescue
+        commit, prune
         """
-        # deal with url
         name = self.docker_name
-        base_url = bp.sock
-        if bp.usek8s:
-            # Not handle in dockerserver for k8s
-            if method != 'delete':
-                name = self.docker_id
-                base_url = bp.sock + '/{}'.format(self.node)
 
-            # deal with methods
-            if method == 'stop':
-                self.commit(check=False)
-                self.api('delete')
-                return
-
-            # rescue
-            if method == 'rescue':
-                self.api('delete')
-                return
-
-        url = base_url + '/' + method
-
-        if method == 'delete':
-            check = False
+        url = bp.sock
+        if bp.usek8s and method != 'delete':
+            url += + '/' + self.node
+        url += + '/' + method
 
         rep = post(url, data={'name': name, **kwargs}).json()
 
@@ -125,9 +108,9 @@ class Box(db.Model):
 
     def commit(self, **kwargs):
         self.api('commit', newname=bp.backup + self.docker_name, **kwargs)
+        self.api('prune', check=False)
         self.commit_date = self.getImage()
         db.session.commit()
-        self.api('prune', check=False)
 
     def getImage(self):
         backupname = bp.backup + self.docker_name

@@ -11,12 +11,6 @@ import os
 
 
 logger = logging.getLogger('oauthserver')
-myMap = {
-    'Start': "start",
-    'Stop': "stop",
-    'Delete': "delete",
-    'Rescue': "rescue",
-    'Restart': "restart"}
 
 
 @bp.route('/')
@@ -44,40 +38,49 @@ def api():
                                   docker_name=data['name']).first()
     if not box:
         abort(403, 'Cannot find your environment')
-    if data.get('method') not in myMap.keys():
-        abort(403, 'How can you show this error')
 
+    # OK
     logger.info("boxapi " + nowUser.name + " " + data['method'] + " " + data['name'])
-    box.api(myMap[data['method']])
 
-    # special case
-    backupname = bp.backup + box.docker_name
     if data.get('method') == 'Start':
+        box.api('start')
         if nowUser.groupid != 1 or box.user == nowUser.name:
             box.api('passwd', pw=nowUser.password)
         return redirect("/vnc/?path=vnc/?token=" + box.docker_name)  # on docker
 
-    elif data.get('method') == 'Stop':
-        boxPush.delay(box.id, backupname)
+    elif data.get('method') == 'Restart':
+        box.api('restart')
 
     elif data.get('method') == 'Delete':
         # delete database before really deleted it
+        box.api('delete', check=False)
         Image.query.filter_by(user=box.user, name=box.docker_name).delete()
         db.session.commit()
         imageDelete.delay(box.id, backupname)
 
-    # rescue = delete + create(locally)
+    elif data.get('method') == 'node':
+        pass
+
+    elif data.get('method') == 'Stop':
+        box.commit(check=False)
+        box.api('delete', check=False)
+        piperDelete(box.box_name)
+
     elif data.get('method') == 'Rescue':
+        self.api('delete', check=False)
         name = box.box_name
         node = box.node
         docker_name = box.docker_name
 
-        image = backupname
+        image = bp.backup + box.docker_name
         # if no backup
         if not box.getImage():
             image = box.image
 
         rescue.delay(box.id, nowUser.id, name, node, docker_name, image)
+
+    else:
+        abort(403, 'How can you show this error')
 
     return redirect(url_for('oauthserver.box_models.List'))
 
@@ -117,7 +120,8 @@ def create():
     if Box.query.filter_by(docker_name=realname).first():
         abort(403, 'Already have environment')
 
-    createAPI(nowUser, name, data.get('node'), realname, image)
+    createAPI.delay(nowUser.id, name, data.get('node'), realname, image)
+    return redirect(url_for('oauthserver.box_models.List'))
 
 
 @celery.task()
@@ -148,7 +152,6 @@ def createAPI(nowUser, name, node, realname, image):
     user_db.session.commit()
     boxCreate.delay(box.id)
 
-    return redirect(url_for('oauthserver.box_models.List'))
 
 
 @bp.route('/vnctoken', methods=['POST'])
@@ -230,15 +233,31 @@ def goCommit():
     logger.debug("Commit now")
     boxes = Box.query.all()
     for box in boxes:
-        st = box.getStatus()
-        if str(st['status']).lower() == 'running':
-            box.commit()
+        try:
+            st = box.getStatus()
+            if str(st['status']).lower() == 'running':
+                box.commit()
+        except:
+            pass
 
 
 # There are three type of operation is time-consuming
 # Create (Download Image and start container)
 # Backup (Upload Image)
 # Delete (Delete pod in k8s)
+
+# Delete is also Problem
+# method:      piper env image database additional
+# api Delete          *
+# piperDelete    *
+# boxDelete      *                *
+# envDelete      *    *
+# rescue         *    *                   +create
+# imageDelete    *    *    *      *
+# boxpush        *    *    *      *       +push (no commmit here)
+# entry:Delete   *    *    *      *
+# entry:Stop     *    *
+# entry:Rescue   *    *
 @celery.task()
 def boxCreate(id):
     box = Box.query.get(id)
@@ -260,8 +279,6 @@ def boxCreate(id):
     piperCreate(box.box_name, box.docker_ip)
 
 
-# After stop, the pod is deleted
-# Now, you push to image to registy and delete the image
 @celery.task()
 def boxPush(id, backupname):
     box = Box.query.get(id)
