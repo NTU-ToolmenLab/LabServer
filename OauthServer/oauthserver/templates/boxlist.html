@@ -26,7 +26,6 @@ list
             <div class="card-body">
               <h5 class="card-title"> status: {{ data.status }} </h5>
               <p class="card-text"> {{ data.text }} </p>
-              <p class="card-text"> node: {{ data.node }} </p>
               <p class="card-text"> image: {{ data.image }} </p>
               <p class="card-text"> create time: {{ data.date }} </p>
               <p class="card-text"> backup time: {{ data.commit }} </p>
@@ -41,6 +40,20 @@ list
                   <input type="submit" name="method" value="Rescue"  class="btn btn-outline-danger" />
                 </div>
               </form>
+
+              <form action="{{ url_for('oauthserver.box_models.api')}}" method="post">
+                <input type="hidden"   name="name"     value="{{data.realname}}"/>
+                <input type="hidden"   name="method"     value="node"/>
+                <div class="form-group">
+                  <label for="node">Choose Server:</label>
+                  <select class="col-3" name="node" onchange="this.form.submit()">
+                  {% for node in create_param.node %}
+                    <option {{ "selected" if data.node == node }}> {{node}} </option>
+                  {% endfor %}
+                  </select>
+                </div>
+              </form>
+
             </div>
             <div class="card-footer text-muted"> {{ data.realname }} </div>
           </div>

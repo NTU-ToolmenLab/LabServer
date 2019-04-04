@@ -91,17 +91,18 @@ class Box(db.Model):
         start, stop, delete, restart, passwd, rescue
         commit, prune
         """
-        name = self.docker_name
 
+        name = self.docker_name
         url = bp.sock
         if bp.usek8s and method != 'delete':
-            url += + '/' + self.node
-        url += + '/' + method
+            url += '/' + self.node
+            name = self.docker_id
+        url += '/' + method
 
         rep = post(url, data={'name': name, **kwargs}).json()
 
         if check and str(rep.get('status')) != '200':
-            logger.error("ERROR " + url + str(kwargs) + str(rep))
+            logger.error("ERROR " + url + name + str(kwargs) + str(rep))
             abort(500, 'Server API error')
 
         return rep
@@ -117,7 +118,7 @@ class Box(db.Model):
         img = otherAPI('searchimage', docker_node=self.node,
                                       name=backupname,
                                       check=False)
-        return parse(img['date']) if img else None
+        return parse(img['date']) if str(img.get('status')) != '200' else None
 
 
 class Image(db.Model):

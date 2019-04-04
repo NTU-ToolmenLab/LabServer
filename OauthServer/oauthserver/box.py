@@ -41,6 +41,7 @@ def api():
 
     # OK
     logger.info("boxapi " + nowUser.name + " " + data['method'] + " " + data['name'])
+    backupname = bp.backup + box.docker_name
 
     if data.get('method') == 'Start':
         box.api('start')
@@ -54,12 +55,18 @@ def api():
     elif data.get('method') == 'Delete':
         # delete database before really deleted it
         box.api('delete', check=False)
-        Image.query.filter_by(user=box.user, name=box.docker_name).delete()
-        db.session.commit()
         imageDelete.delay(box.id, backupname)
 
     elif data.get('method') == 'node':
-        pass
+        if not data.get('node') or data.get('node') not in getNodes():
+            abort(403, 'No such server')
+        box.commit(check=False)
+        box.api('delete', check=False)
+        changeNode.delay(box.id, nowUser.id,
+                         box.box_name,
+                         data['node'],
+                         box.docker_name,
+                         backupname)
 
     elif data.get('method') == 'Stop':
         box.commit(check=False)
@@ -67,17 +74,14 @@ def api():
         piperDelete(box.box_name)
 
     elif data.get('method') == 'Rescue':
-        self.api('delete', check=False)
-        name = box.box_name
-        node = box.node
-        docker_name = box.docker_name
+        box.api('delete', check=False)
 
-        image = bp.backup + box.docker_name
-        # if no backup
-        if not box.getImage():
-            image = box.image
-
-        rescue.delay(box.id, nowUser.id, name, node, docker_name, image)
+        image = box.image if not box.getImage() else backupname
+        rescue.delay(box.id, nowUser.id,
+                     box.box_name,
+                     box.node,
+                     box.docker_name,
+                     image)
 
     else:
         abort(403, 'How can you show this error')
@@ -101,13 +105,9 @@ def create():
 
     realname = nowUser.name + str(time.time()).replace('.', '')
     name = realname
-    image = ''
 
     if Image.query.filter_by(user='user', name=data.get('image')).first():
         image = bp.images + data.get('image')
-    elif Image.query.filter_by(user=nowUser.name, name=data.get('image')).first():
-        image = bp.backup + data.get('image')
-        name = realname = data.get('image')
     else:
         abort(403, 'No such environment')
     if data.get('name'):
@@ -193,7 +193,6 @@ def getImages():
         return Image.query.all()
     else:
         images = Image.query.filter_by(user='user').all()
-        images.extend(Image.query.filter_by(user=nowUser.name).all())
         return images
 
 
@@ -264,7 +263,7 @@ def boxCreate(id):
     for i in range(60 * 10):  # 10 min
         time.sleep(1)
         rep = otherAPI('search', name=box.docker_name, check=False)
-        if rep['status'].lower() == 'running':
+        if str(rep['status']).lower() == 'running':
             break
     else:
         box.box_text = 'Cannot start your environment'
@@ -290,11 +289,6 @@ def boxPush(id, backupname):
     db.session.commit()
     try:
         otherAPI('push', name=backupname, docker_node=box.node, **bp.registry_user)
-        Image.query.filter_by(user=box.user, name=box.docker_name).delete()
-        image = Image(name=box.docker_name, user=box.user,
-                      description="Stopped " + box.box_name)
-        db.session.add(image)
-        db.session.commit()
     except Exception as e:
         box.box_text = str("Backup Error")
         db.session.commit()
@@ -335,3 +329,11 @@ def envDelete(id):
 def rescue(bid, uid, name, node, docker_name, image):
     envDelete(bid)
     createAPI(uid, name, node, docker_name, image)
+
+
+# ugly method
+@celery.task()
+def changeNode(bid, uid, name, node, docker_name, backupname):
+    boxPush(bid, backupname)
+    envDelete(bid)
+    createAPI(uid, name, node, docker_name, backupname)
