@@ -8,12 +8,11 @@ and run `bash setup.sh`
 
 
 ### Add new nodes
-If you add new nodes, you should remember to copy certs of Portus to `/etc/docker`.
+If you add new nodes, you should remember to copy certs of Harbor to `/etc/docker`.
 
 ```
-sudo mkdir -p /etc/docker/certs.d/registry.default.svc.cluster.local
-sudo cp ./Portus/certs/cert.pem /etc/docker/certs.d/registry.default.svc.cluster.local/ca.crt
-sudo cp ./Portus/certs/portus_cert.pem /etc/docker/certs.d/registry.default.svc.cluster.local/client.crt
+sudo mkdir -p /etc/docker/certs.d/harbor.default.svc.cluster.local
+sudo cp ./harbor/tls.crt /etc/docker/certs.d/harbor.default.svc.cluster.local/ca.crt
 ```
 
 ## Run

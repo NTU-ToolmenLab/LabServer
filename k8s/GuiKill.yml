@@ -25,7 +25,7 @@ spec:
     spec:
       containers:
       - name: guikill
-        image: registry.default.svc.cluster.local/linnil1/dockerserver
+        image: harbor.default.svc.cluster.local/linnil1/dockerserver
         command: [python3]
         args: [/app/DockerServer/guikill.py]
         ports:

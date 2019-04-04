@@ -33,9 +33,17 @@ sed -i "s/{{\s*registry_password\s*}}/$oauth_registry_password/g" ../OauthServer
 
 # build for k8s docker api server
 echo "build container"
-docker build myapi_k8s -t registry.default.svc.cluster.local/linnil1/myapi_k8s
-docker tag linnil1/nextcloudfpm:13 registry.default.svc.cluster.local/linnil1/nextcloudfpm:13
-docker tag linnil1/oauthserver registry.default.svc.cluster.local/linnil1/oauthserver
-docker tag linnil1/docker-vnc registry.default.svc.cluster.local/linnil1/docker-vnc
-docker tag linnil1/myapi_k8s registry.default.svc.cluster.local/linnil1/myapi_k8s
-docker tag linnil1/dockerserver registry.default.svc.cluster.local/linnil1/dockerserver
+docker build myapi_k8s -t harbor.default.svc.cluster.local/linnil1/myapi_k8s
+docker tag linnil1/nextcloudfpm:13 harbor.default.svc.cluster.local/linnil1/nextcloudfpm:13
+docker tag linnil1/oauthserver harbor.default.svc.cluster.local/linnil1/oauthserver
+docker tag linnil1/docker-vnc harbor.default.svc.cluster.local/linnil1/docker-vnc
+docker tag linnil1/myapi_k8s harbor.default.svc.cluster.local/linnil1/myapi_k8s
+docker tag linnil1/dockerserver harbor.default.svc.cluster.local/linnil1/dockerserver
+
+# build for k8s docker api server
+echo "Generate cert for harbor"
+openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -subj "/C=TW/CN=harbor.default.svc.cluster.local" -keyout tls.key -out tls.crt
+sudo mkdir -p /etc/docker/certs.d/harbor.default.svc.cluster.local/
+sudo cp tls.crt /etc/docker/certs.d/harbor.default.svc.cluster.local/ca.crt
+kubectl create secret generic harbor-tls --from-file=tls.key --from-file=tls.crt
+git clone https://github.com/goharbor/harbor-helm

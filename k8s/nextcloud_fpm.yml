@@ -28,7 +28,7 @@ spec:
     spec:
       containers:
       - name: nextcloud-fpm
-        image: registry.default.svc.cluster.local/linnil1/nextcloudfpm:13
+        image: harbor.default.svc.cluster.local/linnil1/nextcloudfpm:13
         ports:
         - containerPort: 9000
           protocol: TCP

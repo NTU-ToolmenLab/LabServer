@@ -26,7 +26,7 @@ spec:
     spec:
       containers:
       - name: oauthserver
-        image: registry.default.svc.cluster.local/linnil1/oauthserver
+        image: harbor.default.svc.cluster.local/linnil1/oauthserver
         command: ['/bin/sh', '-c']
         args: ['celery worker -A oauthserver.celery -B -D -l info -f /app/OauthServer/celery.log --pidfile=/app/%n.pid && 
                 gunicorn -b 0.0.0.0:5000 oauthserver:app --reload --access-logfile /app/OauthServer/access.log']

@@ -20,7 +20,7 @@ config = {
     'logfile': '/app/OauthServer/log',
     'sshpiper': '/app/sshpiper/',
     # 'registry_url': 'server:5000',           # can be empty string
-    'registry_url': 'registry.default.svc.cluster.local',      # can be empty string
+    'registry_url': 'harbor.default.svc.cluster.local',      # can be empty string
     'registry_user': 'user',                   # optinoal when you need private registry
     'registry_password': '{{ registry_password }}',           # optinoal when you need private registry
     'registry_backup': 'user/backup',

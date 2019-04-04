@@ -1,14 +1,19 @@
 # create private registy
 kubectl create -f pv.yml -f pv_user.yml
-kubectl create -f portus.yml -f portus_config.yml -f portus_db.yml -f portus_registry.yml 
+
+# create harbor
+cd harbor-helm
+git checkout 1.0.0
+helm install --values ../setting.yml --name harbor .
+cd ..
 
 # push container
-docker login registy.default.svc.cluster.local
-docker push registry.default.svc.cluster.local/linnil1/nextcloudfpm:13
-docker push registry.default.svc.cluster.local/linnil1/oauthserver
-docker push registry.default.svc.cluster.local/linnil1/docker-vnc
-docker push registry.default.svc.cluster.local/linnil1/myapi_k8s
-docker push registry.default.svc.cluster.local/linnil1/dockerserver
+docker login harbor.default.svc.cluster.local
+docker push harbor.default.svc.cluster.local/linnil1/nextcloudfpm:13
+docker push harbor.default.svc.cluster.local/linnil1/oauthserver
+docker push harbor.default.svc.cluster.local/linnil1/docker-vnc
+docker push harbor.default.svc.cluster.local/linnil1/myapi_k8s
+docker push harbor.default.svc.cluster.local/linnil1/dockerserver
 
 # all services
 kubectl create -f nextcloud_fpm.yml -f nextcloud_web.yml -f nextcloud_collabora.yml -f nextcloud_db.yml
