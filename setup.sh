@@ -25,11 +25,3 @@ cd ..
 echo "BUILD Nextcloud"
 mkdir -p Nextcloud/nextcloud
 docker build Nextcloud/ -t linnil1/nextcloudfpm:15
-
-## Portus Certs
-echo "Set Portus Cert"
-openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -subj "/C=TW/CN=registry.default.svc.cluster.local" -keyout ./Portus/certs/privkey.pem -out ./Portus/certs/cert.pem
-openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -subj "/C=TW/CN=portus.default.svc.cluster.local" -keyout ./Portus/certs/portus_privkey.pem -out ./Portus/certs/portus_cert.pem
-sudo mkdir -p /etc/docker/certs.d/registry.default.svc.cluster.local
-sudo cp ./Portus/certs/cert.pem /etc/docker/certs.d/registry.default.svc.cluster.local/ca.crt
-sudo cp ./Portus/certs/portus_cert.pem /etc/docker/certs.d/registry.default.svc.cluster.local/client.crt

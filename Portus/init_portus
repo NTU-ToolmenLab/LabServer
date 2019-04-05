@@ -1,8 +1,0 @@
-#!/bin/sh
-set -x
-# https://unix.stackexchange.com/questions/80131/how-do-i-install-a-system-wide-ssl-certificate-on-opensuse
-mkdir -p /usr/share/pki/trust/anchors/
-cp /certs/cert.pem /usr/share/pki/trust/anchors/
-cp /certs/portus_cert.pem /usr/share/pki/trust/anchors/
-update-ca-certificates
-/init

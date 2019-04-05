@@ -1,9 +1,0 @@
-#!/bin/sh
-set -x
-apk update
-apk add curl
-mkdir -p /usr/local/share/ca-certificates
-cp /certs/cert.pem /usr/local/share/ca-certificates
-cp /certs/portus_cert.pem /usr/local/share/ca-certificates
-update-ca-certificates
-registry serve /etc/docker/registry/config.yml
