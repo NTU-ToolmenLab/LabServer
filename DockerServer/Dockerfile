@@ -6,4 +6,4 @@ RUN pip3 install -e /app/DockerServer && \
 
 WORKDIR /app
 EXPOSE 3476
-CMD ['gunicorn DockerServer:app -b "0.0.0.0:3476"']
+CMD ["gunicorn", "DockerServer:app", "-b", "0.0.0.0:3476", "--timeout", "180"]

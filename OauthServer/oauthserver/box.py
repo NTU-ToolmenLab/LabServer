@@ -53,7 +53,6 @@ def api():
         box.api('restart')
 
     elif data.get('method') == 'Delete':
-        # delete database before really deleted it
         box.api('delete', check=False)
         imageDelete.delay(box.id, backupname)
 
@@ -153,7 +152,6 @@ def createAPI(nowUser, name, node, realname, image):
     boxCreate.delay(box.id)
 
 
-
 @bp.route('/vnctoken', methods=['POST'])
 @flask_login.login_required
 def vncToken():
@@ -219,11 +217,13 @@ def piperDelete(name):
 
 def boxDelete(box):
     u = User.query.filter_by(name=box.user).first()
-    u.use_quota -= 1
-    db.session.delete(box)
-    user_db.session.commit()
-    db.session.commit()
     piperDelete(box.box_name)
+    db.session.delete(box)
+    db.session.commit()
+
+    # u.use_quota -= 1
+    u.use_quota = Box.query.filter_by(user=u.name).count()
+    user_db.session.commit()
 
 
 # run commit every day
@@ -232,12 +232,8 @@ def goCommit():
     logger.debug("Commit now")
     boxes = Box.query.all()
     for box in boxes:
-        try:
-            st = box.getStatus()
-            if str(st['status']).lower() == 'running':
-                box.commit()
-        except:
-            pass
+        logger.debug("Commit " + box.box_name)
+        box.commit(check=False)
 
 
 # There are three type of operation is time-consuming
@@ -268,7 +264,7 @@ def boxCreate(id):
     else:
         box.box_text = 'Cannot start your environment'
         db.session.commit()
-        return
+        raise TimeoutError
 
     box.docker_ip = rep['ip']
     box.docker_id = rep['id']
@@ -278,7 +274,6 @@ def boxCreate(id):
     piperCreate(box.box_name, box.docker_ip)
 
 
-@celery.task()
 def boxPush(id, backupname):
     box = Box.query.get(id)
     if not bp.registry_user:
@@ -292,7 +287,8 @@ def boxPush(id, backupname):
     except Exception as e:
         box.box_text = str("Backup Error")
         db.session.commit()
-        return
+        raise e
+
     imageDelete.delay(id, backupname)
 
 
@@ -318,7 +314,7 @@ def envDelete(id):
         box.box_text = 'Delete again later or Cannot Delete'
         db.session.commit()
         # do not delte in database if cannot delete it in real world.
-        return
+        raise TimeoutError
 
     boxDelete(box)
 
@@ -327,13 +323,18 @@ def envDelete(id):
 # ugly method
 @celery.task()
 def rescue(bid, uid, name, node, docker_name, image):
+    logger.debug("rescue - envDelete", name)
     envDelete(bid)
+    logger.debug("rescue - create", name)
     createAPI(uid, name, node, docker_name, image)
 
 
 # ugly method
 @celery.task()
 def changeNode(bid, uid, name, node, docker_name, backupname):
+    logger.debug("Changenode - push", name)
     boxPush(bid, backupname)
+    logger.debug("Changenode - envDelete", name)
     envDelete(bid)
+    logger.debug("Changenode - create", name)
     createAPI(uid, name, node, docker_name, backupname)

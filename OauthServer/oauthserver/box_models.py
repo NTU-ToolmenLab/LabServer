@@ -78,9 +78,9 @@ class Box(db.Model):
         return {'name': self.box_name,
                 'realname': self.docker_name,
                 'node': self.node,
-                'date': (self.create_date + datetime.timedelta(hours=8)
-                        ).strftime('%Y/%m/%d %X'),
-                'commit': self.commit_date.strftime('%Y/%m/%d %X') \
+                'date': (self.create_date + datetime.timedelta(hours=8))
+                        .strftime('%Y/%m/%d %X'),
+                'commit': self.commit_date.strftime('%Y/%m/%d %X')
                           if self.commit_date else None,
                 'image': self.image.split(':')[-1],
                 'status': status}
@@ -118,7 +118,7 @@ class Box(db.Model):
         img = otherAPI('searchimage', docker_node=self.node,
                                       name=backupname,
                                       check=False)
-        return parse(img['date']) if str(img.get('status')) != '200' else None
+        return parse(img['date']) if img.get('date') else None
 
 
 class Image(db.Model):

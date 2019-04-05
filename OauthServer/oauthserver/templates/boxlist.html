@@ -13,7 +13,7 @@ list
   </nav>
   <div class="container">
     <div class="row justify-content-center">
-      <div class="col-8">
+      <div class="col-lg-7">
         <div class="alert alert-success" role="alert">
           <h3> Bulletin Board </h3>
           <br>
@@ -44,9 +44,9 @@ list
               <form action="{{ url_for('oauthserver.box_models.api')}}" method="post">
                 <input type="hidden"   name="name"     value="{{data.realname}}"/>
                 <input type="hidden"   name="method"     value="node"/>
-                <div class="form-group">
+                <div class="form-group mt-2 mb-2">
                   <label for="node">Choose Server:</label>
-                  <select class="col-3" name="node" onchange="this.form.submit()">
+                  <select class="col-6" name="node" onchange="this.form.submit()">
                   {% for node in create_param.node %}
                     <option {{ "selected" if data.node == node }}> {{node}} </option>
                   {% endfor %}

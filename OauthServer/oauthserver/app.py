@@ -1,7 +1,7 @@
 import os
 from flask import Flask
 import logging
-from werkzeug.contrib.fixers import ProxyFix
+from werkzeug.middleware.proxy_fix import ProxyFix
 from .routes import bp
 from .models import db, login_manager
 from .oauth2 import config_oauth
@@ -24,7 +24,7 @@ def create_app(config={}):
     setLog(app)
 
     login_manager.login_view = "oauthserver.routes.Login"  # redir
-    app.wsgi_app = ProxyFix(app.wsgi_app)
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1)
     # os.environ['AUTHLIB_INSECURE_TRANSPORT'] = "1"
 
     # redis
