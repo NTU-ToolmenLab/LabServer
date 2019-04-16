@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: collect-gpu
+spec:
+  selector:
+    matchLabels:
+      name: collect-gpu
+  template:
+    metadata:
+      labels:
+        name: collect-gpu
+    spec:
+      containers:
+      - name: collect-gpu
+        image: harbor.default.svc.cluster.local/linnil1/collectgpu
+        volumeMounts:
+        - name: volume
+          mountPath: /app
+          subPath: collectgpu
+        - name: volume
+          mountPath: /app/db.sqlite
+          subPath: OauthServer/db.sqlite
+          readOnly: True
+        ports:
+        - containerPort: 8000
+          protocol: TCP
+      hostPID: true
+      volumes:
+      - name: volume
+        persistentVolumeClaim:
+          claimName: nfs-labserver

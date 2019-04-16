@@ -25,3 +25,7 @@ cd ..
 echo "BUILD Nextcloud"
 mkdir -p Nextcloud/nextcloud
 docker build Nextcloud/ -t linnil1/nextcloudfpm:15
+
+## collect_gpu
+echo "BUILD gpu_collect"
+docker build collectgpu/ -t linnil1/collectgpu
