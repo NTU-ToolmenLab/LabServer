@@ -38,6 +38,8 @@ spec:
       subPath: share
     - name: dshm
       mountPath: /dev/shm
+    - name: tmp
+      mountPath: /home/tmp
   nodeSelector:
     kubernetes.io/hostname: lab304-server2
   volumes:
@@ -50,3 +52,5 @@ spec:
   - name: dshm
     emptyDir:
       medium: Memory
+  - name: tmp
+    emptyDir: {}

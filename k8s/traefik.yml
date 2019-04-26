@@ -1,5 +1,4 @@
 externalIP: {{ ip }}
-memoryLimit: 1G
 rbac:
   enabled: true
 dashboard:

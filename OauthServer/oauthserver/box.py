@@ -186,12 +186,8 @@ def getCreate():
 
 
 def getImages():
-    nowUser = flask_login.current_user
-    if nowUser.groupid == 1:
-        return Image.query.all()
-    else:
-        images = Image.query.filter_by(user='user').all()
-        return images
+    images = Image.query.filter_by(user='user').order_by(Image.id.desc()).all()
+    return images
 
 
 def getNodes():

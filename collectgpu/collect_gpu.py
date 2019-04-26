@@ -98,8 +98,6 @@ metrics = {
     # 'pid': 15716,
     'gpu_usage': 30
 }
-old_objs = {}
-
 
 def pushInit():
     for i in metrics:
@@ -115,9 +113,20 @@ def pushInit():
 
 
 def push():
-    global old_objs
+    # remove old
+    # why cannot clean it more easily?
+    for i in metrics:
+        g = metrics[i]
+        for sample in g.collect()[0].samples:
+            obj = sample.labels
+            g.remove(obj['id'],
+                     obj['create_time'],
+                     obj['user'],
+                     obj['cmd'],
+                     obj['gpuid'])
+
+    # add
     objs = setMetrics()
-    tag = str(time.time())
     for obj in objs:
         for i in metrics:
             g = metrics[i]
@@ -126,26 +135,7 @@ def push():
                      user=obj['user'],
                      cmd=obj['cmd'],
                      gpuid=obj['gpuid']).set(obj[i])
-        key = (str(obj['create_time']), obj['boxname'])
-        if not old_objs.get(key):
-            old_objs[key] = obj
-        old_objs[key]['tag'] = tag
 
-    # remove old
-    delete_keys = []
-    for key, obj in old_objs.items():
-        if obj['tag'] != tag:
-            for i in metrics:
-                g = metrics[i]
-                g.remove(obj['boxname'],
-                         obj['create_time'],
-                         obj['user'],
-                         obj['cmd'],
-                         obj['gpuid'])
-            delete_keys.append(key)
-    
-    for key in delete_keys:
-        del old_objs[key]
 
 
 if __name__ == '__main__':
