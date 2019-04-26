@@ -11,6 +11,7 @@ metrics:
 kubernetes:
   namespaces:
   - default
+  - user
   - kube-system
   - monitor
   ingressClass: traefik

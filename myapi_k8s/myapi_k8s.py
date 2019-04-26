@@ -6,6 +6,8 @@ import re
 
 config.load_incluster_config()
 v1 = client.CoreV1Api()
+v1beta = client.ExtensionsV1beta1Api()
+
 app = Flask(__name__)
 ns = 'user'
 label = 'UserDocker'
@@ -103,10 +105,13 @@ def goRedir(node, subpath):
 # args: name, (image, node, labnas=True, homenas=True, homepath, inittar)
 @app.route('/create', methods=['POST'])
 def create():
-    template = yaml.load(open('/app/template.yml'))
-    template['metadata']['name'] = request.form['name']
+    template = yaml.load(open('/app/pod.yml'))
+    name = request.form['name']
+    template['metadata']['name'] = name
+    template['metadata']['labels']['srvname'] = name
     template['metadata']['namespace'] = ns
-    app.logger.info("Create " + request.form['name'])
+    app.logger.info("Create " + name)
+
     if request.form.get('image'):
         template['spec']['containers'][0]['image'] = request.form.get('image')
     if request.form.get('node') and checkNode(request.form.get('node')):
@@ -131,7 +136,25 @@ def create():
         if not vol.get('readOnly') and request.form.get('inittar'):
             vol['subPath'] = request.form.get('inittar')
 
-    rep = v1.create_namespaced_pod(ns, template)
+    # create pod
+    v1.create_namespaced_pod(ns, template)
+
+    # ingress
+    template_ingress = yaml.load(open('/app/pod_ingress.yml'))
+    template_ingress['metadata']['name'] = name
+    path = template_ingress['spec']['rules'][0]['http']['paths'][0]
+    path['path'] = path['path'].replace('hostname', name)
+    path['backend']['serviceName'] = name
+
+    # service
+    template_service = yaml.load(open('/app/pod_service.yml'))
+    template_service['metadata']['name'] = name
+    template_service['spec']['selector']['srvname'] = name
+
+    # create
+    v1.create_namespaced_service(ns, template_service)
+    v1beta.create_namespaced_ingress(ns, template_ingress)
+
     return ok()
 
 
@@ -140,7 +163,9 @@ def delete():
     name = request.form['name']
     checkLabel(name)
     app.logger.info("Delete " + request.form['name'])
-    rep = v1.delete_namespaced_pod(name, ns, client.V1DeleteOptions())
+    v1.delete_namespaced_pod(name, ns)
+    v1.delete_namespaced_service(name, ns)
+    v1beta.delete_namespaced_ingress(name, ns)
     return ok()
 
 

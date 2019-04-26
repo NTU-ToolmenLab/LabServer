@@ -5,6 +5,7 @@ metadata:
   namespace: user
   labels:
     UserDocker: "true"
+    srvname: "test"
 spec:
   initContainers:
   - name: add-files-to-home
@@ -20,13 +21,14 @@ spec:
       readOnly: true
   containers:
   - name: test
-    image: nvidia/cuda:9.0-cudnn7-devel-ubuntu16.04
+    image: nvidia/cuda:10.0-cudnn7-devel-ubuntu18.04
     # imagePullPolicy: Always
     # command: [tail]
     # args: ['-f', '/dev/null']
     ports:
     - containerPort: 22
     - containerPort: 5900
+    - containerPort: 8000
     volumeMounts:
     - name: labnas
       mountPath: /home/nas
