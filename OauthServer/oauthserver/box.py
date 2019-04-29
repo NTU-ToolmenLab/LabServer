@@ -27,7 +27,7 @@ def List():
 def api():
     nowUser = flask_login.current_user
     data = request.form
-    logger.debug(nowUser.name + " api " + str(data))
+    logger.debug("API " + nowUser.name + ": " + str(data))
 
     if not data.get('name'):
         abort(403, 'What is your environment name')
@@ -40,13 +40,10 @@ def api():
         abort(403, 'Cannot find your environment')
 
     # OK
-    logger.info("boxapi " + nowUser.name + " " + data['method'] + " " + data['name'])
     backupname = bp.backup + box.docker_name
 
     if data.get('method') == 'Start':
         box.api('start')
-        if nowUser.groupid != 1 or box.user == nowUser.name:
-            box.api('passwd', pw=nowUser.password)
         return redirect("/vnc/?path=vnc/?token=" + box.docker_name)  # on docker
 
     elif data.get('method') == 'Restart':
@@ -93,7 +90,7 @@ def api():
 def create():
     nowUser = flask_login.current_user
     data = request.form
-    logger.debug(nowUser.name + " create " + str(data))
+    logger.debug("Create " + nowUser.name + ": " + str(data))
 
     if not data.get('image'):
         abort(403, 'No such environment')
@@ -102,7 +99,7 @@ def create():
     if not data.get('node') or data.get('node') not in getNodes():
         abort(403, 'No such server')
 
-    realname = nowUser.name + str(time.time()).replace('.', '')
+    realname = nowUser.name + "{:.3f}".format(time.time()).replace('.', '')
     name = realname
 
     if Image.query.filter_by(user='user', name=data.get('image')).first():
@@ -119,7 +116,7 @@ def create():
     if Box.query.filter_by(docker_name=realname).first():
         abort(403, 'Already have environment')
 
-    createAPI.delay(nowUser.id, name, data.get('node'), realname, image)
+    createAPI(nowUser.id, name, data.get('node'), realname, image)
     return redirect(url_for('oauthserver.box_models.List'))
 
 
@@ -149,7 +146,35 @@ def createAPI(nowUser, name, node, realname, image):
     # user
     nowUser.use_quota += 1
     user_db.session.commit()
-    boxCreate.delay(box.id)
+    boxWaitCreate.delay(box.id, nowUser.id)
+
+
+@celery.task()
+def boxWaitCreate(bid, uid):
+    box = Box.query.get(bid)
+    nowUser = User.query.filter_by(name=box.user).first()
+    logger.debug("Create - wait: " + box.box_name)
+    for i in range(60 * 10):  # 10 min
+        time.sleep(1)
+        rep = otherAPI('search', name=box.docker_name, check=False)
+        if str(rep['status']).lower() == 'running':
+            break
+    else:
+        logger.error("Create - fail: " + box.box_name)
+        box.box_text = 'Cannot start your environment'
+        db.session.commit()
+        raise TimeoutError
+
+    logger.debug("Create - success: " + box.box_name)
+    box.docker_ip = rep['ip']
+    box.docker_id = rep['id']
+    box.box_text = ''
+    db.session.commit()
+    piperCreate(box.box_name, box.docker_ip)
+
+    # make sure it is running
+    time.sleep(5)
+    box.api('passwd', pw=nowUser.password)
 
 
 @bp.route('/vnctoken', methods=['POST'])
@@ -169,7 +194,7 @@ def vncToken():
 
 def getList():
     nowUser = flask_login.current_user
-    logger.info("list " + nowUser.name)
+    logger.debug("List " + nowUser.name)
     if nowUser.groupid == 1:
         boxes_ori = Box.query.all()
     else:
@@ -222,14 +247,39 @@ def boxDelete(box):
     user_db.session.commit()
 
 
-# run commit every day
 @celery.task()
-def goCommit():
+def routineMaintain():
+    # Commit
     logger.debug("Commit now")
     boxes = Box.query.all()
     for box in boxes:
         logger.debug("Commit " + box.box_name)
         box.commit(check=False)
+
+    # check if it is somewhat kill by kubernetes
+    logger.debug("Checking inconsistence now")
+    statusTarget = 'Not Consist ID'
+    for box in boxes:
+        if box.getStatus()['status'] == statusTarget:
+            logger.error("Check - ID inconsistence: " + box.box_name)
+            rep = otherAPI('search', name=box.docker_name, check=False)
+            box.docker_ip = rep['ip']
+            box.docker_id = rep['id']
+            db.session.commit()
+
+    # run passwd
+    logger.debug("Passwd now")
+    users = User.query.all()
+    for user in users:
+        boxsPasswd(user)
+
+
+# Change password for all boxes
+def boxsPasswd(now_user):
+    boxes = Box.query.filter_by(user=now_user.name).all()
+    for box in boxes:
+        if box.getStatus()['status'] == 'running':
+            box.api('passwd', pw=now_user.password)
 
 
 # There are three type of operation is time-consuming
@@ -249,27 +299,6 @@ def goCommit():
 # entry:Delete   *    *    *      *
 # entry:Stop     *    *
 # entry:Rescue   *    *
-@celery.task()
-def boxCreate(id):
-    box = Box.query.get(id)
-    for i in range(60 * 10):  # 10 min
-        time.sleep(1)
-        rep = otherAPI('search', name=box.docker_name, check=False)
-        if str(rep['status']).lower() == 'running':
-            break
-    else:
-        box.box_text = 'Cannot start your environment'
-        db.session.commit()
-        raise TimeoutError
-
-    box.docker_ip = rep['ip']
-    box.docker_id = rep['id']
-    box.box_text = ''
-    db.session.commit()
-
-    piperCreate(box.box_name, box.docker_ip)
-
-
 def boxPush(id, backupname):
     box = Box.query.get(id)
     if not bp.registry_user:
@@ -319,18 +348,18 @@ def envDelete(id):
 # ugly method
 @celery.task()
 def rescue(bid, uid, name, node, docker_name, image):
-    logger.debug("rescue - envDelete", name)
+    logger.debug("rescue - envDelete: " +  name)
     envDelete(bid)
-    logger.debug("rescue - create", name)
+    logger.debug("rescue - create: " + name)
     createAPI(uid, name, node, docker_name, image)
 
 
 # ugly method
 @celery.task()
 def changeNode(bid, uid, name, node, docker_name, backupname):
-    logger.debug("Changenode - push", name)
+    logger.debug("Changenode - push:"  + name)
     boxPush(bid, backupname)
-    logger.debug("Changenode - envDelete", name)
+    logger.debug("Changenode - envDelete: " + name)
     envDelete(bid)
-    logger.debug("Changenode - create", name)
+    logger.debug("Changenode - create: " + name)
     createAPI(uid, name, node, docker_name, backupname)

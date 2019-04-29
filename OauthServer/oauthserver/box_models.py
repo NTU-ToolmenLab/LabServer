@@ -69,11 +69,11 @@ class Box(db.Model):
         if not status:
             rep = otherAPI('search', name=self.docker_name, check=False)
             status = str(rep['status']).lower()
-            if status == 'running' and self.docker_ip != rep['ip']:
+            if status == 'running' and self.docker_id != rep['id']:
                 # self.docker_ip = rep['ip']
                 # self.docker_id = rep['id']
                 # db.session.commit()
-                status = 'Not Consist IP'
+                status = 'Not Consist ID'
 
         return {'name': self.box_name,
                 'realname': self.docker_name,
@@ -102,7 +102,8 @@ class Box(db.Model):
         rep = post(url, data={'name': name, **kwargs}).json()
 
         if check and str(rep.get('status')) != '200':
-            logger.error("ERROR " + url + name + str(kwargs) + str(rep))
+            rep = rep or "None"
+            logger.error("ERROR " + method + ": " + name + str(kwargs) + str(rep))
             abort(500, 'Server API error')
 
         return rep
@@ -144,7 +145,7 @@ def otherAPI(method, docker_node=None, check=True, **kwargs):
     rep = post(url, data=kwargs).json()
 
     if check and str(rep.get('status')) != '200':
-        logger.error("ERROR " + url + str(kwargs) + str(rep))
+        logger.error("ERROR " + url + ": " + str(kwargs) + str(rep))
         abort(500, 'Server API error')
 
     return rep

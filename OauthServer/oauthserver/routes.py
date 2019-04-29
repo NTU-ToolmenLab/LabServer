@@ -94,6 +94,9 @@ def ChangePassword():
         logger.info(nowUser.name + " ChangePassword Fail With " + rep)
         return render_template('changePassword.html', error=rep)
 
+    # ugly import
+    from .box import boxsPasswd
+    boxsPasswd(nowUser)
     logger.info(nowUser.name + " ChangePassword OK")
     return redirect(url_for('oauthserver.box_models.List'))
 

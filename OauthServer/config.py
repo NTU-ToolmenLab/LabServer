@@ -27,9 +27,10 @@ config = {
     'registry_images': 'linnil1/serverbox',
     'celery_broker_url': 'redis://box-redis.default.svc.cluster.local:6379',
     'celery_result_backend': 'redis://box-redis.default.svc.cluster.local:6379',
-    'celery_schedule': {'commit-every-day': {
-        'task': 'oauthserver.box.goCommit',
-            'schedule': crontab(hour=2, minute=0),
-        }
+    'celery_schedule': {
+        'box-routine': {
+            'task': 'oauthserver.box.routineMaintain',
+            'schedule': crontab(hour=18, minute=0),
+        },
     }
 }
