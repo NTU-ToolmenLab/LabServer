@@ -1,6 +1,8 @@
 from flask import Flask, request, jsonify, abort
 import docker
 import ast
+import os
+
 
 app = Flask(__name__)
 app.secret_key = 'super secret string1'  # Change this!
@@ -10,14 +12,14 @@ default_naspath = '/home/nas/'
 client = docker.from_env()
 
 
-@app.errorhandler(500)
+@app.errorhandler(403)
 def Error(e):
     message = {
-        'status': 500,
+        'status': 403,
         'message': str(e) or 'Internal Error'
     }
     resp = jsonify(message)
-    resp.status_code = 500
+    resp.status_code = 403
     return resp
 
 
@@ -42,14 +44,15 @@ def Ok():
 def getContainer(query, one=True):
     try:
         container = client.containers.get(query)
-        """
+        '''
         # for k8s label is in another containers
         if label not in container.labels:
             abort(404)
-        """
+        '''
         return container
     except docker.errors.NotFound:
-        abort(404)
+        abort(404, 'Not Found Container')
+        # raise Error('Not Found Container')
 
 
 def parseContainer(cont):
@@ -83,7 +86,11 @@ def searchImage():
     query = request.form.get('name')
     output = []
 
-    img = client.images.get(query)
+    try:
+        img = client.images.get(query)
+    except docker.errors.ImageNotFound:
+        return not_found('Not found Image')
+
     output = {'tag': img.tags[0],
               'date': img.attrs['Metadata']['LastTagTime']}
 
@@ -121,10 +128,7 @@ def passwd():
     if not container.attrs['State']['Running']:
         abort(404)
     pw = request.form.get('pw')
-    pwd = pw.replace(r'/', r'\/').replace('$', r'\$')
-    # Is it not robost ?
-    rest = container.exec_run(
-        r'perl -p -i -e "s/(ubuntu:).*?(:.+)/\1' + pwd + r'\2/g" /etc/shadow')
+    rest = container.exec_run('usermod -p "' + pw + '" ubuntu')
     return Ok()
 
 
@@ -143,7 +147,7 @@ def push():
     try:
         client.images.get(name)
     except docker.errors.ImageNotFound:
-        return Error('Not Find Image')
+        return not_found('Not Find Image')
 
     username = request.form.get('username')
     password = request.form.get('password')
@@ -157,23 +161,31 @@ def push():
     return Ok()
 
 
+def isSafePath(basedir, path):
+    return os.path.abspath(basedir + path).startswith(basedir)
+
+
 @app.route('/create', methods=['POST'])
 def create():
+    name = request.form.get('name')
+    if not name:
+        return Error('no name')
+
     image = request.form.get('image')
     try:
         client.images.get(image)
     except docker.errors.ImageNotFound:
-        return Error('Not Find Image')
+        return not_found('Not Find Image')
 
-    name = request.form.get('name')
-    homenas = request.form.get('homenas', 'False').lower() == 'true'
     homepath = request.form.get('homepath')
-    labnas = request.form.get('labnas', 'False').lower() == 'true'
-    if not name or (homenas and not homepath):
-        return Error('no home dictionary')
+    if not homepath:
+        homepath = name
+    if not isSafePath(default_homepath, homepath):
+        return Error('Bad Path')
 
+    labnas = request.form.get('labnas', 'False').lower() == 'true'
     mounts = []
-    if homenas:
+    if homepath:
         mounts.append(docker.types.Mount('/home/ubuntu',
                       default_homepath + homepath, type='bind'))
     if labnas:
