@@ -13,6 +13,17 @@ ns = 'user'
 label = 'UserDocker'
 
 
+@app.errorhandler(403)
+def forbidden(error=None):
+    message = {
+        'status': 403,
+        'message': error or 'Fail'
+    }
+    resp = jsonify(message)
+    resp.status_code = 403
+    return resp
+
+
 @app.errorhandler(404)
 def not_found(error=None):
     message = {
@@ -25,7 +36,7 @@ def not_found(error=None):
 
 
 @app.errorhandler(500)
-def internal_eroor(error=None):
+def internal_error(error=None):
     message = {
         'status': 500,
         'message': 'Internal Error'
@@ -55,10 +66,10 @@ def listDockerServer():
 
 def checkLabel(name):
     try:
-        rep = v1.read_namespaced_pod(request.form.get('name'), ns)
+        rep = v1.read_namespaced_pod(name, ns)
         if not rep.metadata.labels[label]:
             abort(404)
-    except:
+    except client.rest.ApiException:
         abort(404)
     return rep
 
@@ -102,7 +113,7 @@ def goRedir(node, subpath):
     return not_found()
 
 
-# args: name, (image, node, labnas=True, homenas=True, homepath, inittar)
+# args: name, (image, node, labnas=True, homepath, inittar)
 @app.route('/create', methods=['POST'])
 def create():
     template = yaml.load(open('/app/pod.yml'))
@@ -121,7 +132,7 @@ def create():
     noclaim = []
     if not request.form.get('labnas', 'True').lower() == 'true':
         noclaim.append('labnas')
-    if not request.form.get('homenas', 'True').lower() == 'true':
+    if not request.form.get('homepath'):
         noclaim.append('homenas')
     for vol in template['spec']['volumes']:
         if vol['name'] in noclaim:
@@ -137,7 +148,11 @@ def create():
             vol['subPath'] = request.form.get('inittar')
 
     # create pod
-    v1.create_namespaced_pod(ns, template)
+    try:
+        rep = v1.read_namespaced_pod(name, ns)
+        return forbidden('Double Creation')
+    except client.rest.ApiException:
+        v1.create_namespaced_pod(ns, template)
 
     # ingress
     template_ingress = yaml.load(open('/app/pod_ingress.yml'))
@@ -152,20 +167,35 @@ def create():
     template_service['spec']['selector']['srvname'] = name
 
     # create
-    v1.create_namespaced_service(ns, template_service)
-    v1beta.create_namespaced_ingress(ns, template_ingress)
+    try:
+        v1.create_namespaced_service(ns, template_service)
+    except client.rest.ApiException:
+        pass
+    try:
+        v1beta.create_namespaced_ingress(ns, template_ingress)
+    except client.rest.ApiException:
+        pass
 
     return ok()
 
 
 @app.route('/delete', methods=['POST'])
 def delete():
-    name = request.form['name']
+    name = request.form.get('name')
     checkLabel(name)
     app.logger.info("Delete " + request.form['name'])
+    # delete empty
     v1.delete_namespaced_pod(name, ns)
-    v1.delete_namespaced_service(name, ns)
-    v1beta.delete_namespaced_ingress(name, ns)
+
+    # using exception bcz didn't check
+    try:
+        v1.delete_namespaced_service(name, ns)
+    except client.rest.ApiException:
+        pass
+    try:
+        v1beta.delete_namespaced_ingress(name, ns)
+    except client.rest.ApiException:
+        pass
     return ok()
 
 
