@@ -5,8 +5,8 @@ docker run -it --rm -v $PWD/OauthServer:/app/OauthServer linnil1/oauthserver fla
 docker run -it --rm -v $PWD/OauthServer:/app/OauthServer linnil1/oauthserver flask std_add_user
 
 # Control docker to start or stop
-echo "BUILD dockerserver"
-docker build DockerServer -t linnil1/dockerserver
+echo "BUILD labboxapi-docker"
+docker build labboxapi_docker -t linnil1/labboxapi-docker
 
 ## VNC
 echo "BUILD VNC"

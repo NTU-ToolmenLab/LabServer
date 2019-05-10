@@ -2,10 +2,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: dockerserver
+  name: labboxapi-docker
 spec:
   selector:
-    name: dockerserver
+    name: labboxapi-docker
   ports:
   - port: 3476
     targetPort: 3476
@@ -13,26 +13,26 @@ spec:
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: dockerserver
+  name: labboxapi-docker
 spec:
   selector:
     matchLabels:
-      name: dockerserver
+      name: labboxapi-docker
   template:
     metadata:
       labels:
-        name: dockerserver
+        name: labboxapi-docker
     spec:
       containers:
-      - name: dockerserver
-        image: harbor.default.svc.cluster.local/linnil1/dockerserver
+      - name: labboxapi-docker
+        image: harbor.default.svc.cluster.local/linnil1/labboxapi-docker
         ports:
         - containerPort: 3476
           protocol: TCP
         volumeMounts:
         - name: volume
-          mountPath: /app/DockerServer
-          subPath: DockerServer
+          mountPath: /app
+          subPath: labboxapi_docker
         - name: docker-sock
           mountPath: /var/run/docker.sock
       volumes:

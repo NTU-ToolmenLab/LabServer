@@ -34,7 +34,7 @@ docker tag linnil1/nextcloudfpm:13 harbor.default.svc.cluster.local/linnil1/next
 docker tag linnil1/oauthserver harbor.default.svc.cluster.local/linnil1/oauthserver
 docker tag linnil1/docker-vnc harbor.default.svc.cluster.local/linnil1/docker-vnc
 docker tag linnil1/myapi_k8s harbor.default.svc.cluster.local/linnil1/myapi_k8s
-docker tag linnil1/dockerserver harbor.default.svc.cluster.local/linnil1/dockerserver
+docker tag linnil1/labboxapi-docker harbor.default.svc.cluster.local/linnil1/labboxapi-docker
 docker tag linnil1/collectgpu harbor.default.svc.cluster.local/linnil1/collectgpu
 
 # build for k8s docker api server
