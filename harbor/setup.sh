@@ -7,7 +7,8 @@ git clone https://github.com/goharbor/harbor-helm
 cd harbor-helm
 git checkout 1.0.0
 
-helm install --values ../setting.yml --name harbor .
-# helm upgrade harbor -f ../setting.yml  .
-# helm del --pugre harbor
 
+# first time
+helm install --values traefik.yml --name harbor stable/traefik
+# update
+# helm upgrade lab-traefik -f traefik.yml stable/traefik

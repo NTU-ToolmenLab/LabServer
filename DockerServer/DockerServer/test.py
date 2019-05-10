@@ -20,15 +20,18 @@ class TestAPI_unit(unittest.TestCase):
     def setUp(self):
         self.url = url
 
-    def test_basic(self):
-        rep = get(self.url)
+    def not_found(self, rep):
+        self.assertEqual(rep.status_code, 404)
         rep = rep.json()
         self.assertEqual(rep['status'], 404)
 
+    def test_basic(self):
+        rep = get(self.url)
+        self.not_found(rep)
+
     def test_basic_error(self):
         rep = get(self.url + '/hi')
-        rep = rep.json()
-        self.assertEqual(rep['status'], 404)
+        self.not_found(rep)
 
     def test_basic_405(self):
         rep = get(self.url + '/search')
@@ -43,13 +46,11 @@ class TestAPI_unit(unittest.TestCase):
 
     def test_basic_search_fail(self):
         rep = post(self.url + '/search', data={'name': name})
-        rep = rep.json()
-        self.assertEqual(rep['status'], 404)
+        self.not_found(rep)
 
     def test_basic_search_fail_image(self):
         rep = post(self.url + '/searchimage', data={'name': name})
-        rep = rep.json()
-        self.assertEqual(rep['status'], 404)
+        self.not_found(rep)
 
     def test_prune(self):
         rep = post(self.url + '/prune')
@@ -58,18 +59,24 @@ class TestAPI_unit(unittest.TestCase):
         self.assertEqual(rep['status'], 200)
         self.assertEqual(rep['message'], 'ok')
 
+    def test_delete_empty(self):
+        rep = post(self.url + '/deleteImage', data={'name': name})
+        self.not_found(rep)
+        rep = post(self.url + '/delete', data={'name': name})
+        self.not_found(rep)
+
 
 class TestAPI_continue(unittest.TestCase):
     def setUp(self):
         self.url = url
 
-    def test_create(self):
-        def checkOK(rep):
-            self.assertEqual(rep.status_code, 200)
-            rep = rep.json()
-            self.assertEqual(rep['status'], 200)
-            self.assertEqual(rep['message'], 'ok')
+    def checkOK(self, rep):
+        self.assertEqual(rep.status_code, 200)
+        rep = rep.json()
+        self.assertEqual(rep['status'], 200)
+        self.assertEqual(rep['message'], 'ok')
 
+    def test_create(self):
         # Before Create
         print('Create')
         rep = post(self.url + '/search', data={'name': name})
@@ -85,7 +92,7 @@ class TestAPI_continue(unittest.TestCase):
             'homepath': 'guest/test',
             'labnas': True,
             'name': 'unit_test'})
-        checkOK(rep)
+        self.checkOK(rep)
 
         # Check Created
         print('Check Create and Mount')
@@ -104,14 +111,14 @@ class TestAPI_continue(unittest.TestCase):
         # Stop
         print('Stop')
         rep = post(self.url + '/stop', data={'name': name})
-        checkOK(rep)
+        self.checkOK(rep)
         con = client.containers.get(name)
         self.assertEqual(con.status, 'exited')
 
         # start
         print('Resume')
         rep = post(self.url + '/start', data={'name': name})
-        checkOK(rep)
+        self.checkOK(rep)
         con = client.containers.get(name)
         self.assertEqual(con.status, 'running')
 
@@ -120,14 +127,14 @@ class TestAPI_continue(unittest.TestCase):
         con.exec_run('adduser ubuntu')
         rep = post(self.url + '/passwd', data={'name': name,
                                                'pw': 'tmpPW'})
-        checkOK(rep)
+        self.checkOK(rep)
         self.assertIn('tmpPW', con.exec_run('cat /etc/shadow').output.decode())
 
         # commit
         print('Commit')
         rep = post(self.url + '/commit', data={'name': name,
                                                'newname': name})
-        checkOK(rep)
+        self.checkOK(rep)
 
         # search image
         rep = post(self.url + '/searchimage', data={'name': name})
@@ -137,7 +144,7 @@ class TestAPI_continue(unittest.TestCase):
         # delete
         print('Delete')
         rep = post(self.url + '/delete', data={'name': name})
-        checkOK(rep)
+        self.checkOK(rep)
 
         # exit
         rep = post(self.url + '/search', data={'name': name})
@@ -147,12 +154,41 @@ class TestAPI_continue(unittest.TestCase):
         # Delete Image
         print('Delete Image')
         rep = post(self.url + '/deleteImage', data={'name': name})
-        checkOK(rep)
+        self.checkOK(rep)
 
         # Check if delete it
         rep = post(self.url + '/searchimage', data={'name': name})
         rep = rep.json()
         self.assertEqual(rep['status'], 404)
+
+
+    def test_double_create(self):
+        os.makedirs('/home/nas/tmp0', exist_ok=True)
+        os.makedirs('/nashome/guest/test/tmp1', exist_ok=True)
+
+        print('Create')
+        rep = post(self.url + '/create', data={
+            'image': 'nvidia/cuda:10.0-cudnn7-devel-ubuntu18.04',
+            'homepath': 'guest/test',
+            'labnas': False,
+            'name': 'unit_test'})
+        self.checkOK(rep)
+
+        con = client.containers.get(name)
+        self.assertNotIn('tmp0', con.exec_run('ls /home/nas').output.decode())
+
+        rep = post(self.url + '/create', data={
+            'image': 'nvidia/cuda:10.0-cudnn7-devel-ubuntu18.04',
+            'homepath': 'guest/test',
+            'labnas': False,
+            'name': 'unit_test'})
+        self.assertEqual(rep.status_code, 403)
+        rep = rep.json()
+        self.assertEqual(rep['status'], 403)
+
+        print('Delete')
+        rep = post(self.url + '/delete', data={'name': name})
+        self.checkOK(rep)
 
 
 if __name__ == '__main__':

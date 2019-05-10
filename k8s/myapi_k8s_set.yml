@@ -3,13 +3,17 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: myapi-k8s
 rules:
-- apiGroups: [""] # "" indicates the core API group
+- apiGroups: [""]
   resources: ["pods", "services"]
   verbs: ["get", "list", "create", "delete"]
 
 - apiGroups: ["extensions"]
   resources: ["ingresses"]
   verbs: ["get", "list", "create", "delete"]
+
+- apiGroups: [""]  # testing
+  resources: ["pods/exec", "pods/log"]
+  verbs: ["create", "get", "list"]
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1

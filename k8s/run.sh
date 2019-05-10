@@ -4,7 +4,10 @@ kubectl create -f pv.yml -f pv_user.yml
 # create harbor
 cd harbor-helm
 git checkout 1.0.0
+# first time
 helm install --values ../setting.yml --name harbor .
+# update
+# helm upgrade -f ../setting.yml harbor .
 cd ..
 
 # push container

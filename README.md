@@ -24,7 +24,7 @@ git clone https://github.com/linnil1/LabServer
 cd LabServer
 ```
 
-### Create encrypt file
+### Create encrypt file for web used
 1. Use Lets Encrypt it!
 **You should open port 80 and 443 for verification**
 

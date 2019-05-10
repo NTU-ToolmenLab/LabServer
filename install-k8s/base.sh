@@ -34,8 +34,12 @@ sudo swapoff -a
 
 echo "install docker-ce kubectl kubelet kubeadm nvidia-docker2"
 sudo apt update && \
-sudo apt install -y docker-ce=18.06.0~ce~3-0~ubuntu kubectl kubelet kubeadm kubernetes-cni \
-                 nvidia-container-runtime=2.0.0+docker18.06.0-1 nvidia-docker2=2.0.3+docker18.06.0-1
+sudo apt install -y docker-ce=18.06.2~ce~3-0~ubuntu nvidia-container-runtime=2.0.0+docker18.06.2-2 nvidia-docker2=2.0.3+docker18.06.2-2 \
+                    kubectl1.13.5-00 kubelet=1.13.5-00 kubeadm=1.13.5-00 kubernetes-cni \
+
+# hold for stable
+sudo apt-mark hold docker-ce kubectl kubelet kubeadm kubernetes-cni nvidia-docker2 nvidia-container-runtime
+
 
 # Set parameters and Reload the Docker daemon configuration
 # sudo pkill -SIGHUP dockerd
@@ -44,12 +48,11 @@ echo "Setting network"
 if ! sudo ufw status | grep -q inactive; then
     # kube services
     sudo ufw allow 30000:32676/tcp
-    # etcd client
-    sudo ufw allow 2379,2380/tcp
-    # healthcheck
+    # API
     sudo ufw allow 10250/tcp
     # calico
-    sudo ufw allow 109/tcp
+    sudo ufw allow 179,5473/tcp
+    sudo ufw allow 4789/udp
 
 sudo ln -fs /run/systemd/resolve/resolv.conf /etc/resolv.conf
 echo "nameserver 10.96.0.10" | sudo tee --append  /etc/resolv.conf

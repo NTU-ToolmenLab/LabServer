@@ -6,5 +6,7 @@ sed -i "s/defaultCert.*/defaultCert: $sec_cert/g" traefik.yml
 sed -i "s/defaultKey.*/defaultKey: $sec_key/g" traefik.yml
 kubectl delete secrets test
 
-helm del --purge lab-traefik
+# First time
 helm install stable/traefik --name lab-traefik --values traefik.yml
+# Update
+# helm upgrade lab-traefik -f traefik.yml stable/traefik 

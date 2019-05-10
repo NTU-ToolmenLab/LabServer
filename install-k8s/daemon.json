@@ -1,4 +1,5 @@
 {
+    "exec-opts": ["native.cgroupdriver=systemd"],
     "default-runtime": "nvidia",
     "runtimes": {
         "nvidia": {

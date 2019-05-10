@@ -4,19 +4,23 @@ set -e
 #pod_network="flannel"
 pod_network="calico"
 master_no_taint="true"
+interface="bond0"
 
 if [ $pod_network = "flannel" ]; then
+    pod_network_cidr="10.244.0.0/16"
+elif [ $pod_network = "canal" ]; then
     pod_network_cidr="10.244.0.0/16"
 elif [ $pod_network = "calico" ]; then
     pod_network_cidr="10.90.0.0/16"
 else
     echo "There is no pod network cidr"
+    exit
 fi
 
 bash base.sh
 
 echo "initialize the master node"
-sudo kubeadm init --pod-network-cidr="$pod_network_cidr" --service-cidr=10.96.0.0/12
+sudo kubeadm init --pod-network-cidr="$pod_network_cidr" --service-cidr="10.96.0.0/12"
 
 echo "let kubeaadm can be used as a regular user"
 mkdir -p $HOME/.kube
@@ -35,14 +39,23 @@ if [ "$master_no_taint" = true ]; then
     kubectl taint nodes --all node-role.kubernetes.io/master-
 fi
 
+return 123
+
 if [ $pod_network = "flannel" ]; then
     echo "installing Flannel"
     kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
 elif [ $pod_network = "calico" ]; then
     echo "installing Calico"
-    wget https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
+    kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml
+    curl https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml -O
     sed -ie "s~192.168.0.0/16~$pod_network_cidr~g" calico.yaml
-    kubectl apply -f calico.yaml -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml
+    kubectl apply -f calico.yaml
+    sed -ie "/autodetect/a\
+\            - name: IP_AUTODETECTION_METHOD\
+\              value: interface=$interface" tmp
+elif [ $pod_network = "canal" ]; then
+    kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/canal/rbac.yaml
+    kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/canal/canal.yaml
 else
     echo "there is no pod network assigned!"
     exit 1
@@ -53,10 +66,13 @@ echo -n "checking master node status..."
 if ! sudo ufw status | grep -q inactive; then
     # kube API
     sudo ufw allow 6443/tcp
+    # kube etcd
+    sudo ufw allow 2379,2380/tcp
     # web
     sudo ufw allow 80,443/tcp
     # kube-scheduler controller
     sudo ufw allow 10251,10252/tcp
+fi
 
 ready=false
 while [ $ready == false ]

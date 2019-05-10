@@ -15,7 +15,7 @@ server:
     subPath: prometheus_data1
   global:
     scrape_interval: 5s
-    scrape_timeout:  15s
+    scrape_timeout:  5s
   retention: 720h
 
 serverFiles:

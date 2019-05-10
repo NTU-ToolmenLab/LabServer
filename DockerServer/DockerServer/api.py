@@ -5,7 +5,7 @@ import os
 
 
 app = Flask(__name__)
-app.secret_key = 'super secret string1'  # Change this!
+app.secret_key = 'super secret string'  # Change this!
 label = 'UserDocker'
 default_homepath = '/nashome/'
 default_naspath = '/home/nas/'
@@ -170,6 +170,11 @@ def create():
     name = request.form.get('name')
     if not name:
         return Error('no name')
+    try:
+        container = client.containers.get(name)
+        return Error('Exist')
+    except docker.errors.NotFound:
+        pass
 
     image = request.form.get('image')
     try:
@@ -214,7 +219,10 @@ def delete():
 @app.route('/deleteImage', methods=['POST'])
 def deleteImage():
     name = request.form.get('name')
-    client.images.remove(name, force=True)
+    try:
+        client.images.remove(name, force=True)
+    except docker.errors.ImageNotFound:
+        return not_found('Not found Image')
     return Ok()
 
 
