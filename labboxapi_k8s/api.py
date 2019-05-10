@@ -57,7 +57,7 @@ def listDockerServer():
     pods = v1.list_pod_for_all_namespaces(watch=False)
     dockerserver = []
     for pod in list(pods.items):
-        if pod.spec.containers[0].name == 'dockerserver':
+        if pod.spec.containers[0].name == 'labboxapi-docker':
             dockerserver.append(pod)
     pods = [{'name': pod.spec.node_name,
              'ip': pod.status.pod_ip} for pod in dockerserver]

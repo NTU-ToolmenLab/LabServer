@@ -15,7 +15,7 @@ docker login harbor.default.svc.cluster.local
 docker push harbor.default.svc.cluster.local/linnil1/nextcloudfpm:13
 docker push harbor.default.svc.cluster.local/linnil1/oauthserver
 docker push harbor.default.svc.cluster.local/linnil1/docker-vnc
-docker push harbor.default.svc.cluster.local/linnil1/myapi_k8s
+docker push harbor.default.svc.cluster.local/linnil1/labboxapi-k8s
 docker push harbor.default.svc.cluster.local/linnil1/labboxapi-docker
 docker push harbor.default.svc.cluster.local/linnil1/collectgpu
 

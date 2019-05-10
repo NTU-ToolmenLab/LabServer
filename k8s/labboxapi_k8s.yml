@@ -1,7 +1,7 @@
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: myapi-k8s
+  name: labboxapi-k8s
 rules:
 - apiGroups: [""]
   resources: ["pods", "services"]
@@ -18,46 +18,46 @@ rules:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: myapi-k8s
+  name: labboxapi-k8s
 subjects:
 - kind: ServiceAccount
-  name: myapi-k8s
+  name: labboxapi-k8s
   namespace: default
 roleRef:
   kind: ClusterRole
-  name: myapi-k8s
+  name: labboxapi-k8s
   apiGroup: rbac.authorization.k8s.io
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: myapi-k8s
+  name: labboxapi-k8s
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: myapi-k8s
+  name: labboxapi-k8s
 spec:
   selector:
     matchLabels:
-      name: myapi-k8s
+      name: labboxapi-k8s
   replicas: 1
   template:
     metadata:
       labels:
-        name: myapi-k8s
+        name: labboxapi-k8s
     spec:
-      serviceAccountName: myapi-k8s
+      serviceAccountName: labboxapi-k8s
       containers:
-      - name: myapi-k8s
-        image: harbor.default.svc.cluster.local/linnil1/myapi_k8s
+      - name: labboxapi-k8s
+        image: harbor.default.svc.cluster.local/linnil1/labboxapi-k8s
         ports:
         - containerPort: 3476
           protocol: TCP
         volumeMounts:
         - name: volume
           mountPath: /app
-          subPath: myapi_k8s
+          subPath: labboxapi_k8s
       volumes:
       - name: volume
         persistentVolumeClaim:
@@ -66,10 +66,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: myapi-k8s
+  name: labboxapi-k8s
 spec:
   selector:
-    name: myapi-k8s
+    name: labboxapi-k8s
   ports:
   - port: 3476
     targetPort: 3476

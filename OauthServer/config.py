@@ -15,7 +15,7 @@ config = {
     # 'SQLALCHEMY_DATABASE_URI': 'sqlite:////tmp/db.sqlite', # local
     # 'logfile': './log',                                    # local
     # 'dockerserver': 'http://dockerserver:3476', # Use without kubernetes
-    'myapik8s': 'http://myapi-k8s.default.svc.cluster.local:3476', # Use without dockercompose
+    'myapik8s': 'http://labboxapi-k8s.default.svc.cluster.local:3476', # Use without dockercompose
     'SQLALCHEMY_DATABASE_URI': 'sqlite:////app/OauthServer/db.sqlite',
     'logfile': '/app/OauthServer/log',
     'sshpiper': '/app/sshpiper/',
