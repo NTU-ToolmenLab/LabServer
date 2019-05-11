@@ -28,7 +28,7 @@ Admin
           <tbody>
             {% for body in table.table %}
             <tr>
-              <form action="{{ url_for('oauthserver.routes.AdminPage') }}" method="post">
+              <form action="{{ url_for('labboxmain.routes.AdminPage') }}" method="post">
               {% for ind, data in dict(body).items() %}
               <th>{{data}}</th>
               <input  type="hidden" value="{{data}}" name="{{ind}}"/>
@@ -43,7 +43,7 @@ Admin
             </tr>
             {% endfor %}
             <tr>
-              <form action="{{ url_for('oauthserver.routes.AdminPage') }}" method="post">
+              <form action="{{ url_for('labboxmain.routes.AdminPage') }}" method="post">
               {% for key in table.table[0].keys() %}
               <th>
                   <input  type="text" value="" name="{{key}}"/>

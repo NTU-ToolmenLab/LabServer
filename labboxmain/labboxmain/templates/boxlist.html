@@ -8,15 +8,20 @@ list
   <nav class="navbar navbar-light bg-light justify-content-between">
     <a class="navbar-brand"> {{ current_user.name }} </a>
      <form class="form-inline">
-         <a href="{{ url_for('oauthserver.routes.Logout')}}" class="btn btn-primary btn-md"/>logout</a>
+         <a href="{{ url_for('labboxmain.routes.Logout')}}" class="btn btn-primary btn-md"/>logout</a>
      </form>
   </nav>
+
   <div class="container">
     <div class="row justify-content-center">
       <div class="col-lg-7">
         <div class="alert alert-success" role="alert">
           <h3> Bulletin Board </h3>
           <br>
+          <p><a href="/passwd">Change Your Password</a></p>
+          <p><a href="/drive/">Drive</a></p>
+          <p><a href="/monitor/">Monitor Web</a></p>
+          <p><a href="/help">Help Web</a></p>
           {{ config.bullet|safe }}
         </div>
 
@@ -30,7 +35,7 @@ list
               <p class="card-text"> create time: {{ data.date }} </p>
               <p class="card-text"> backup time: {{ data.commit }} </p>
 
-              <form action="{{ url_for('oauthserver.box_models.api')}}" method="post">
+              <form action="{{ url_for('labboxmain.box_models.api')}}" method="post">
                 <input type="hidden"   name="name"     value="{{data.realname}}"/>
                 <div class="btn-group" role="group">
                   <input type="submit" name="method" value="Start"   class="btn btn-outline-primary"/>
@@ -42,7 +47,7 @@ list
                 </div>
               </form>
 
-              <form action="{{ url_for('oauthserver.box_models.api')}}" method="post">
+              <form action="{{ url_for('labboxmain.box_models.api')}}" method="post">
                 <input type="hidden"   name="name"     value="{{data.realname}}"/>
                 <input type="hidden"   name="method"     value="node"/>
                 <div class="form-group mt-2 mb-2">
@@ -60,7 +65,7 @@ list
           </div>
         {% endfor %}
         {% if create_param.quota - create_param.use_quota > 0 %}
-          <form action="{{ url_for('oauthserver.box_models.create')}}" method="post">
+          <form action="{{ url_for('labboxmain.box_models.create')}}" method="post">
             <div class="card my-3">
               <div class="card-header"> Create New Environment {{create_param.use_quota + 1}}/{{create_param.quota}} </div>
               <div class="card-body">

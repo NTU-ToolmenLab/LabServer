@@ -20,10 +20,10 @@ def create_app(config={}):
     app.register_blueprint(bp, url_prefix='')
     db.init_app(app)
     login_manager.init_app(app)
-    config_oauth(app)
+    config_oauth(app, config.get('domain_name'))
     setLog(app)
 
-    login_manager.login_view = "oauthserver.routes.Login"  # redir
+    login_manager.login_view = "labboxmain.routes.Login"  # redir
     app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1)
     # os.environ['AUTHLIB_INSECURE_TRANSPORT'] = "1"
 
@@ -51,7 +51,7 @@ def make_celery(app):
 
 
 def setLog(app):
-    logger = logging.getLogger('oauthserver')
+    logger = logging.getLogger('labboxmain')
     logger.setLevel(logging.DEBUG)
 
     # output to std

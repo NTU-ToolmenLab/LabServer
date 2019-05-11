@@ -5,12 +5,12 @@ import time
 import re
 from .models import db as user_db, User
 from .box_models import db as db, Box, Image, bp, otherAPI
-from oauthserver import celery
+from labboxmain import celery
 import shutil
 import os
 
 
-logger = logging.getLogger('oauthserver')
+logger = logging.getLogger('labboxmain')
 
 
 @bp.route('/')
@@ -25,16 +25,16 @@ def List():
 @bp.route('/api', methods=['POST'])
 @flask_login.login_required
 def api():
-    nowUser = flask_login.current_user
+    now_user = flask_login.current_user
     data = request.form
-    logger.debug("API " + nowUser.name + ": " + str(data))
+    logger.debug("API " + now_user.name + ": " + str(data))
 
     if not data.get('name'):
         abort(403, 'What is your environment name')
-    if nowUser.groupid == 1:
+    if now_user.groupid == 1:
         box = Box.query.filter_by(docker_name=data['name']).first()
     else:
-        box = Box.query.filter_by(user=nowUser.name,
+        box = Box.query.filter_by(user=now_user.name,
                                   docker_name=data['name']).first()
     if not box:
         abort(403, 'Cannot find your environment')
@@ -58,7 +58,7 @@ def api():
             abort(403, 'No such server')
         box.commit(check=False)
         box.api('delete', check=False)
-        changeNode.delay(box.id, nowUser.id,
+        changeNode.delay(box.id, now_user.id,
                          box.box_name,
                          data['node'],
                          box.docker_name,
@@ -73,7 +73,7 @@ def api():
         box.api('delete', check=False)
 
         image = box.image if not box.getImage() else backupname
-        rescue.delay(box.id, nowUser.id,
+        rescue.delay(box.id, now_user.id,
                      box.box_name,
                      box.node,
                      box.docker_name,
@@ -82,24 +82,24 @@ def api():
     else:
         abort(403, 'How can you show this error')
 
-    return redirect(url_for('oauthserver.box_models.List'))
+    return redirect(url_for('labboxmain.box_models.List'))
 
 
 @bp.route('/create', methods=['POST'])
 @flask_login.login_required
 def create():
-    nowUser = flask_login.current_user
+    now_user = flask_login.current_user
     data = request.form
-    logger.debug("Create " + nowUser.name + ": " + str(data))
+    logger.debug("Create " + now_user.name + ": " + str(data))
 
     if not data.get('image'):
         abort(403, 'No such environment')
-    if nowUser.use_quota >= nowUser.quota:
+    if now_user.use_quota >= now_user.quota:
         abort(403, 'Quota = 0')
     if not data.get('node') or data.get('node') not in getNodes():
         abort(403, 'No such server')
 
-    realname = nowUser.name + "{:.3f}".format(time.time()).replace('.', '')
+    realname = now_user.name + "{:.3f}".format(time.time()).replace('.', '')
     name = realname
 
     if Image.query.filter_by(user='user', name=data.get('image')).first():
@@ -107,7 +107,7 @@ def create():
     else:
         abort(403, 'No such environment')
     if data.get('name'):
-        name = nowUser.name + '_' + data['name']
+        name = now_user.name + '_' + data['name']
         # https://github.com/tg123/sshpiper/blob/3243906a19e2e63f7a363050843109aa5caf6b91/sshpiperd/upstream/workingdir/workingdir.go#L36
         if not re.match(r'^[a-z_][-a-z0-9_]{0,31}$', name):
             abort(403, 'Your name does not follow the rule')
@@ -116,13 +116,13 @@ def create():
     if Box.query.filter_by(docker_name=realname).first():
         abort(403, 'Already have environment')
 
-    createAPI(nowUser.id, name, data.get('node'), realname, image)
-    return redirect(url_for('oauthserver.box_models.List'))
+    createAPI(now_user.id, name, data.get('node'), realname, image)
+    return redirect(url_for('labboxmain.box_models.List'))
 
 
-@celery.task()
-def createAPI(nowUser, name, node, realname, image):
-    homepath = nowUser.name
+def createAPI(userid, name, node, realname, image):
+    now_user = User.query.get(userid)
+    homepath = now_user.name
     labnas = 'True'
 
     rep = otherAPI('create',
@@ -130,13 +130,12 @@ def createAPI(nowUser, name, node, realname, image):
                    node=node,
                    image=image,
                    homepath=homepath,
-                   labnas=labnas,
-                   homenas='True')
+                   labnas=labnas)
 
     # async, wait for creation
     box = Box(box_name=name,
               docker_name=realname,
-              user=nowUser.name,
+              user=now_user.name,
               image=image,
               box_text='Creating',
               node=node)
@@ -144,15 +143,15 @@ def createAPI(nowUser, name, node, realname, image):
     db.session.commit()
 
     # user
-    nowUser.use_quota += 1
+    now_user.use_quota += 1
     user_db.session.commit()
-    boxWaitCreate.delay(box.id, nowUser.id)
+    boxWaitCreate.delay(box.id, now_user.id)
 
 
 @celery.task()
 def boxWaitCreate(bid, uid):
     box = Box.query.get(bid)
-    nowUser = User.query.filter_by(name=box.user).first()
+    now_user = User.query.filter_by(name=box.user).first()
     logger.debug("Create - wait: " + box.box_name)
     for i in range(60 * 10):  # 10 min
         time.sleep(1)
@@ -174,39 +173,39 @@ def boxWaitCreate(bid, uid):
 
     # make sure it is running
     time.sleep(5)
-    box.api('passwd', pw=nowUser.password)
+    box.api('passwd', pw=now_user.password)
 
 
 @bp.route('/vnctoken', methods=['POST'])
 @flask_login.login_required
 def vncToken():
-    nowUser = flask_login.current_user
+    now_user = flask_login.current_user
     docker_name = request.args.get('token')
-    if nowUser.groupid == 1:
+    if now_user.groupid == 1:
         box = Box.query.filter_by(docker_name=docker_name).first()
     else:
-        box = Box.query.filter_by(user=nowUser.name,
+        box = Box.query.filter_by(user=now_user.name,
                                   docker_name=docker_name).first()
     if not box:
         abort(403)
-    return "password_of_vnc"
+    return 'password_of_vnc'
 
 
 def getList():
-    nowUser = flask_login.current_user
-    logger.debug("List " + nowUser.name)
-    if nowUser.groupid == 1:
+    now_user = flask_login.current_user
+    logger.debug("List " + now_user.name)
+    if now_user.groupid == 1:
         boxes_ori = Box.query.all()
     else:
-        boxes_ori = Box.query.filter_by(user=nowUser.name).all()
+        boxes_ori = Box.query.filter_by(user=now_user.name).all()
     boxes = [box.getStatus() for box in boxes_ori]
     return boxes
 
 
 def getCreate():
-    nowUser = flask_login.current_user
+    now_user = flask_login.current_user
     images = [i.name for i in getImages()]
-    return {'quota': nowUser.quota, 'use_quota': nowUser.use_quota,
+    return {'quota': now_user.quota, 'use_quota': now_user.use_quota,
             'image': images, 'node': getNodes()}
 
 

@@ -7,7 +7,7 @@ from dateutil.parser import parse
 
 
 db = SQLAlchemy()
-logger = logging.getLogger('oauthserver')
+logger = logging.getLogger('labboxmain')
 bp = Blueprint(__name__, 'box')
 
 
@@ -103,7 +103,7 @@ class Box(db.Model):
 
         if check and str(rep.get('status')) != '200':
             rep = rep or "None"
-            logger.error("ERROR " + method + ": " + name + str(kwargs) + str(rep))
+            logger.error("[" + method + "] " + name + str(kwargs) + str(rep))
             abort(500, 'Server API error')
 
         return rep
@@ -145,31 +145,14 @@ def otherAPI(method, docker_node=None, check=True, **kwargs):
     rep = post(url, data=kwargs).json()
 
     if check and str(rep.get('status')) != '200':
-        logger.error("ERROR " + url + ": " + str(kwargs) + str(rep))
+        logger.error("[" + url + "] " + str(kwargs) + str(rep))
         abort(500, 'Server API error')
 
     return rep
 
 
-def add_box(user, docker_name, box_name, image, node=''):
-    logger.info("Add box " + user + ' -> ' + docker_name)
-    assert(not Box.query.filter_by(docker_name=docker_name,
-                                   user=user).first())
-
-    # no check for user is exist or not
-    # assert(User.query.filter_by(name=user).first())
-
-    box = Box(user=user,
-              docker_name=docker_name,
-              box_name=box_name,
-              image=image,
-              node=node)
-    db.session.add(box)
-    db.session.commit()
-
-
 def add_image(user, name, description=''):
-    logger.info('Add image ' + user + ' -> ' + name)
+    logger.info('[Add image] ' + user + ' -> ' + name)
     assert(not Image.query.filter_by(name=name,
                                      user=user).first())
 
