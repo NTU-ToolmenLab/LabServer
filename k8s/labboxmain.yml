@@ -27,11 +27,8 @@ spec:
       containers:
       - name: labboxmain
         image: harbor.default.svc.cluster.local/linnil1/labboxmain
-        # command: ['/bin/sh', '-c']
-        # args: ['celery worker -A labboxmain.celery -B -D -l info -f /app/labboxmain/celery.log --pidfile=/app/%n.pid && 
-        #         gunicorn -b 0.0.0.0:5000 labboxmain:app --reload --access-logfile /app/labboxmain/access.log']
-        command: [tail]
-        args: ['-f', '/dev/null']
+        # command: [tail]
+        # args: ['-f', '/dev/null']
         env:
         - name: FLASK_APP
           value: labboxmain

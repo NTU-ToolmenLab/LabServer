@@ -62,7 +62,7 @@ def requestParse(request):
 @flask_login.login_required
 def Logout():
     now_user = flask_login.current_user
-    logger.info(now_user.name + ' Logout')
+    logger.debug('[Logout] ' + now_user.name)
     flask_login.logout_user()
     return redirect(url_for('labboxmain.routes.Login'))
 
@@ -73,24 +73,24 @@ def ChangePassword():
     if request.method == 'GET':
         return render_template('changePassword.html')
     now_user = flask_login.current_user
-    logger.info(now_user.name + ' ChangePassword')
     oldone = request.form.get('opw')
     newone = request.form.get('npw')
 
-    rep = 'ok'
-    if newone != request.form.get('npw1'):
-        rep = 'confirm password error'
-    if rep == 'ok':
-        rep = setPW(now_user, oldone, newone)
-    if rep != 'ok':
-        logger.info(now_user.name + ' ChangePassword Fail With ' + rep)
+    rep = ''
+    if len(newone) < 8:
+        rep = 'Password should be more than 8 characters'
+    elif len(newone) > 100:
+        rep = 'Password is too long'
+    elif newone != request.form.get('npw1'):
+        rep = 'New passwords are inconsist'
+    elif not now_user.checkPassword(oldone):
+        rep = 'Wrong old password'
+    if rep:
+        logger.warning('[Passwd] ' + now_user.name + ': ' + rep)
         return render_template('changePassword.html', error=rep)
 
-    logger.info('[passwd] ' + now_user.name)
-    # ugly import
-    from .box import boxsPasswd
-    boxsPasswd(now_user)
-    logger.info(now_user.name + ' ChangePassword OK')
+    logger.debug('[Passwd] ' + now_user.name)
+    setPW(now_user, newone)
     return redirect(url_for('labboxmain.box_models.List'))
 
 

@@ -1,5 +1,17 @@
 from celery.schedules import crontab
 
+
+def create_rule(user):
+    strict_dict = {}
+    if user.groupid == 2:
+        strict_dict.update({
+            'homepath': user.name,
+            'labnas': 'False',
+            'node': 'lab304-server3'
+        })
+    return strict_dict
+
+
 config = {
     'bullet': """
 """,
@@ -24,6 +36,8 @@ config = {
     'registry_images': 'linnil1/serverbox',
     'celery_broker_url': 'redis://labboxdb-redis.default.svc.cluster.local:6379',
     'celery_result_backend': 'redis://labboxdb-redis.default.svc.cluster.local:6379',
+    'vnc_password': '{{ vncpw }}',
+    'create_rule': create_rule,
     'celery_schedule': {
         'box-routine': {
             'task': 'labboxmain.box.routineMaintain',

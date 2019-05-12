@@ -2,7 +2,6 @@ import time
 from flask_sqlalchemy import SQLAlchemy
 import flask_login
 import passlib.hash
-import time
 import logging
 
 logger = logging.getLogger('labboxmain')
@@ -35,6 +34,14 @@ class User(db.Model, flask_login.UserMixin):
         return self.id
 
 
+def setPW(user, newone):
+    from .box import boxsPasswd
+    user.setPassword(newone)
+    user.passtime = time.time()
+    db.session.commit()
+    boxsPasswd(user)
+
+
 @login_manager.user_loader
 def user_loader(id):
     return User.query.get(id)
@@ -47,17 +54,6 @@ def getUserId(name, password):
     if not u.checkPassword(password):
         return None
     return user_loader(u.id)
-
-
-def setPW(user, oldone, newone):
-    if not user.checkPassword(oldone):
-        return 'Wrong password'
-    if len(newone) < 8:
-        return 'Password should be more than 8 characters'
-    user.setPassword(newone)
-    user.passtime = time.time()
-    db.session.commit()
-    return 'ok'
 
 
 def add_user(name, passwd='', time=0, groupid=0, quota=0):

@@ -33,6 +33,9 @@ def record_params(setup_state):
     else:
         bp.registry_user = None
 
+    bp.vncpw = config.get('vnc_password')
+    bp.create_rule = config.get('create_rule')
+
 
 @bp.errorhandler(403)
 def userForbidden(e):

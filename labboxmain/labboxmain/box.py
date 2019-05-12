@@ -122,23 +122,23 @@ def create():
 
 def createAPI(userid, name, node, realname, image):
     now_user = User.query.get(userid)
-    homepath = now_user.name
-    labnas = 'True'
+    now_dict = {
+        'name': realname,
+        'node': node,
+        'image': image,
+        'labnas': 'True',
+        'homepath': now_user.name}
+    now_dict.update(bp.create_rule(now_user))
 
-    rep = otherAPI('create',
-                   name=realname,
-                   node=node,
-                   image=image,
-                   homepath=homepath,
-                   labnas=labnas)
+    rep = otherAPI('create', **now_dict)
 
     # async, wait for creation
     box = Box(box_name=name,
-              docker_name=realname,
               user=now_user.name,
-              image=image,
-              box_text='Creating',
-              node=node)
+              docker_name=now_dict['name'],
+              image=now_dict['image'],
+              node=now_dict['node'],
+              box_text='Creating')
     db.session.add(box)
     db.session.commit()
 
@@ -180,7 +180,9 @@ def boxWaitCreate(bid, uid):
 @flask_login.login_required
 def vncToken():
     now_user = flask_login.current_user
-    docker_name = request.args.get('token')
+    docker_name = request.form.get('token')
+    if not docker_name:
+        abort(403)
     if now_user.groupid == 1:
         box = Box.query.filter_by(docker_name=docker_name).first()
     else:
@@ -188,7 +190,7 @@ def vncToken():
                                   docker_name=docker_name).first()
     if not box:
         abort(403)
-    return 'password_of_vnc'
+    return bp.vncpw
 
 
 def getList():
