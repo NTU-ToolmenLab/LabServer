@@ -27,79 +27,80 @@ def Login():
         else:
             return render_template('Login.html')
     else:
-        user = requestParse(request)
-        if user:
+        name, ok = requestParse(request)
+        if ok:
             nexturl = request.args.get('next')
             if not is_safe_url(nexturl):
                 return abort(400)
-            logger.info("[Login] " + user.name)
+            logger.info('[Login] ' + name)
             return redirect(nexturl or url_for('labboxmain.box_models.List'))
         else:
-            logger.warning("[Login] fail " + user.name)
-            return render_template('Login.html', error="Fail to Login")
+            logger.warning('[Login] fail ' + name)
+            return render_template('Login.html', error='Fail to Login')
 
 
-@bp.route("/help")  # help web
+@bp.route('/help')  # help web
 @flask_login.login_required
 def help():
     return render_template('help.html')
 
 
 def requestParse(request):
-    name     = request.form.get('userName')
-    password = request.form.get('userPassword')
-    logger.info(name + " Login")
+    name = request.form.get('username')
+    password = request.form.get('password')
+    if not name or not password:
+        return (name or ''), False
+
     user = getUserId(name, password)
     if not user:
-        logger.info(name + " Login Fail")
-        return None
+        return name, False
     flask_login.login_user(user)
-    return user
+    return name, True
 
 
-@bp.route("/logout")
+@bp.route('/logout')
 @flask_login.login_required
 def Logout():
     now_user = flask_login.current_user
-    logger.info(now_user.name + " Logout")
+    logger.info(now_user.name + ' Logout')
     flask_login.logout_user()
     return redirect(url_for('labboxmain.routes.Login'))
 
 
-@bp.route("/passwd", methods=['GET', 'POST'])
+@bp.route('/passwd', methods=['GET', 'POST'])
 @flask_login.login_required
 def ChangePassword():
     if request.method == 'GET':
         return render_template('changePassword.html')
     now_user = flask_login.current_user
-    logger.info(now_user.name + " ChangePassword")
-    oldone = request.form.get("opw")
-    newone = request.form.get("npw")
+    logger.info(now_user.name + ' ChangePassword')
+    oldone = request.form.get('opw')
+    newone = request.form.get('npw')
 
-    rep = "ok"
-    if newone != request.form.get("npw1"):
-        rep = "confirm password error"
-    if rep == "ok":
+    rep = 'ok'
+    if newone != request.form.get('npw1'):
+        rep = 'confirm password error'
+    if rep == 'ok':
         rep = setPW(now_user, oldone, newone)
-    if rep != "ok":
-        logger.info(now_user.name + " ChangePassword Fail With " + rep)
+    if rep != 'ok':
+        logger.info(now_user.name + ' ChangePassword Fail With ' + rep)
         return render_template('changePassword.html', error=rep)
 
-    logger.info("[passwd] " + now_user.name)
+    logger.info('[passwd] ' + now_user.name)
     # ugly import
     from .box import boxsPasswd
     boxsPasswd(now_user)
-    logger.info(now_user.name + " ChangePassword OK")
+    logger.info(now_user.name + ' ChangePassword OK')
     return redirect(url_for('labboxmain.box_models.List'))
 
 
-@bp.route("/adminpage", methods=['GET', 'POST'])
+@bp.route('/adminpage', methods=['GET', 'POST'])
 @flask_login.login_required
 def AdminPage():
     now_user = flask_login.current_user
     if now_user.groupid != 1:
         abort(401)
-    logger.warning("[Admin] " + now_user.name)
+    logger.warning('[Admin] ' + now_user.name)
     if request.method == 'GET':
         return adminView()
     else:

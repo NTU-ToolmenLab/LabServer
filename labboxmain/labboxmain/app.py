@@ -23,9 +23,9 @@ def create_app(config={}):
     config_oauth(app, config.get('domain_name'))
     setLog(app)
 
-    login_manager.login_view = "labboxmain.routes.Login"  # redir
+    login_manager.login_view = 'labboxmain.routes.Login'  # redir
     app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1)
-    # os.environ['AUTHLIB_INSECURE_TRANSPORT'] = "1"
+    # os.environ['AUTHLIB_INSECURE_TRANSPORT'] = '1'
 
     # redis
     celery = make_celery(app)
@@ -64,7 +64,7 @@ def setLog(app):
     logger.addHandler(ch)
 
     # output to file
-    if app.config.get("logfile"):
+    if app.config.get('logfile'):
         fh = logging.FileHandler(app.config['logfile'])
         fh.setLevel(logging.DEBUG)
         fh.setFormatter(formatter)

@@ -19,6 +19,7 @@ harbor/jobservice
 harbor/redis
 harbor/registry
 harbor/tls.*
+db.sqlite*
 
 # log
 log

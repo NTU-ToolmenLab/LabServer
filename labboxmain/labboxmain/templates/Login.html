@@ -11,9 +11,9 @@ Login
       <div class="form-login">
         <h4>Welcome to {{ config.name }} !</h4>
         <form action="{{ url_for('labboxmain.routes.Login', next=request.args.get('next')) }}" method="post">
-          <input type="text"     name="userName"     placeholder="username"
+          <input type="text"     name="username"     placeholder="username"
                  class="form-control input-sm chat-input"/></br>
-          <input type="password" name="userPassword" placeholder="password"
+          <input type="password" name="password" placeholder="password"
                  class="form-control input-sm chat-input"/></br>
           <div class="wrapper">
             <span class="group-btn">

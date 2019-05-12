@@ -51,17 +51,17 @@ def getUserId(name, password):
 
 def setPW(user, oldone, newone):
     if not user.checkPassword(oldone):
-        return "Wrong password"
+        return 'Wrong password'
     if len(newone) < 8:
-        return "Password should be more than 8 characters"
+        return 'Password should be more than 8 characters'
     user.setPassword(newone)
     user.passtime = time.time()
     db.session.commit()
-    return "ok"
+    return 'ok'
 
 
 def add_user(name, passwd='', time=0, groupid=0, quota=0):
-    logger.info("[Database] Add user " + name)
+    logger.info('[Database] Add user ' + name)
     u = User.query.filter_by(name=name).first()
     assert(not u)
     u = User(name=name,

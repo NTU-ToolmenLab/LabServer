@@ -13,7 +13,7 @@ from authlib.flask.oauth2.sqla import (
 from authlib.oauth2.rfc6749 import grants
 
 import flask_login
-from flask import Blueprint, request, render_template, jsonify
+from flask import Blueprint, request, render_template, jsonify, abort
 import logging
 from .models import db, User
 
@@ -56,6 +56,7 @@ class AuthorizationCode(db.Model, OAuth2AuthorizationCodeMixin):
 class AuthorizationCodeGrant(grants.AuthorizationCodeGrant):
     # no NONE method
     TOKEN_ENDPOINT_AUTH_METHODS = ['client_secret_basic', 'client_secret_post']
+
     def create_authorization_code(self, client, user, request):
         code = generate_token(48)
         item = AuthorizationCode(
@@ -83,8 +84,6 @@ class AuthorizationCodeGrant(grants.AuthorizationCodeGrant):
         return User.query.get(authorization_code.user_id)
 
 
-
-
 def config_oauth(app, dn=''):
     global domain_name
     domain_name = dn
@@ -103,10 +102,9 @@ def config_oauth(app, dn=''):
     # protect resource
     BearerTokenValidator = create_bearer_token_validator(db.session, Token)
     require_oauth.register_token_validator(BearerTokenValidator())
-    
+
     # reigster
     app.register_blueprint(bp, url_prefix='/oauth')
-
 
 
 @bp.route('/client', methods=['GET', 'POST'])
@@ -116,7 +114,7 @@ def client():
     now_user = flask_login.current_user
     if now_user.groupid != 1:
         abort(401)
-    logger.debug("[oauth] client " + now_user.name)
+    logger.debug('[oauth] client ' + now_user.name)
 
     if request.method == 'GET':
         return render_template('clients.html', clients=Client.query.all())
@@ -125,13 +123,13 @@ def client():
 
 
 def clientCreate(form, user):
-    if form.get("delete_client_id"):
-        logger.debug("[oauth] oauth client delete by " + user.name)
+    if form.get('delete_client_id'):
+        logger.debug('[oauth] oauth client delete by ' + user.name)
         db.session.delete(Client.query.filter_by(
                           client_id=form['delete_client_id']).first())
         db.session.commit()
         return
-    logger.debug("[oauth] oauth client created by " + user.name)
+    logger.debug('[oauth] oauth client created by ' + user.name)
     client = Client(**form.to_dict(flat=True))
     client.user_id = user.id
     client.client_id = generate_token(24)
@@ -145,18 +143,18 @@ def clientCreate(form, user):
 
 @bp.route('/token', methods=['POST'])
 def issue_token():
-    logger.debug("[oauth] token " + str(request.form))
+    logger.debug('[oauth] token ' + str(request.form))
     return server.create_token_response()
 
 
 @bp.route('/authorize')
 @flask_login.login_required
 def authorize():
-    """
+    '''
     Need to ask grant and confirmed again, but I'm lazy
     # grant = server.validate_consent_request(end_user=user)
-    """
-    logger.debug("[oauth] auth " + str(request.form))
+    '''
+    logger.debug('[oauth] auth ' + str(request.form))
     now_user = flask_login.current_user
     grant = server.validate_consent_request(end_user=now_user)
     return server.create_authorization_response(grant_user=now_user)
@@ -172,7 +170,7 @@ def revoke_token():
 def profile():
     user = current_token.user
     name = user.name
-    logger.debug("[oauth] user " + name)
+    logger.debug('[oauth] user ' + name)
     return jsonify({
         'id': name,
         'username': name,

@@ -27,7 +27,7 @@ def List():
 def api():
     now_user = flask_login.current_user
     data = request.form
-    logger.debug("API " + now_user.name + ": " + str(data))
+    logger.debug('[API] ' + now_user.name + ': ' + str(data))
 
     if not data.get('name'):
         abort(403, 'What is your environment name')
@@ -42,9 +42,11 @@ def api():
     # OK
     backupname = bp.backup + box.docker_name
 
-    if data.get('method') == 'Start':
-        box.api('start')
-        return redirect("/vnc/?path=vnc/?token=" + box.docker_name)  # on docker
+    if data.get('method') == 'Desktop':
+        return redirect('/vnc/?path=vnc/?token=' + box.docker_name)
+
+    elif data.get('method') == 'Jupyter':
+        return redirect('/jupyter/' + box.docker_name)
 
     elif data.get('method') == 'Restart':
         box.api('restart')
@@ -65,7 +67,7 @@ def api():
                          backupname)
 
     elif data.get('method') == 'Stop':
-        box.commit(check=False)
+        box.commit()
         box.api('delete', check=False)
         piperDelete(box.box_name)
 
@@ -90,22 +92,20 @@ def api():
 def create():
     now_user = flask_login.current_user
     data = request.form
-    logger.debug("Create " + now_user.name + ": " + str(data))
+    logger.debug('[API Create] ' + now_user.name + ': ' + str(data))
 
-    if not data.get('image'):
-        abort(403, 'No such environment')
     if now_user.use_quota >= now_user.quota:
         abort(403, 'Quota = 0')
     if not data.get('node') or data.get('node') not in getNodes():
         abort(403, 'No such server')
-
-    realname = now_user.name + "{:.3f}".format(time.time()).replace('.', '')
-    name = realname
-
     if Image.query.filter_by(user='user', name=data.get('image')).first():
         image = bp.images + data.get('image')
     else:
         abort(403, 'No such environment')
+
+    realname = now_user.name + '{:.3f}'.format(time.time()).replace('.', '')
+    name = realname
+
     if data.get('name'):
         name = now_user.name + '_' + data['name']
         # https://github.com/tg123/sshpiper/blob/3243906a19e2e63f7a363050843109aa5caf6b91/sshpiperd/upstream/workingdir/workingdir.go#L36
@@ -152,19 +152,19 @@ def createAPI(userid, name, node, realname, image):
 def boxWaitCreate(bid, uid):
     box = Box.query.get(bid)
     now_user = User.query.filter_by(name=box.user).first()
-    logger.debug("Create - wait: " + box.box_name)
+    logger.debug('[API Create] wait: ' + box.box_name)
     for i in range(60 * 10):  # 10 min
         time.sleep(1)
         rep = otherAPI('search', name=box.docker_name, check=False)
         if str(rep['status']).lower() == 'running':
             break
     else:
-        logger.error("Create - fail: " + box.box_name)
+        logger.error('[API Create] fail: ' + box.box_name)
         box.box_text = 'Cannot start your environment'
         db.session.commit()
         raise TimeoutError
 
-    logger.debug("Create - success: " + box.box_name)
+    logger.debug('[API Create] success: ' + box.box_name)
     box.docker_ip = rep['ip']
     box.docker_id = rep['id']
     box.box_text = ''
@@ -193,7 +193,6 @@ def vncToken():
 
 def getList():
     now_user = flask_login.current_user
-    logger.debug("List " + now_user.name)
     if now_user.groupid == 1:
         boxes_ori = Box.query.all()
     else:
@@ -215,7 +214,6 @@ def getImages():
 
 
 def getNodes():
-    # return ['n1', 'n2', 'n3'] # test
     if not bp.usek8s:
         return ['server']
     req = otherAPI('listnode', check=False)
@@ -225,9 +223,9 @@ def getNodes():
 
 def piperCreate(name, ip):
     sshfolder = bp.sshpiper + name + '/'
-    sshpip = sshfolder + "sshpiper_upstream"
+    sshpip = sshfolder + 'sshpiper_upstream'
     os.makedirs(sshfolder, exist_ok=True)
-    open(sshpip, "w").write("ubuntu@" + ip)
+    open(sshpip, 'w').write('ubuntu@' + ip)
     os.chmod(sshpip, 0o600)
 
 
@@ -249,28 +247,36 @@ def boxDelete(box):
 @celery.task()
 def routineMaintain():
     # Commit
-    logger.debug("Commit now")
+    logger.info('[Routine] Commit')
     boxes = Box.query.all()
     for box in boxes:
-        logger.debug("Commit " + box.box_name)
+        logger.debug('[Routine] Commit: ' + box.box_name)
         box.commit(check=False)
 
     # check if it is somewhat kill by kubernetes
-    logger.debug("Checking inconsistence now")
+    logger.info('[Routine] check inconsistence')
     statusTarget = 'Not Consist ID'
     for box in boxes:
         if box.getStatus()['status'] == statusTarget:
-            logger.error("Check - ID inconsistence: " + box.box_name)
+            logger.warning('[Routine] inconsistence ID: ' + box.box_name)
             rep = otherAPI('search', name=box.docker_name, check=False)
             box.docker_ip = rep['ip']
             box.docker_id = rep['id']
             db.session.commit()
 
     # run passwd
-    logger.debug("Passwd now")
+    logger.info('[Routine] passwd')
     users = User.query.all()
     for user in users:
         boxsPasswd(user)
+
+    # Maintain sshpiper
+    logger.info('[Routine] sshpiper')
+    for name in os.listdir(bp.sshpiper):
+        shutil.rmtree(bp.sshpiper + name)
+    for box in boxes:
+        if box.getStatus()['status'] == 'running':
+            piperCreate(box.box_name, box.docker_ip)
 
 
 # Change password for all boxes
@@ -307,9 +313,11 @@ def boxPush(id, backupname):
     box.box_text = 'Backuping'
     db.session.commit()
     try:
-        otherAPI('push', name=backupname, docker_node=box.node, **bp.registry_user)
+        otherAPI('push', name=backupname,
+                         docker_node=box.node,
+                         **bp.registry_user)
     except Exception as e:
-        box.box_text = str("Backup Error")
+        box.box_text = str('Backup Error')
         db.session.commit()
         raise e
 
@@ -329,17 +337,20 @@ def envDelete(id):
     box = Box.query.get(id)
     box.box_text = 'Deleting ENV'
     db.session.commit()
+    logger.debug('[API Delete] wait: ' + box.box_name)
     for i in range(60 * 10):  # 10 min
         time.sleep(1)
         rep = otherAPI('search', name=box.docker_name, check=False)
         if str(rep['status']) == '404':
             break
     else:
+        logger.error('[API Delete] fail: ' + box.box_name)
         box.box_text = 'Delete again later or Cannot Delete'
         db.session.commit()
         # do not delte in database if cannot delete it in real world.
         raise TimeoutError
 
+    logger.debug('[API Delete] success: ' + box.box_name)
     boxDelete(box)
 
 
@@ -347,18 +358,18 @@ def envDelete(id):
 # ugly method
 @celery.task()
 def rescue(bid, uid, name, node, docker_name, image):
-    logger.debug("rescue - envDelete: " +  name)
+    logger.debug('[rescue] envDelete: ' + name)
     envDelete(bid)
-    logger.debug("rescue - create: " + name)
+    logger.debug('[rescue] create: ' + name)
     createAPI(uid, name, node, docker_name, image)
 
 
 # ugly method
 @celery.task()
 def changeNode(bid, uid, name, node, docker_name, backupname):
-    logger.debug("Changenode - push:"  + name)
+    logger.debug('[Changenode] push:' + name)
     boxPush(bid, backupname)
-    logger.debug("Changenode - envDelete: " + name)
+    logger.debug('[Changenode] envDelete: ' + name)
     envDelete(bid)
-    logger.debug("Changenode - create: " + name)
+    logger.debug('[Changenode] create: ' + name)
     createAPI(uid, name, node, docker_name, backupname)

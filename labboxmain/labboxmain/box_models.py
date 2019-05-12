@@ -70,9 +70,6 @@ class Box(db.Model):
             rep = otherAPI('search', name=self.docker_name, check=False)
             status = str(rep['status']).lower()
             if status == 'running' and self.docker_id != rep['id']:
-                # self.docker_ip = rep['ip']
-                # self.docker_id = rep['id']
-                # db.session.commit()
                 status = 'Not Consist ID'
 
         return {'name': self.box_name,
@@ -86,11 +83,11 @@ class Box(db.Model):
                 'status': status}
 
     def api(self, method, check=True, **kwargs):
-        """
+        '''
         There are many mothods:
         start, stop, delete, restart, passwd, rescue
         commit, prune
-        """
+        '''
 
         name = self.docker_name
         url = bp.sock
@@ -102,8 +99,8 @@ class Box(db.Model):
         rep = post(url, data={'name': name, **kwargs}).json()
 
         if check and str(rep.get('status')) != '200':
-            rep = rep or "None"
-            logger.error("[" + method + "] " + name + str(kwargs) + str(rep))
+            rep = rep or 'None'
+            logger.error('[labboxapi] ' + name + ': ' + str(kwargs) + str(rep))
             abort(500, 'Server API error')
 
         return rep
@@ -134,10 +131,10 @@ class Image(db.Model):
 
 
 def otherAPI(method, docker_node=None, check=True, **kwargs):
-    """
+    '''
     There are many mothods:
     push, deleteImage, search, create, listnode, searchimage
-    """
+    '''
     base_url = bp.sock
     if bp.usek8s and method in ['push', 'deleteImage', 'searchimage']:
         base_url = bp.sock + '/{}'.format(docker_node)
@@ -145,14 +142,14 @@ def otherAPI(method, docker_node=None, check=True, **kwargs):
     rep = post(url, data=kwargs).json()
 
     if check and str(rep.get('status')) != '200':
-        logger.error("[" + url + "] " + str(kwargs) + str(rep))
+        logger.error('[labboxapi] ' + url + ': ' + str(kwargs) + str(rep))
         abort(500, 'Server API error')
 
     return rep
 
 
 def add_image(user, name, description=''):
-    logger.info('[Add image] ' + user + ' -> ' + name)
+    logger.info('[Database] Add Image: ' + user + ' -> ' + name)
     assert(not Image.query.filter_by(name=name,
                                      user=user).first())
 
