@@ -275,7 +275,8 @@ def routineMaintain():
     # Maintain sshpiper
     logger.info('[Routine] sshpiper')
     for name in os.listdir(bp.sshpiper):
-        shutil.rmtree(bp.sshpiper + name)
+        if os.path.isdir(bp.sshpiper + name):
+            shutil.rmtree(bp.sshpiper + name)
     for box in boxes:
         if box.getStatus()['status'] == 'running':
             piperCreate(box.box_name, box.docker_ip)

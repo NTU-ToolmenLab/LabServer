@@ -38,6 +38,7 @@ def make_celery(app):
         backend=app.config['celery_result_backend'],
         broker=app.config['celery_broker_url']
     )
+    celery.conf.timezone = os.getenv('TZ')
     celery.conf.beat_schedule = app.config['celery_schedule']
     # celery.conf.update(app.config)
 

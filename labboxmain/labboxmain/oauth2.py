@@ -1,5 +1,9 @@
 # authlib 0.11
-from authlib.flask.oauth2 import AuthorizationServer, ResourceProtector
+from authlib.flask.oauth2 import (
+    AuthorizationServer,
+    ResourceProtector,
+    current_token
+)
 from authlib.common.security import generate_token
 from authlib.flask.oauth2.sqla import (
     OAuth2ClientMixin,

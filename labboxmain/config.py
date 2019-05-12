@@ -16,7 +16,7 @@ config = {
     'bullet': """
 """,
     'name': 'Lab304',
-    'domain_name': 'my.domain.ntu.edu.tw',
+    'domain_name': '{{ domain_name }}',
     'SECRET_KEY': '{{ secretkey }}',
     'OAUTH2_REFRESH_TOKEN_GENERATOR': True,
     'SQLALCHEMY_TRACK_MODIFICATIONS': False,
@@ -41,7 +41,7 @@ config = {
     'celery_schedule': {
         'box-routine': {
             'task': 'labboxmain.box.routineMaintain',
-            'schedule': crontab(hour=18, minute=0),
+            'schedule': crontab(hour=2, minute=0),
         },
     }
 }
