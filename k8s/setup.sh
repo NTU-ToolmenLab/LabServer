@@ -22,10 +22,10 @@ sed -i "s~{{\s*HOMENAS_PATH\s*}}~$HOMENAS_PATH~g" pv_user.yml
 sed -i "s~{{\s*ip\s*}}~$MASTERIP~g" traefik.yml
 sed -i "s/{{\s*mysql_root_password\s*}}/$mysql_root_password/g" nextcloud_db.yml
 sed -i "s/{{\s*mysql_password\s*}}/$mysql_password/g" nextcloud_db.yml
-sed -i "s/my.domain.ntu.edu.tw/$domain_name/g" ../Nextcloud/nginx-k8s.conf nextcloud_collabora.yml
+sed -i "s/my.domain.ntu.edu.tw/$domain_name/g" ../Nextcloud/nginx-k8s.conf nextcloud_collabora.yml ../labboxmain/config.py
 sed -i "s/:443/:$domain_port/g" ../Nextcloud/nginx*
-sed -i "s/{{\s*secretkey\s*}}/$oauth_secretkey/g" ../OauthServer/config.py
-sed -i "s/{{\s*registry_password\s*}}/$oauth_registry_password/g" ../OauthServer/config.py
+sed -i "s/{{\s*secretkey\s*}}/$oauth_secretkey/g" ../labboxmain/config.py
+sed -i "s/{{\s*registry_password\s*}}/$oauth_registry_password/g" ../labboxmain/config.py
 
 # build for k8s docker api server
 echo "build container"
@@ -33,8 +33,8 @@ docker build labboxapi-k8s -t harbor.default.svc.cluster.local/linnil1/labboxapi
 docker tag linnil1/labboxapi-k8s harbor.default.svc.cluster.local/linnil1/labboxapi-k8s
 docker tag linnil1/labboxapi-docker harbor.default.svc.cluster.local/linnil1/labboxapi-docker
 docker tag linnil1/nextcloudfpm:13 harbor.default.svc.cluster.local/linnil1/nextcloudfpm:13
-docker tag linnil1/oauthserver harbor.default.svc.cluster.local/linnil1/oauthserver
-docker tag linnil1/docker-vnc harbor.default.svc.cluster.local/linnil1/docker-vnc
+docker tag linnil1/labboxmain harbor.default.svc.cluster.local/linnil1/labboxmain
+docker tag linnil1/novnc harbor.default.svc.cluster.local/linnil1/novnc
 docker tag linnil1/collectgpu harbor.default.svc.cluster.local/linnil1/collectgpu
 
 # build for k8s docker api server

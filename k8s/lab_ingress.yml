@@ -28,7 +28,7 @@ spec:
       paths:
       - path: /vnc/
         backend:
-          serviceName: myvnc
+          serviceName: novnc
           servicePort: 6080
 ---
 apiVersion: extensions/v1beta1

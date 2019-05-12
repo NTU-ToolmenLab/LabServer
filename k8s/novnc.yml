@@ -2,10 +2,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: myvnc
+  name: novnc
 spec:
   selector:
-    name: myvnc
+    name: novnc
   ports:
   - port: 6080
     targetPort: 6080
@@ -13,30 +13,30 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: myvnc
+  name: novnc
 spec:
   selector:
     matchLabels:
-      name: myvnc
+      name: novnc
   replicas: 1
   template:
     metadata:
       labels:
-        name: myvnc
+        name: novnc
     spec:
       containers:
-      - name: myvnc
-        image: harbor.default.svc.cluster.local/linnil1/docker-vnc
+      - name: novnc
+        image: harbor.default.svc.cluster.local/linnil1/novnc
         ports:
         - containerPort: 6080
           protocol: TCP
         volumeMounts:
         - name: volume
-          mountPath: /app/my_vnc
-          subPath: my_vnc
+          mountPath: /app/novnc
+          subPath: novnc
         - name: volume
           mountPath: /app/db.sqlite
-          subPath: OauthServer/db.sqlite
+          subPath: labboxmain/db.sqlite
       volumes:
       - name: volume
         persistentVolumeClaim:

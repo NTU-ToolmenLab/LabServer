@@ -111,7 +111,7 @@ You can add `help.html` in `Oauthserver/oauthserver/templates/`
 
 ### VNC
 If you want to do more fancy things, like auto login for vnc password.
-you can add `my_vnc/noVNC/app/ui.js` with
+you can add `novnc/noVNC/app/ui.js` with
 ```
 var xmlHttp = new XMLHttpRequest();
 xmlHttp.onreadystatechange = function() {
@@ -122,8 +122,9 @@ xmlHttp.onreadystatechange = function() {
 }
 var tokenname = window.location.search;
 tokenname = tokenname.substr(17);
-xmlHttp.open("POST", "https://my.domain.ntu.edu.tw:443/box/vnctoken?token=" + tokenname, true); // true for asynchronous 
-xmlHttp.send(null);
+xmlHttp.open("POST", "https://my.domain.ntu.edu.tw:443/box/vnctoken, true);  // true for asynchronous 
+xmlHttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+xmlHttp.send("token=" + tokenname);
 ```
 
 ### Nextcloud Enable Oauth

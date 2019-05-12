@@ -10,7 +10,7 @@ docker build labboxapi_docker -t linnil1/labboxapi-docker
 
 ## VNC
 echo "BUILD VNC"
-cd my_vnc
+cd novnc
 git clone https://github.com/novnc/websockify
 git clone https://github.com/novnc/noVNC.git
 docker run -it --rm -v $PWD/noVNC:/project node:8.11-alpine sh -c ' \
@@ -18,7 +18,7 @@ docker run -it --rm -v $PWD/noVNC:/project node:8.11-alpine sh -c ' \
 sudo mv noVNC/build ./
 sudo cp build/vnc.html build/index.html
 cat token_plugin.py >> websockify/websockify/token_plugins.py
-docker build . -t linnil1/docker-vnc
+docker build . -t linnil1/novnc
 cd ..
 
 ## nextcloud

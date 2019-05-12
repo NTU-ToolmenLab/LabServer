@@ -7,11 +7,11 @@ Nextcloud/db/
 Nextcloud/log/
 Nextcloud/nextcloud/
 certs/
-my_vnc/build/
 OauthServer/db.sqlite
 OauthServer/oauthserver/templates/help.html
 registry_data/
 sshpiper/
+novnc/build/
 Portus/db
 Portus/registry
 harbor/database
@@ -27,6 +27,6 @@ log
 celerybeat-schedule
 
 # github
-my_vnc/websockify/
-my_vnc/noVNC/
+novnc/websockify/
+novnc/noVNC/
 harbor/harbor-helm
