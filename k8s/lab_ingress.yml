@@ -46,3 +46,26 @@ spec:
           serviceName: labboxmain
           servicePort: 5000
 
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: collabora
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /lool/
+        backend:
+          serviceName: nextcloud-nginx
+          servicePort: 443
+      - path: /loleaflet/
+        backend:
+          serviceName: nextcloud-nginx
+          servicePort: 443
+      - path: /hosting/
+        backend:
+          serviceName: nextcloud-nginx
+          servicePort: 443

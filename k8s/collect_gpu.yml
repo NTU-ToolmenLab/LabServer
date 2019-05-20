@@ -20,7 +20,7 @@ spec:
           subPath: collectgpu
         - name: volume
           mountPath: /app/db.sqlite
-          subPath: OauthServer/db.sqlite
+          subPath: labboxmain/db.sqlite
           readOnly: True
         ports:
         - containerPort: 8000

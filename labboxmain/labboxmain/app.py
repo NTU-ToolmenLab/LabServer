@@ -24,7 +24,7 @@ def create_app(config={}):
     setLog(app)
 
     login_manager.login_view = 'labboxmain.routes.Login'  # redir
-    app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1)
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
     # os.environ['AUTHLIB_INSECURE_TRANSPORT'] = '1'
 
     # redis

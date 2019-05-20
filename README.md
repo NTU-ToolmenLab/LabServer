@@ -94,6 +94,17 @@ see `README-dockercompose.md`.
 
 ## Some note of this system
 
+### NVIDIA SMI
+Need to install `dkms` that will exist evenif reboot.
+
+``` bash
+sudo apt install dkms
+chmod +x NVIDIA-Linux-x86_64-418.74.run
+sudo ./NVIDIA-Linux-x86_64-418.74.run --dkms --no-cc-version-check
+```
+
+https://devtalk.nvidia.com/default/topic/1047781/linux/nvidia-driver-not-work-after-reboot-on-ubuntu/
+
 ### OauthServer
 This app has two features:
 1. Oauth Server
@@ -145,7 +156,8 @@ xmlHttp.send("token=" + tokenname);
 ```
 
 * Go to web https://my.domain.ntu.edu.tw:443/drive/settings/admin/sociallogin
-* Modify code in `Nextcloud//custom_apps/sociallogin/lib/Controller/LoginController.php`
+* Modify code in `Nextcloud//custom_apps/sociallogin/lib/Controller/LoginController.php` to make login with their name `$uid = $profileId;`
+
 * Add client configuration (Custom Oauth2)
 ``` init
 Internal_name: testapp

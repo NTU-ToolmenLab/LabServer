@@ -5,7 +5,7 @@ env
 # data
 Nextcloud/db/
 Nextcloud/log/
-Nextcloud/nextcloud/
+Nextcloud/nextcloud*/
 certs/
 OauthServer/db.sqlite
 OauthServer/oauthserver/templates/help.html
