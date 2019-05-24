@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+echo "creating worker installation script"
+
 nodes=( "server1" )
 node_num=${#nodes[*]}
 
@@ -8,8 +10,10 @@ token=$(sudo kubeadm token create)
 token_ca_cert_hash=$(openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | openssl rsa -pubin -outform der 2>/dev/null | openssl dgst -sha256 -hex | sed 's/^.* //')
 master_ip=$(ip addr | grep 'MASTER' -A2 | tail -n1 | awk '{print $2}' | cut -f1 -d'/')
 
-echo "creating worker installation script"
+echo "Add basic command"
 cat base.sh > k8s-install-worker-tmp.sh
+
+echo "Add joining the cluster script"
 cat << EOF >> k8s-install-worker-tmp.sh
 sudo kubeadm join $master_ip:6443 --token $token --discovery-token-ca-cert-hash sha256:$token_ca_cert_hash
 EOF

@@ -45,7 +45,6 @@ spec:
         backend:
           serviceName: labboxmain
           servicePort: 5000
-
 ---
 apiVersion: extensions/v1beta1
 kind: Ingress
@@ -62,10 +61,6 @@ spec:
           serviceName: nextcloud-nginx
           servicePort: 443
       - path: /loleaflet/
-        backend:
-          serviceName: nextcloud-nginx
-          servicePort: 443
-      - path: /hosting/
         backend:
           serviceName: nextcloud-nginx
           servicePort: 443

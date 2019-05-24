@@ -23,7 +23,7 @@ sed -i "s~{{\s*ip\s*}}~$MASTERIP~g" traefik.yml
 sed -i "s/{{\s*mysql_root_password\s*}}/$mysql_root_password/g" nextcloud_db.yml
 sed -i "s/{{\s*mysql_password\s*}}/$mysql_password/g" nextcloud_db.yml
 sed -i "s/my.domain.ntu.edu.tw/$domain_name/g" ../Nextcloud/nginx-k8s.conf nextcloud_collabora.yml ../labboxmain/config.py
-sed -i "s/:443/:$domain_port/g" ../Nextcloud/nginx*
+sed -i "s/:443/:$domain_port/g" ../Nextcloud/nginx-k8s.conf
 sed -i "s/{{\s*secretkey\s*}}/$oauth_secretkey/g" ../labboxmain/config.py
 sed -i "s/{{\s*registry_password\s*}}/$oauth_registry_password/g" ../labboxmain/config.py
 

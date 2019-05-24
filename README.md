@@ -4,12 +4,12 @@ The advantage of this labserver is that user can access GPU resources
 with prebuild docker images(which contain pytorch, keras and caffe2),
 they can also choose which server to start their containers.
 
-After starting containers, they access it by ssh(sshpiper) or vnc(noVNC) we provided,
+After starting containers, they access it by ssh(sshpiper) or vnc(noVNC) or juniper notebook we provided,
 the vnc is a graphical user interface that can run in any browser without install anything.
 
 With the help of Docker and Kubernetes, this system should be safe, secure and reliable.
 
-Moreover, this repo provide more applications like Nextcloud(Drive), Grafana(Monitor)
+Moreover, this repo provide more applications like Nextcloud(Drive), Grafana(Monitor), Prometheus(Monitor)
 to make life easier.
 
 ## Related repo
@@ -18,7 +18,7 @@ to make life easier.
 
 ## How to Build
 
-### Clone from Github 
+### Clone from Github
 ```
 git clone https://github.com/linnil1/LabServer
 cd LabServer
@@ -33,7 +33,7 @@ docker pull certbot/certbot
 docker run --rm -it -p 80:80 -v $PWD/letsencrypt:/etc/letsencrypt certbot/certbot certonly --standalone
 ```
 
-1.1. Renew it 
+1.1. Renew it
 
 `docker run --rm -it -p 80:80 -p 443:443 -v $PWD/letsencrypt:/etc/letsencrypt certbot/certbot renew`
 
@@ -105,20 +105,24 @@ sudo ./NVIDIA-Linux-x86_64-418.74.run --dkms --no-cc-version-check
 
 https://devtalk.nvidia.com/default/topic/1047781/linux/nvidia-driver-not-work-after-reboot-on-ubuntu/
 
-### OauthServer
+### Network Policy
+https://hackmd.io/dZEPlsD0S22ZKBPe53iFXg
+
+### Labboxmain
 This app has two features:
 1. Oauth Server
-2. A interface that can start or stop your containers.
+2. A interface that can create or delete your containers.
+3. Run with API `labboxapi_k8s` and `labboxapi_docker`
 
 1.  Run this code to add more users.
 ```
-docker run -it --rm -v $PWD/OauthServer:/app/OauthServer linnil1/oauthserver flask std-add-user
+docker run -it --rm -v $PWD/labboxmain:/app/ linnil1/labboxmain flask std-add-user
 ```
 2. Add it by web (After init)
 If you are admin, go to `your.domain.name/adminpage` to modify.
 
 
-You can add `help.html` in `Oauthserver/oauthserver/templates/`
+You can add `help.html` in `labboxmain/labboxmain/templates/`
 
 ### VNC
 If you want to do more fancy things, like auto login for vnc password.
@@ -133,7 +137,7 @@ xmlHttp.onreadystatechange = function() {
 }
 var tokenname = window.location.search;
 tokenname = tokenname.substr(17);
-xmlHttp.open("POST", "https://my.domain.ntu.edu.tw:443/box/vnctoken, true);  // true for asynchronous 
+xmlHttp.open("POST", "https://my.domain.ntu.edu.tw:443/box/vnctoken, true);  // true for asynchronous
 xmlHttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
 xmlHttp.send("token=" + tokenname);
 ```

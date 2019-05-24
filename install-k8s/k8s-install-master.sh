@@ -17,6 +17,7 @@ else
     exit
 fi
 
+echo "Run basic config"
 bash base.sh
 
 echo "initialize the master node"
@@ -27,7 +28,7 @@ mkdir -p $HOME/.kube
 sudo cp -f /etc/kubernetes/admin.conf $HOME/.kube/config
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
-echo -n "checking kubelet status..."
+echo "checking kubelet status..."
 sudo systemctl status kubelet | grep "active (running)" &> /dev/null
 if [ $? == 0 ]; then
 	echo "OK"
@@ -35,11 +36,10 @@ else
 	echo "not ready"
 fi
 
+echo "Remove master taint"
 if [ "$master_no_taint" = true ]; then
     kubectl taint nodes --all node-role.kubernetes.io/master-
 fi
-
-return 123
 
 if [ $pod_network = "flannel" ]; then
     echo "installing Flannel"
@@ -54,6 +54,7 @@ elif [ $pod_network = "calico" ]; then
 \            - name: IP_AUTODETECTION_METHOD\
 \              value: interface=$interface" tmp
 elif [ $pod_network = "canal" ]; then
+    echo "installing Canal"
     kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/canal/rbac.yaml
     kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/canal/canal.yaml
 else
@@ -61,8 +62,8 @@ else
     exit 1
 fi
 
-echo -n "checking master node status..."
 
+echo "Set ufw firewall"
 if ! sudo ufw status | grep -q inactive; then
     # kube API
     sudo ufw allow 6443/tcp
@@ -73,6 +74,8 @@ if ! sudo ufw status | grep -q inactive; then
     # kube-scheduler controller
     sudo ufw allow 10251,10252/tcp
 fi
+
+echo -n "checking master node status..."
 
 ready=false
 while [ $ready == false ]
@@ -86,4 +89,7 @@ do
 	sleep 1
 done
 
+echo "Add kubectl autocompletion"
 echo "source <(kubectl completion bash)" >> ~/.bashrc
+
+echo "Done"
