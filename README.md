@@ -14,7 +14,7 @@ to make life easier.
 
 ## Related repo
 [Dockerfile](https://github.com/armorsun/Lab304-server)
-[Monitor](https://github.com/linnil1/LabServer_monitork)
+[Monitor](https://github.com/linnil1/LabServer_monitor)
 
 ## How to Build
 
@@ -94,17 +94,6 @@ see `README-dockercompose.md`.
 
 ## Some note of this system
 
-### NVIDIA SMI
-Need to install `dkms` that will exist evenif reboot.
-
-``` bash
-sudo apt install dkms
-chmod +x NVIDIA-Linux-x86_64-418.74.run
-sudo ./NVIDIA-Linux-x86_64-418.74.run --dkms --no-cc-version-check
-```
-
-https://devtalk.nvidia.com/default/topic/1047781/linux/nvidia-driver-not-work-after-reboot-on-ubuntu/
-
 ### Network Policy
 https://hackmd.io/dZEPlsD0S22ZKBPe53iFXg
 
@@ -118,11 +107,18 @@ This app has two features:
 ```
 docker run -it --rm -v $PWD/labboxmain:/app/ linnil1/labboxmain flask std-add-user
 ```
-2. Add it by web (After init)
+2. Configure it
+Edit labboxmain/config.py
+
+3. Add it by web (After init)
 If you are admin, go to `your.domain.name/adminpage` to modify.
 
-
 You can add `help.html` in `labboxmain/labboxmain/templates/`
+
+4. If any emergency happened
+```
+kubectl exec -it labboxmain-6599f4b74c-z5jcx flask stop --node=all
+```
 
 ### VNC
 If you want to do more fancy things, like auto login for vnc password.
@@ -147,15 +143,15 @@ xmlHttp.send("token=" + tokenname);
 * Add client
 ``` json
 {
-"client_id": "",
-"client_secret": "",
-"client_name": "testapp",
-"client_uri": "https://my.domain.ntu.edu.tw:443/drive/",
-"grant_types": ["authorization_code"],
-"redirect_uris": ["https://my.domain.ntu.edu.tw:443/drive/apps/sociallogin/custom_oidc/testapp"],
-"response_types": ["code"],
-"scope": "profile",
-"token_endpoint_auth_method": "client_secret_post"
+    "client_id": "",
+    "client_secret": "",
+    "client_name": "testapp",
+    "client_uri": "https://my.domain.ntu.edu.tw:443/drive/",
+    "grant_types": ["authorization_code"],
+    "redirect_uris": ["https://my.domain.ntu.edu.tw:443/drive/apps/sociallogin/custom_oidc/testapp"],
+    "response_types": ["code"],
+    "scope": "profile",
+    "token_endpoint_auth_method": "client_secret_post"
 }
 ```
 
@@ -186,11 +182,6 @@ python3 adduser.py
 docker exec -it -u 1000 labserver_nextcloud_1 php occ files_external:import my_storages.json
 cd ..
 ```
-
-### Firewall Security
-Be careful if you enable ufw, which may block the ports that k8s needs.
-
-see https://github.com/freach/kubernetes-security-best-practice/blob/master/README.md.
 
 ## Contribute
 you can use `git add -p xx` to commit modified changes.

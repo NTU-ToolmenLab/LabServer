@@ -23,6 +23,7 @@ docker push harbor.default.svc.cluster.local/linnil1/collectgpu
 kubectl create -f nextcloud_fpm.yml -f nextcloud_web.yml -f nextcloud_collabora.yml -f nextcloud_db.yml
 kubectl create -f labboxmain.yml -f labboxdb_redis.yml -f labboxapi_k8s.yml -f labboxapi_docker.yml -f novnc.yml -f sshpiper.yml -f lab_ingress.yml
 kubectl create -f collect_gpu.yml
+kubectl create -f policy.yml
 
 # add traefik and renew key
 bash renewcert.sh

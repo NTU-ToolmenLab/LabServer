@@ -46,6 +46,7 @@ spec:
     metadata:
       labels:
         name: labboxapi-k8s
+        app: labbox
     spec:
       serviceAccountName: labboxapi-k8s
       containers:

@@ -1,6 +1,7 @@
 from .app import create_app
 from config import config
 import logging
+import click
 
 app, celery = create_app(config)
 
@@ -54,3 +55,10 @@ def std_add_image():
     name = input('Imagename ')
     description = input('description ')
     add_image(user, name, description)
+
+
+@app.cli.command()
+@click.option('--node', default='all', help='Server hostname. `all` for all nodes')
+def stop(node):
+    from labboxmain.box import stopAll
+    stopAll(node)

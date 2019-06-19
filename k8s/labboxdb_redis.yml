@@ -23,6 +23,7 @@ spec:
     metadata:
       labels:
         name: labboxdb-redis
+        app: labbox
     spec:
       containers:
       - name: labboxdb-redis

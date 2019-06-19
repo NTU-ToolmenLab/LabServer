@@ -23,6 +23,7 @@ spec:
     metadata:
       labels:
         name: labboxmain
+        app: labbox
     spec:
       containers:
       - name: labboxmain

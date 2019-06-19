@@ -22,6 +22,7 @@ spec:
     metadata:
       labels:
         name: labboxapi-docker
+        app: labbox
     spec:
       containers:
       - name: labboxapi-docker

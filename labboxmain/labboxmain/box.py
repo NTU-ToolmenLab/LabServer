@@ -67,9 +67,7 @@ def api():
                          backupname)
 
     elif data.get('method') == 'Stop':
-        box.commit()
-        box.api('delete', check=False)
-        piperDelete(box.box_name)
+        boxStop(box)
 
     elif data.get('method') == 'Rescue':
         box.api('delete', check=False)
@@ -376,3 +374,22 @@ def changeNode(bid, uid, name, node, docker_name, backupname):
     envDelete(bid)
     logger.debug('[Changenode] create: ' + name)
     createAPI(uid, name, node, docker_name, backupname)
+
+
+def boxStop(box):
+    box.commit()
+    box.api('delete', check=False)
+    piperDelete(box.box_name)
+
+
+def stopAll(node='all'):
+    # Commit
+    logger.warning('[Waring] Stop ' + node)
+    if node != 'all':
+        boxes = Box.query.filter_by(node=node).all()
+    else:
+        boxes = Box.query.all()
+    for box in boxes:
+        if box.getStatus()['status'] == 'running':
+            logger.debug('[Warning] Stop: ' + box.box_name)
+            boxStop(box)
