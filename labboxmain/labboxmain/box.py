@@ -118,12 +118,13 @@ def create():
     return redirect(url_for('labboxmain.box_models.List'))
 
 
-def createAPI(userid, name, node, realname, image):
+def createAPI(userid, name, node, realname, image, pull=True):
     now_user = User.query.get(userid)
     now_dict = {
         'name': realname,
         'node': node,
         'image': image,
+        'pull': pull,
         'labnas': 'True',
         'homepath': now_user.name}
     now_dict.update(bp.create_rule(now_user))
@@ -362,7 +363,7 @@ def rescue(bid, uid, name, node, docker_name, image):
     logger.debug('[rescue] envDelete: ' + name)
     envDelete(bid)
     logger.debug('[rescue] create: ' + name)
-    createAPI(uid, name, node, docker_name, image)
+    createAPI(uid, name, node, docker_name, image, pull=False)
 
 
 # ugly method

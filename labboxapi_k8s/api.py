@@ -113,7 +113,7 @@ def goRedir(node, subpath):
     return not_found()
 
 
-# args: name, (image, node, labnas=True, homepath, inittar)
+# args: name, (image, node, homepath, labnas=True, inittar=server/ServerBox/all.tar, pull=True)
 @app.route('/create', methods=['POST'])
 def create():
     template = yaml.load(open('/app/pod.yml'))
@@ -146,6 +146,10 @@ def create():
             vol['subPath'] = request.form.get('homepath')
         if not vol.get('readOnly') and request.form.get('inittar'):
             vol['subPath'] = request.form.get('inittar')
+
+    # pull
+    if request.form.get('pull'):
+        template['spec']['containers']['imagePullPolicy'] = "Always"
 
     # create pod
     try:
@@ -184,10 +188,11 @@ def delete():
     name = request.form.get('name')
     checkLabel(name)
     app.logger.info("Delete " + request.form['name'])
-    # delete empty
-    v1.delete_namespaced_pod(name, ns)
-
     # using exception bcz didn't check
+    try:
+        v1.delete_namespaced_pod(name, ns)
+    except client.rest.ApiException:
+        pass
     try:
         v1.delete_namespaced_service(name, ns)
     except client.rest.ApiException:

@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-version="v2.12.0"
+version="v2.14.1"
 
 curl https://storage.googleapis.com/kubernetes-helm/helm-"$version"-linux-amd64.tar.gz --output helm-"$version"-linux-amd64.tar.gz
 tar -zxvf helm-"$version"-linux-amd64.tar.gz
@@ -32,6 +32,6 @@ subjects:
     namespace: kube-system
 EOF
 
-kubectl create -f role-based-access-control-config.yaml
+kubectl apply -f role-based-access-control-config.yaml
 
 helm init --service-account tiller
