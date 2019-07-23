@@ -20,16 +20,16 @@ image_name = 'learn3.6'
 box_name = 'tmp1'
 conn = sqlite3.connect('/app/db.sqlite')
 user_xpath = '//div[contains(@class, "card-footer")]/text()'
-login_str = '<a class="navbar-brand"> ' + name + ' </a>'
+login_str = '<a class="navbar-brand"> ' + user + ' </a>'
 
 
-def get_ssh(self, password=password):
+def get_ssh(box_name=box_name, password=password):
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     client.connect(hostname=ssh_host,
                    port=ssh_port,
                    allow_agent=False,
-                   username=name + '_' + box_name,
+                   username=user + '_' + box_name,
                    password=password)
     return client
 
@@ -80,7 +80,7 @@ class Test_login(unittest.TestCase):
 
     def test_login_fail(self):
         rep = post(self.url, data={
-            'username': name,
+            'username': user,
             'password': '123123123'})
         self.assertEqual(rep.status_code, 200)
         self.assertIn('Fail to Login', rep.text)
@@ -91,23 +91,23 @@ class Test_login(unittest.TestCase):
         self.assertIn('Fail to Login', rep.text)
 
         rep = post(self.url, data={
-            'username': name})
+            'username': user})
         self.assertEqual(rep.status_code, 200)
         self.assertIn('Fail to Login', rep.text)
 
     def test_login_ok(self):
         rep = post(self.url, data={
-            'username': name,
+            'username': user,
             'password': password})
         self.assertEqual(rep.status_code, 200)
         self.assertIn(login_str, rep.text)
 
     def test_not_auth(self):
-        conn.execute('UPDATE user SET groupid = ? WHERE name = ?', (0, name))
+        conn.execute('UPDATE user SET groupid = ? WHERE name = ?', (0, user))
         conn.commit()
         s = Session()
         rep = s.post(self.url, data={
-            'username': name,
+            'username': user,
             'password': password})
         self.assertEqual(rep.status_code, 200)
 
@@ -117,11 +117,11 @@ class Test_login(unittest.TestCase):
         self.is_401(s.post, '/adminpage')
 
     def test_not_auth_other_group(self):
-        conn.execute('UPDATE user SET groupid = ? WHERE name = ?', (2, name))
+        conn.execute('UPDATE user SET groupid = ? WHERE name = ?', (2, user))
         conn.commit()
         s = Session()
         rep = s.post(self.url, data={
-            'username': name,
+            'username': user,
             'password': password})
         self.assertEqual(rep.status_code, 200)
 
@@ -133,7 +133,7 @@ class Test_login(unittest.TestCase):
     def test_logout(self):
         s = Session()
         rep = s.post(self.url, data={
-            'username': name,
+            'username': user,
             'password': password})
         self.assertEqual(rep.status_code, 200)
         self.isLoginPage(s.get, '/logout')
@@ -142,7 +142,7 @@ class Test_login(unittest.TestCase):
     def test_vnctoken(self):
         s = Session()
         rep = s.post(self.url, data={
-            'username': name,
+            'username': user,
             'password': password})
         self.assertEqual(rep.status_code, 200)
         rep = s.post(self.url + '/box/vnctoken')
@@ -160,23 +160,23 @@ class Test_admin(unittest.TestCase):
         self.assertEqual(rep.url, self.url + url)
 
     def test_db(self):
-        res = conn.execute('SELECT * FROM user WHERE name = ?', (name,))
+        res = conn.execute('SELECT * FROM user WHERE name = ?', (user,))
         self.assertTrue(res.fetchall())
 
     def test_admin(self):
-        conn.execute('UPDATE user SET groupid = ? WHERE name = ?', (1, name))
+        conn.execute('UPDATE user SET groupid = ? WHERE name = ?', (1, user))
         conn.commit()
 
         s = Session()
         rep = s.post(self.url, data={
-            'username': name,
+            'username': user,
             'password': password})
         self.assertEqual(rep.status_code, 200)
 
         self.is_access(s.get, '/oauth/client')
         self.is_access(s.get, '/adminpage')
 
-        conn.execute('UPDATE user SET groupid = ? WHERE name = ?', (0, name))
+        conn.execute('UPDATE user SET groupid = ? WHERE name = ?', (0, user))
         conn.commit()
 
 
@@ -185,20 +185,9 @@ class Test_api(unittest.TestCase):
         self.url = url + '/box/'
         self.s = Session()
         rep = self.s.post(url, data={
-            'username': name,
+            'username': user,
             'password': password})
         self.assertEqual(rep.status_code, 200)
-
-    def connect_ssh(self):
-        time.sleep(5)
-        client = paramiko.SSHClient()
-        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        client.connect(hostname=ssh_host,
-                       port=ssh_port,
-                       allow_agent=False,
-                       username=name + '_' + box_name,
-                       password=password)
-        return client
 
     def get_realname(self):
         rep = self.s.get(self.url)
@@ -240,7 +229,7 @@ class Test_api(unittest.TestCase):
 
         # check
         realname = self.get_realname()[0].strip()
-        client = self.connect_ssh()
+        client = get_ssh()
         sudo = 'echo ' + password + ' | sudo -S '
         _, stdout, _ = client.exec_command('ls /home')
         self.assertNotIn('tmp2\n', stdout.readlines())
@@ -255,7 +244,7 @@ class Test_api(unittest.TestCase):
 
         # check
         time.sleep(3)
-        client = self.connect_ssh()
+        client = get_ssh()
         _, stdout, _ = client.exec_command('ls /home')
         self.assertIn('tmp2\n', stdout.readlines())
 
@@ -271,7 +260,7 @@ class Test_api(unittest.TestCase):
         self.chect_num(1)
 
         # check
-        client = self.connect_ssh()
+        client = get_ssh()
         _, stdout, _ = client.exec_command('ls /home')
         self.assertNotIn('tmp2\n', stdout.readlines())
         client.exec_command(sudo + 'mkdir /home/tmp2')
@@ -298,7 +287,7 @@ class Test_api(unittest.TestCase):
         self.chect_num(1)
 
         # check
-        client = self.connect_ssh()
+        client = get_ssh()
         _, stdout, _ = client.exec_command('ls /home')
         self.assertIn('tmp2\n', stdout.readlines())
         client.exec_command(sudo + 'mkdir /home/tmp3')
@@ -316,7 +305,7 @@ class Test_api(unittest.TestCase):
         self.chect_num(1)
 
         # check
-        client = self.connect_ssh()
+        client = get_ssh()
         _, stdout, _ = client.exec_command('ls /home')
         self.assertIn('tmp3\n', stdout.readlines())
 
@@ -348,7 +337,7 @@ class Test_api(unittest.TestCase):
         self.assertEqual(rep.status_code, 403)
 
     def test_create_rule(self):
-        conn.execute('UPDATE user SET groupid = ? WHERE name = ?', (2, name))
+        conn.execute('UPDATE user SET groupid = ? WHERE name = ?', (2, user))
         conn.commit()
 
         print('Create')
@@ -362,7 +351,7 @@ class Test_api(unittest.TestCase):
 
         # check
         realname = self.get_realname()[0].strip()
-        client = self.connect_ssh()
+        client = get_ssh()
         _, stdout, _ = client.exec_command('ls /home/nas')
         self.assertNotIn('tmp0\n', stdout.readlines())
 
@@ -378,7 +367,7 @@ class Test_api(unittest.TestCase):
         print('Wait for deletion')
         self.wait('1/3')
 
-        conn.execute('UPDATE user SET groupid = ? WHERE name = ?', (0, name))
+        conn.execute('UPDATE user SET groupid = ? WHERE name = ?', (0, user))
         conn.commit()
 
 
@@ -388,7 +377,7 @@ class Test_after_create(unittest.TestCase):
         self.url = url + '/box/'
         self.s = Session()
         rep = self.s.post(url, data={
-            'username': name,
+            'username': user,
             'password': password})
         self.assertEqual(rep.status_code, 200)
 
@@ -487,7 +476,7 @@ class Test_after_create(unittest.TestCase):
             'name': self.get_realname()})
 
     def test_excess_quota(self):
-        conn.execute('UPDATE user SET quota = ? WHERE name = ?', (1, name))
+        conn.execute('UPDATE user SET quota = ? WHERE name = ?', (1, user))
         conn.commit()
 
         rep = self.s.post(self.url + 'create', data={
@@ -496,11 +485,11 @@ class Test_after_create(unittest.TestCase):
             'image': image_name})
         self.assertEqual(rep.status_code, 403)
 
-        conn.execute('UPDATE user SET quota = ? WHERE name = ?', (3, name))
+        conn.execute('UPDATE user SET quota = ? WHERE name = ?', (3, user))
         conn.commit()
 
     def test_access_other_fail(self):
-        bn = name + '_' + box_name
+        bn = user + '_' + box_name
         realname = self.get_realname()
         conn.execute('UPDATE box SET user = ? WHERE box_name = ?', ('123', bn))
         conn.commit()
@@ -510,7 +499,7 @@ class Test_after_create(unittest.TestCase):
             'name': realname})
         self.assertEqual(rep.status_code, 403)
 
-        conn.execute('UPDATE box SET user = ? WHERE box_name = ?', (name, bn))
+        conn.execute('UPDATE box SET user = ? WHERE box_name = ?', (user, bn))
         conn.commit()
 
     def is_passwd_not_ok(self, data):
@@ -560,20 +549,20 @@ class Test_after_create(unittest.TestCase):
 
         # cannot login
         rep = post(url, data={
-            'username': name,
+            'username': user,
             'password': password})
         self.assertEqual(rep.status_code, 200)
         self.assertIn('Fail to Login', rep.text)
 
         # can login
         rep = post(url, data={
-            'username': name,
+            'username': user,
             'password': password1})
         self.assertEqual(rep.status_code, 200)
         self.assertIn(login_str, rep.text)
 
         # can login with ssh
-        get_ssh(password1)
+        get_ssh(password=password1)
 
         # change back
         rep = self.s.post(url + '/passwd', data={
@@ -584,7 +573,7 @@ class Test_after_create(unittest.TestCase):
 
         # check
         rep = self.s.post(url, data={
-            'username': name,
+            'username': user,
             'password': password})
         self.assertEqual(rep.status_code, 200)
         self.assertIn(login_str, rep.text)
@@ -594,6 +583,102 @@ class Test_after_create(unittest.TestCase):
             'token': self.get_realname()})
         self.assertEqual(rep.status_code, 200)
         self.assertEqual(rep.text, config['vnc_password'])
+
+
+class Test_duplicate(unittest.TestCase):
+    def setUp(self):
+        self.url = url + '/box/'
+        self.sudo = 'echo ' + password + ' | sudo -S '
+        self.s = Session()
+        rep = self.s.post(url, data={
+            'username': user,
+            'password': password})
+        self.assertEqual(rep.status_code, 200)
+
+        # create one if not exist
+        rep = self.s.get(self.url)
+        if ' 1/3' not in rep.text:
+            print('Skip Create')
+            client = get_ssh()
+            client.exec_command(self.sudo + 'mkdir /home/tmp1')
+            time.sleep(1)
+            return
+        self.assertIn(' 1/3', rep.text)
+
+        rep = self.s.post(self.url + 'create', data={
+            'name': box_name,
+            'node': test_node,
+            'image': image_name})
+        self.assertEqual(rep.status_code, 200)
+        print('Wait for creation')
+        self.wait('status: running')
+
+        time.sleep(5)
+        client = get_ssh()
+        client.exec_command(self.sudo + 'mkdir /home/tmp1')
+        time.sleep(1)
+
+
+    def test_duplicate(self):
+        # create same env
+        print('Wait for duplicated creation')
+        rep = self.s.post(self.url + 'create', data={
+            'name': box_name + '_1',
+            'node': test_node,
+            'image': user + '_' + box_name})
+        self.assertEqual(rep.status_code, 200)
+        self.wait('status: running', 2)
+
+        time.sleep(5)
+        client = get_ssh(box_name=box_name + '_1')
+        _, stdout, _ = client.exec_command('ls /home')
+        self.assertIn('tmp1\n', stdout.readlines())
+
+        # sync same env
+        print('Sync')
+        client = get_ssh()
+        client.exec_command(self.sudo + 'mkdir /home/tmp2')
+
+        rep = self.s.get(self.url)
+        tree = html.fromstring(rep.content)
+        realname = tree.xpath(user_xpath)[1].strip()
+        rep = self.s.post(self.url + 'api', data={
+            'method': 'Sync',
+            'name': realname})
+        self.assertEqual(rep.status_code, 200)
+        time.sleep(10)
+        self.wait('status: running', 2)
+        time.sleep(5)
+
+        client = get_ssh(box_name=box_name + '_1')
+        _, stdout, _ = client.exec_command('ls /home')
+        self.assertIn('tmp2\n', stdout.readlines())
+
+    def wait(self, status, num=1):
+        t = 30
+        while t > 0:
+            rep = self.s.get(self.url)
+            if rep.text.count(status) == num:
+                break
+            t -= 1
+            print('.')
+            time.sleep(3)
+        else:
+            self.assertTrue(False)
+
+    def tearDown(self):
+        rep = self.s.get(self.url)
+        tree = html.fromstring(rep.content)
+        realname = tree.xpath(user_xpath)
+        for name in realname:
+            print('Delete')
+            rep = self.s.post(self.url + 'api', data={
+                'method': 'Delete',
+                'name': name.strip()})
+            self.assertEqual(rep.status_code, 200)
+
+        print('Wait for deletion')
+        self.wait(' 1/3')
 
 
 if __name__ == '__main__':

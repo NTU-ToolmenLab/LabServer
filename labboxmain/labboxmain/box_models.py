@@ -63,6 +63,7 @@ class Box(db.Model):
     image = db.Column(db.String(64), nullable=False)
     create_date = db.Column(db.DateTime, default=datetime.datetime.utcnow)
     commit_date = db.Column(db.DateTime)
+    parent = db.Column(db.String(32))
 
     def __str__(self):
         return '<Box {}>'.format(docker_name)
@@ -83,6 +84,7 @@ class Box(db.Model):
                 'commit': self.commit_date.strftime('%Y/%m/%d %X')
                           if self.commit_date else None,
                 'image': self.image.split(':')[-1],
+                'parent': self.parent,
                 'status': status}
 
     def api(self, method, check=True, **kwargs):

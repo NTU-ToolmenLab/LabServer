@@ -32,6 +32,9 @@ list
               <h5 class="card-title"> status: {{ data.status }} </h5>
               <p class="card-text"> {{ data.text }} </p>
               <p class="card-text"> image: {{ data.image }} </p>
+              {% if data.parent %}
+              <p class="card-text"> parent: {{ data.parent}} </p>
+              {% endif %}
               <p class="card-text"> create time: {{ data.date }} </p>
               <p class="card-text"> backup time: {{ data.commit }} </p>
 
@@ -39,11 +42,14 @@ list
                 <input type="hidden"   name="name"     value="{{data.realname}}"/>
                 <div class="btn-group" role="group">
                   <input type="submit" name="method" value="Desktop" class="btn btn-outline-primary"/>
+                  <input type="submit" name="method" value="Jupyter" class="btn btn-outline-primary"/>
                   <input type="submit" name="method" value="Restart" class="btn btn-outline-warning"/>
                   <input type="submit" name="method" value="Stop"    class="btn btn-outline-warning"/>
                   <input type="submit" name="method" value="Delete"  class="btn btn-outline-danger" />
                   <input type="submit" name="method" value="Rescue"  class="btn btn-outline-danger" />
-                  <input type="submit" name="method" value="Jupyter" class="btn btn-outline-primary"/>
+                  {% if data.parent %}
+                    <input type="submit" name="method" value="Sync"  class="btn btn-outline-danger" />
+                  {% endif %}
                 </div>
               </form>
 

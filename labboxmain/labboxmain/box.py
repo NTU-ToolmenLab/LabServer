@@ -61,9 +61,7 @@ def api():
         box.commit(check=False)
         box.api('delete', check=False)
         changeNode.delay(box.id, now_user.id,
-                         box.box_name,
                          data['node'],
-                         box.docker_name,
                          backupname)
 
     elif data.get('method') == 'Stop':
@@ -73,11 +71,22 @@ def api():
         box.api('delete', check=False)
 
         image = box.image if not box.getImage() else backupname
-        rescue.delay(box.id, now_user.id,
-                     box.box_name,
-                     box.node,
-                     box.docker_name,
-                     image)
+        rescue.delay(box.id, now_user.id, image)
+
+    elif data.get('method') == 'Sync':
+        box.api('delete', check=False)
+        if not Box.query.filter_by(user=now_user.name,
+                                   box_name=box.parent).first():
+            abort(403, 'No Parent existed')
+        parent_box = Box.query.filter_by(user=now_user.name,
+                                         box_name=box.parent).first()
+        backupname = bp.backup + parent_box.docker_name
+        parent = box.parent
+        node = box.node
+        name = box.box_name
+        realname = box.docker_name
+        duplicate.delay(parent_box.id, now_user.id, name, node,
+                        realname, backupname, parent, box.id)
 
     else:
         abort(403, 'How can you show this error')
@@ -96,8 +105,15 @@ def create():
         abort(403, 'Quota = 0')
     if not data.get('node') or data.get('node') not in getNodes():
         abort(403, 'No such server')
-    if Image.query.filter_by(user='user', name=data.get('image')).first():
+    image = data.get('image')
+    parent = ''
+    if Image.query.filter_by(user='user', name=image).first():
         image = bp.images + data.get('image')
+    elif Box.query.filter_by(user=now_user.name, box_name=image).first():
+        box = Box.query.filter_by(user=now_user.name, box_name=image).first()
+        if box:
+            parent = image
+            image = bp.backup + box.docker_name
     else:
         abort(403, 'No such environment')
 
@@ -114,17 +130,24 @@ def create():
     if Box.query.filter_by(docker_name=realname).first():
         abort(403, 'Already have environment')
 
-    createAPI(now_user.id, name, data.get('node'), realname, image)
+    if parent:
+        logger.debug('[Duplicate] ' + now_user.name + ': ' + name + ' from ' + parent)
+        box.commit()
+        duplicate.delay(box.id, now_user.id, name, data['node'],
+                        realname, image, parent)
+    else:
+        createAPI(now_user.id, name, data['node'], realname, image)
     return redirect(url_for('labboxmain.box_models.List'))
 
 
-def createAPI(userid, name, node, realname, image, pull=True):
+def createAPI(userid, name, node, realname, image, pull=True, parent=''):
     now_user = User.query.get(userid)
     now_dict = {
         'name': realname,
         'node': node,
         'image': image,
         'pull': pull,
+        'parent': parent,
         'labnas': 'True',
         'homepath': now_user.name}
     now_dict.update(bp.create_rule(now_user))
@@ -136,6 +159,7 @@ def createAPI(userid, name, node, realname, image, pull=True):
               user=now_user.name,
               docker_name=now_dict['name'],
               image=now_dict['image'],
+              parent=parent,
               node=now_dict['node'],
               box_text='Creating')
     db.session.add(box)
@@ -204,13 +228,17 @@ def getList():
 
 def getCreate():
     now_user = flask_login.current_user
-    images = [i.name for i in getImages()]
     return {'quota': now_user.quota, 'use_quota': now_user.use_quota,
-            'image': images, 'node': getNodes()}
+            'image': [i['name'] for i in getImages()], 'node': getNodes()}
 
 
 def getImages():
     images = Image.query.filter_by(user='user').order_by(Image.id.desc()).all()
+    images = [{'name': i.name, 'description': i.description} for i in images]
+
+    now_user = flask_login.current_user
+    box_images = Box.query.filter_by(user=now_user.name).all()
+    images.extend([{'name': i.box_name} for i in box_images])
     return images
 
 
@@ -302,7 +330,7 @@ def boxsPasswd(now_user):
 # envDelete      *    *
 # rescue         *    *                   +create
 # imageDelete    *    *    *      *
-# boxpush        *    *    *      *       +push (no commmit here)
+# boxpush        *    *           *       +push (no commmit here)
 # entry:Delete   *    *    *      *
 # entry:Stop     *    *
 # entry:Rescue   *    *
@@ -323,7 +351,8 @@ def boxPush(id, backupname):
         db.session.commit()
         raise e
 
-    imageDelete.delay(id, backupname)
+    box.box_text = ''
+    db.session.commit()
 
 
 @celery.task()
@@ -359,22 +388,33 @@ def envDelete(id):
 # Can not chain?
 # ugly method
 @celery.task()
-def rescue(bid, uid, name, node, docker_name, image):
+def rescue(bid, uid, image):
+    box = Box.query.get(bid)
+    node = box.node
+    name = box.box_name
+    parent = box.parent
+    docker_name = box.docker_name
     logger.debug('[rescue] envDelete: ' + name)
     envDelete(bid)
     logger.debug('[rescue] create: ' + name)
-    createAPI(uid, name, node, docker_name, image, pull=False)
+    createAPI(uid, name, node, docker_name, image, pull=False, parent=parent)
 
 
 # ugly method
 @celery.task()
-def changeNode(bid, uid, name, node, docker_name, backupname):
+def changeNode(bid, uid, node, backupname):
+    box = Box.query.get(bid)
+    parent = box.parent
+    name = box.box_name
+    docker_name = box.docker_name
+
     logger.debug('[Changenode] push:' + name)
     boxPush(bid, backupname)
+    imageDelete(bid, backupname)
     logger.debug('[Changenode] envDelete: ' + name)
     envDelete(bid)
     logger.debug('[Changenode] create: ' + name)
-    createAPI(uid, name, node, docker_name, backupname)
+    createAPI(uid, name, node, docker_name, backupname, parent=parent)
 
 
 def boxStop(box):
@@ -394,3 +434,16 @@ def stopAll(node='all'):
         if box.getStatus()['status'] == 'running':
             logger.debug('[Warning] Stop: ' + box.box_name)
             boxStop(box)
+
+
+@celery.task()
+def duplicate(bid, uid, name, node, docker_name, backupname,
+              parent, delete_bid=''):
+    logger.debug('[Duplicate] push:' + parent)
+    Box.query.get(bid).commit(check=False)
+    boxPush(bid, backupname)
+    if delete_bid:
+        logger.debug('[Duplicate] envDelete: ' + name)
+        envDelete(delete_bid)
+    logger.debug('[Duplicate] create: ' + name)
+    createAPI(uid, name, node, docker_name, backupname, parent=parent)
