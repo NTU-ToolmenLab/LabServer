@@ -110,16 +110,18 @@ class Box(db.Model):
 
         return rep
 
+    def getBackupname(self):
+        return bp.backup + self.docker_name
+
     def commit(self, **kwargs):
-        self.api('commit', newname=bp.backup + self.docker_name, **kwargs)
+        self.api('commit', newname=self.getBackupname(), **kwargs)
         self.api('prune', check=False)
         self.commit_date = self.getImage()
         db.session.commit()
 
     def getImage(self):
-        backupname = bp.backup + self.docker_name
         img = otherAPI('searchimage', docker_node=self.node,
-                                      name=backupname,
+                                      name=self.getBackupname(),
                                       check=False)
         return parse(img['date']) if img.get('date') else None
 

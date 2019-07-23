@@ -12,7 +12,7 @@ url = 'http://localhost:5000'
 ssh_host = config['domain_name']
 ssh_port = 22
 web_port = 443
-name = 'guest'
+user = 'guest'
 password = 'password'
 test_node = 'lab304-server3'
 test_node1 = 'lab304-server1'
@@ -21,6 +21,7 @@ box_name = 'tmp1'
 conn = sqlite3.connect('/app/db.sqlite')
 user_xpath = '//div[contains(@class, "card-footer")]/text()'
 login_str = '<a class="navbar-brand"> ' + user + ' </a>'
+sudo = 'echo ' + password + ' | sudo -S '
 
 
 def get_ssh(box_name=box_name, password=password):
@@ -34,8 +35,74 @@ def get_ssh(box_name=box_name, password=password):
     return client
 
 
-class Test_login(unittest.TestCase):
-    def setUp(self):
+def get_ssh_command(command, **kwargs):
+    client = get_ssh(**kwargs)
+    _, stdout, _ = client.exec_command(sudo + command)
+    return stdout.readlines()
+
+
+class TestFunc(unittest.TestCase):
+    def login(self, user=user, password=password):
+        self.s = Session()
+        rep = self.s.post(url, data={
+            'username': user,
+            'password': password})
+        self.assertEqual(rep.status_code, 200)
+        return rep
+
+    def get_id(self):
+        rep = self.s.get(self.url)
+        tree = html.fromstring(rep.content)
+        realname = tree.xpath(user_xpath)
+        return [i.strip() for i in realname]
+
+    def tearAll(self):
+        for name in self.get_id():
+            print('Delete')
+            rep = self.s.post(self.url + 'api', data={
+                'method': 'Delete',
+                'name': name.strip()})
+            self.assertEqual(rep.status_code, 200)
+
+        print('Wait for deletion')
+        self.wait(' 1/3')
+
+    def wait(self, status, num=1):
+        t = 30
+        while t > 0:
+            rep = self.s.get(self.url)
+            if rep.text.count(status) == num:
+                break
+            t -= 1
+            print('.')
+            time.sleep(3)
+        else:
+            self.assertTrue(False)
+
+    def createOne(self):
+        self.login()
+
+        rep = self.s.get(self.url)
+        if ' 1/3' not in rep.text:
+            return
+
+        rep = self.s.post(self.url + 'create', data={
+            'name': box_name,
+            'node': test_node,
+            'image': image_name})
+        self.assertEqual(rep.status_code, 200)
+        print('Wait for creation')
+        self.wait('status: running')
+        time.sleep(3)
+
+    def check_num(self, num):
+        rep = self.s.get(self.url)
+        self.assertIn(' ' + str(num + 1) + '/3', rep.text)
+        self.assertEqual(num, len(self.get_id()))
+
+
+class Test_login(TestFunc):
+    def setUpClass(self):
         self.url = url
 
     def isLoginPage(self, func, url):
@@ -180,40 +247,13 @@ class Test_admin(unittest.TestCase):
         conn.commit()
 
 
-class Test_api(unittest.TestCase):
+class Test_api(TestFunc):
     def setUp(self):
         self.url = url + '/box/'
-        self.s = Session()
-        rep = self.s.post(url, data={
-            'username': user,
-            'password': password})
-        self.assertEqual(rep.status_code, 200)
-
-    def get_realname(self):
-        rep = self.s.get(self.url)
-        tree = html.fromstring(rep.content)
-        realname = tree.xpath(user_xpath)
-        return realname
-
-    def chect_num(self, num):
-        rep = self.s.get(self.url)
-        self.assertIn(str(num + 1) + '/3', rep.text)
-        self.assertEqual(num, len(self.get_realname()))
-
-    def wait(self, status):
-        t = 30
-        while t > 0:
-            rep = self.s.get(self.url)
-            if status in rep.text:
-                break
-            t -= 1
-            print('.')
-            time.sleep(3)
-        else:
-            self.assertTrue(False)
+        self.login()
 
     def test_cycle(self):
-        self.chect_num(0)
+        self.check_num(0)
 
         # check No other boxes
         print('Create')
@@ -225,15 +265,13 @@ class Test_api(unittest.TestCase):
 
         print('Wait for creation')
         self.wait('status: running')
-        self.chect_num(1)
+        self.check_num(1)
 
         # check
-        realname = self.get_realname()[0].strip()
-        client = get_ssh()
-        sudo = 'echo ' + password + ' | sudo -S '
-        _, stdout, _ = client.exec_command('ls /home')
-        self.assertNotIn('tmp2\n', stdout.readlines())
-        _, stdout, _ = client.exec_command(sudo + 'mkdir /home/tmp2')
+        realname = self.get_id()[0].strip()
+        time.sleep(3)
+        self.assertNotIn('tmp2\n', get_ssh_command('ls /home'))
+        get_ssh_command('mkdir /home/tmp2')
         time.sleep(1)
 
         print('Restart')
@@ -257,7 +295,7 @@ class Test_api(unittest.TestCase):
 
         print('Wait for rescue')
         self.wait('status: running')
-        self.chect_num(1)
+        self.check_num(1)
 
         # check
         client = get_ssh()
@@ -273,8 +311,8 @@ class Test_api(unittest.TestCase):
         self.assertEqual(rep.status_code, 200)
 
         print('Wait for stoping')
-        self.wait('status: 404')
-        self.chect_num(1)
+        self.wait('status: Stopped')
+        self.check_num(1)
 
         print('Rescue Stop')
         rep = self.s.post(self.url + 'api', data={
@@ -284,7 +322,7 @@ class Test_api(unittest.TestCase):
 
         print('Wait for rescuing stopped')
         self.wait('status: running')
-        self.chect_num(1)
+        self.check_num(1)
 
         # check
         client = get_ssh()
@@ -302,7 +340,7 @@ class Test_api(unittest.TestCase):
 
         print('Wait for chaning node')
         self.wait('status: running')
-        self.chect_num(1)
+        self.check_num(1)
 
         # check
         client = get_ssh()
@@ -316,8 +354,8 @@ class Test_api(unittest.TestCase):
         self.assertEqual(rep.status_code, 200)
 
         print('Wait for deletion')
-        self.wait('1/3')
-        self.chect_num(0)
+        self.wait(' 1/3')
+        self.check_num(0)
 
     def test_wrong_name(self):
         rep = self.s.post(self.url + 'api')
@@ -350,7 +388,7 @@ class Test_api(unittest.TestCase):
         self.wait('status: running')
 
         # check
-        realname = self.get_realname()[0].strip()
+        realname = self.get_id()[0].strip()
         client = get_ssh()
         _, stdout, _ = client.exec_command('ls /home/nas')
         self.assertNotIn('tmp0\n', stdout.readlines())
@@ -365,49 +403,16 @@ class Test_api(unittest.TestCase):
         self.assertEqual(rep.status_code, 200)
 
         print('Wait for deletion')
-        self.wait('1/3')
+        self.wait(' 1/3')
 
         conn.execute('UPDATE user SET groupid = ? WHERE name = ?', (0, user))
         conn.commit()
 
 
-# TODO: tearDown manually
-class Test_after_create(unittest.TestCase):
+class Test_after_create(TestFunc):
     def setUp(self):
         self.url = url + '/box/'
-        self.s = Session()
-        rep = self.s.post(url, data={
-            'username': user,
-            'password': password})
-        self.assertEqual(rep.status_code, 200)
-
-        # create one if not exist
-        rep = self.s.get(self.url)
-        if '1/3' not in rep.text:
-            return
-        self.assertIn('1/3', rep.text)
-
-        rep = self.s.post(self.url + 'create', data={
-            'name': box_name,
-            'node': test_node,
-            'image': image_name})
-        self.assertEqual(rep.status_code, 200)
-
-        time.sleep(3)
-        rep = self.s.get(self.url)
-        self.assertIn('2/3', rep.text)
-
-        print('Wait for creation')
-        t = 10
-        while t > 0:
-            rep = self.s.get(self.url)
-            if 'status: running' in rep.text:
-                break
-            t -= 1
-            print('.')
-            time.sleep(3)
-        else:
-            self.assertTrue(False)
+        self.createOne()
 
     def test_double_create(self):
         rep = self.s.post(self.url + 'create', data={
@@ -417,7 +422,7 @@ class Test_after_create(unittest.TestCase):
         self.assertEqual(rep.status_code, 403)
 
         rep = self.s.get(self.url)
-        self.assertIn('2/3', rep.text)
+        self.assertIn(' 2/3', rep.text)
 
     def test_wrong_create(self):
         rep = self.s.post(self.url + 'create', data={
@@ -463,17 +468,11 @@ class Test_after_create(unittest.TestCase):
         _, stdout, _ = client.exec_command('echo ' + password + ' | sudo -S echo 123')
         self.assertIn('123\n', stdout.readlines())
 
-    def get_realname(self):
-        rep = self.s.get(self.url)
-        tree = html.fromstring(rep.content)
-        realname = tree.xpath(user_xpath)
-        return realname[0].strip()
-
     def test_wrong_node(self):
         rep = self.s.post(self.url + 'api', data={
             'method': 'node',
             'node': '123123',
-            'name': self.get_realname()})
+            'name': self.get_id()[0]})
 
     def test_excess_quota(self):
         conn.execute('UPDATE user SET quota = ? WHERE name = ?', (1, user))
@@ -490,7 +489,7 @@ class Test_after_create(unittest.TestCase):
 
     def test_access_other_fail(self):
         bn = user + '_' + box_name
-        realname = self.get_realname()
+        realname = self.get_id()[0]
         conn.execute('UPDATE box SET user = ? WHERE box_name = ?', ('123', bn))
         conn.commit()
 
@@ -580,44 +579,18 @@ class Test_after_create(unittest.TestCase):
 
     def test_vnctoken(self):
         rep = self.s.post(self.url + 'vnctoken', data={
-            'token': self.get_realname()})
+            'token': self.get_id()[0]})
         self.assertEqual(rep.status_code, 200)
         self.assertEqual(rep.text, config['vnc_password'])
 
 
-class Test_duplicate(unittest.TestCase):
+class Test_duplicate(TestFunc):
     def setUp(self):
         self.url = url + '/box/'
-        self.sudo = 'echo ' + password + ' | sudo -S '
-        self.s = Session()
-        rep = self.s.post(url, data={
-            'username': user,
-            'password': password})
-        self.assertEqual(rep.status_code, 200)
 
         # create one if not exist
-        rep = self.s.get(self.url)
-        if ' 1/3' not in rep.text:
-            print('Skip Create')
-            client = get_ssh()
-            client.exec_command(self.sudo + 'mkdir /home/tmp1')
-            time.sleep(1)
-            return
-        self.assertIn(' 1/3', rep.text)
-
-        rep = self.s.post(self.url + 'create', data={
-            'name': box_name,
-            'node': test_node,
-            'image': image_name})
-        self.assertEqual(rep.status_code, 200)
-        print('Wait for creation')
-        self.wait('status: running')
-
-        time.sleep(5)
-        client = get_ssh()
-        client.exec_command(self.sudo + 'mkdir /home/tmp1')
-        time.sleep(1)
-
+        self.createOne()
+        get_ssh_command('mkdir /home/tmp1')
 
     def test_duplicate(self):
         # create same env
@@ -628,57 +601,26 @@ class Test_duplicate(unittest.TestCase):
             'image': user + '_' + box_name})
         self.assertEqual(rep.status_code, 200)
         self.wait('status: running', 2)
+        time.sleep(3)
 
-        time.sleep(5)
-        client = get_ssh(box_name=box_name + '_1')
-        _, stdout, _ = client.exec_command('ls /home')
-        self.assertIn('tmp1\n', stdout.readlines())
+        self.assertIn('tmp1\n', get_ssh_command('ls /home', box_name=box_name + '_1'))
 
         # sync same env
         print('Sync')
-        client = get_ssh()
-        client.exec_command(self.sudo + 'mkdir /home/tmp2')
+        get_ssh_command('mkdir /home/tmp2')
 
-        rep = self.s.get(self.url)
-        tree = html.fromstring(rep.content)
-        realname = tree.xpath(user_xpath)[1].strip()
         rep = self.s.post(self.url + 'api', data={
             'method': 'Sync',
-            'name': realname})
+            'name': self.get_id()[1]})
         self.assertEqual(rep.status_code, 200)
         time.sleep(10)
         self.wait('status: running', 2)
-        time.sleep(5)
+        time.sleep(3)
 
-        client = get_ssh(box_name=box_name + '_1')
-        _, stdout, _ = client.exec_command('ls /home')
-        self.assertIn('tmp2\n', stdout.readlines())
-
-    def wait(self, status, num=1):
-        t = 30
-        while t > 0:
-            rep = self.s.get(self.url)
-            if rep.text.count(status) == num:
-                break
-            t -= 1
-            print('.')
-            time.sleep(3)
-        else:
-            self.assertTrue(False)
+        self.assertIn('tmp2\n', get_ssh_command('ls /home', box_name=box_name + '_1'))
 
     def tearDown(self):
-        rep = self.s.get(self.url)
-        tree = html.fromstring(rep.content)
-        realname = tree.xpath(user_xpath)
-        for name in realname:
-            print('Delete')
-            rep = self.s.post(self.url + 'api', data={
-                'method': 'Delete',
-                'name': name.strip()})
-            self.assertEqual(rep.status_code, 200)
-
-        print('Wait for deletion')
-        self.wait(' 1/3')
+        self.tearAll()
 
 
 if __name__ == '__main__':
