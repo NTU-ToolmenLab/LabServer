@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}
+list
+{% endblock %}
+
+{% block body %}
+  <nav class="navbar navbar-light bg-light justify-content-between">
+    <a class="navbar-brand"> {{ current_user.name }} </a>
+     <form class="form-inline">
+         <a href="{{ url_for('labboxmain.routes.Logout')}}" class="btn btn-primary btn-md"/>logout</a>
+     </form>
+  </nav>
+
+  <div class="container">
+    <form action="{{ url_for('labboxmain.box_models.queueAppend')}}" method="post">
+    <div class="input-group mb-3">
+      <div class="input-group-prepend">
+        <span class="input-group-text">Your command</span>
+      </div>
+      <input type="text" class="form-control" name="command" placeholder="echo 123"/>
+
+      <div class="input-group-append">
+        <select class="form-control" name="image">
+        {% for image in create_images %}
+          <option> {{image}} </option>
+        {% endfor %}
+        </select>
+      </div>
+
+      <div class="input-group-append">
+        <button type="submit" class="btn btn-outline-primary"/>Submit Command</button>
+      </div>
+    </div>
+    </form>
+    <table class="table">
+      <tbody>
+      {% for data in queue %}
+        <tr>
+          <th scope="row"> {{ data.name }} </th>
+          <td>
+            <form action="{{ url_for('labboxmain.box_models.log')}}" method="post">
+              <input type="hidden"   name="name"     value="{{data.name}}"/>
+              <div class="btn-group" role="group">
+                <input type="submit" name="method" value="Detail" class="btn btn-outline-primary"/>
+              </div>
+            </form>
+          </td>
+          <td> {{ data.user }} </td>
+          <td> {{ data.image }} </td>
+          <td> {{ data.date }} </td>
+          {% if data.queueing %}
+            <td> <i class="fas fa-spinner"></i> Waiting </td>
+          {% else %}
+            <td> <i class="far fa-check-circle"></i> Running </td>
+          {% endif %}
+          <td>
+            <form action="{{ url_for('labboxmain.box_models.queueDelete')}}" method="post">
+              <input type="hidden"   name="name"     value="{{data.name}}"/>
+              <div class="btn-group" role="group">
+                <input type="submit" name="method" value="Delete" class="btn btn-outline-primary"/>
+              </div>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

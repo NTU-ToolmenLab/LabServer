@@ -22,16 +22,16 @@ def initdb():
     from labboxmain.models import db, add_user
     from labboxmain.box_models import db as boxdb, add_image
     logger.warning('[Database] Recreate DataBase')
-    db.drop_all()
-    boxdb.drop_all()
+    # db.drop_all()
+    # boxdb.drop_all()
     db.create_all()
     boxdb.create_all()
     db.session.commit()
     boxdb.session.commit()
     # testing
-    add_user('linnil1', 'test123', groupid=1, quota=2)
-    add_image('user', 'learn3.0', 'cuda9.0 cudnn7 python3')
-    add_image('user', 'learn3.1', 'cuda9.0 cudnn7 python3 caffe2')
+    # add_user('linnil1', 'test123', groupid=1, quota=2)
+    # add_image('user', 'learn3.0', 'cuda9.0 cudnn7 python3')
+    # add_image('user', 'learn3.1', 'cuda9.0 cudnn7 python3 caffe2')
 
 
 @app.cli.command()

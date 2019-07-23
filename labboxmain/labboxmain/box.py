@@ -157,9 +157,9 @@ def createAPI(userid, name, node, realname, image, pull=True, parent=''):
         'node': node,
         'image': image,
         'pull': pull,
-        'parent': parent,
         'labnas': 'True',
         'homepath': now_user.name}
+
     now_dict.update(bp.create_rule(now_user))
 
     rep = otherAPI('create', **now_dict)

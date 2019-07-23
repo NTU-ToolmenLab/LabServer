@@ -151,7 +151,7 @@ def create():
 
     # pull
     if request.form.get('pull'):
-        template['spec']['containers']['imagePullPolicy'] = "Always"
+        template['spec']['containers'][0]['imagePullPolicy'] = "Always"
 
     # only run one command
     if request.form.get('command'):
