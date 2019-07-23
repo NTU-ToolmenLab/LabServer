@@ -275,5 +275,47 @@ class TestAPI_continue(unittest.TestCase):
             self.assertTrue(False)
 
 
+class Test_command(unittest.TestCase):
+    def setUp(self):
+        self.url = url
+
+    def checkOK(self, rep):
+        self.assertEqual(rep.status_code, 200)
+        rep = rep.json()
+        self.assertEqual(rep['status'], 200)
+        self.assertEqual(rep['message'], 'ok')
+
+    def test_command(self):
+        post(self.url + '/delete', data={'name': name})
+        rep = post(self.url + '/create', data={
+            'image': image_name,
+            'homepath': 'guest',
+            'labnas': False,
+            'node': test_node,
+            'command': 'echo 123 && sleep 5 && >&2 echo error',
+            'name': name})
+        self.checkOK(rep)
+
+        # Wait
+        t = 40
+        while t > 0:
+            rep = post(self.url + '/log', data={'name': name}).json()
+            print(rep)
+            if rep['status'] in ['Succeeded', 'Failed']:
+                break
+            t = t - 1
+            time.sleep(1)
+        else:
+            self.assertTrue(False)
+
+        # completed
+        rep = post(self.url + '/log', data={'name': name}).json()
+        self.assertEqual(rep['log'], '123\nerror\n')
+
+        # delete
+        rep = post(self.url + '/delete', data={'name': name})
+        self.checkOK(rep)
+
+
 if __name__ == '__main__':
     unittest.main()

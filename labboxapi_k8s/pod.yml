@@ -25,6 +25,7 @@ spec:
     # imagePullPolicy: Always
     # command: [tail]
     # args: ['-f', '/dev/null']
+    # restartPolicy: Never
     ports:
     - containerPort: 22
     - containerPort: 5900

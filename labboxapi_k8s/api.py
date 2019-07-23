@@ -113,7 +113,8 @@ def goRedir(node, subpath):
     return not_found()
 
 
-# args: name, (image, node, homepath, labnas=True, inittar=server/ServerBox/all.tar, pull=True)
+# args: name, (image, node, homepath, labnas=True,
+#              inittar=server/ServerBox/all.tar, pull=True, command='')
 @app.route('/create', methods=['POST'])
 def create():
     template = yaml.load(open('/app/pod.yml'))
@@ -139,7 +140,8 @@ def create():
             del vol['persistentVolumeClaim']
 
     for vol in template['spec']['containers'][0]['volumeMounts']:
-        if vol['name'] == 'homenas' and vol['subPath'] == 'guest' and request.form.get('homepath'):
+        if vol['name'] == 'homenas' and vol['subPath'] == 'guest' \
+           and request.form.get('homepath'):
             vol['subPath'] = request.form.get('homepath')
     for vol in template['spec']['initContainers'][0]['volumeMounts']:
         if not vol.get('readOnly') and request.form.get('homepath'):
@@ -151,12 +153,23 @@ def create():
     if request.form.get('pull'):
         template['spec']['containers']['imagePullPolicy'] = "Always"
 
+    # only run one command
+    if request.form.get('command'):
+        del template['spec']['containers'][0]['ports']
+        template['spec']['containers'][0]['command'] = ['bash']
+        template['spec']['containers'][0]['args'] = ['-c', request.form.get('command')]
+        template['spec']['restartPolicy'] = 'Never'
+
     # create pod
     try:
         rep = v1.read_namespaced_pod(name, ns)
         return forbidden('Double Creation')
     except client.rest.ApiException:
         v1.create_namespaced_pod(ns, template)
+
+    # only run one command
+    if request.form.get('command'):
+        return ok()
 
     # ingress
     template_ingress = yaml.load(open('/app/pod_ingress.yml'))
@@ -213,6 +226,30 @@ def listPod():
         rep = v1.list_namespaced_pod(ns, label_selector=label)
         pod = [parsePod(pod) for pod in rep.items]
     return jsonify(pod)
+
+
+@app.route('/log', methods=['POST'])
+def logShow():
+    name = request.form.get('name')
+    rep = checkLabel(name)
+    app.logger.debug("Log " + name)
+
+    log = ''
+    result = {}
+    if rep.status.phase not in ['Pending', 'Unknown']:
+        log = v1.read_namespaced_pod_log(name, ns),
+        # why tuple
+        if isinstance(log, tuple):
+            log = log[0]
+        if rep.status.container_statuses[0].state.terminated:
+            result = rep.status.container_statuses[0].state.terminated
+
+    return jsonify({
+        'log': log,
+        'result': [result.started_at.timestamp(), result.finished_at.timestamp()]
+                   if result else [],
+        'status': rep.status.phase
+    })
 
 
 if __name__ == '__main__':
