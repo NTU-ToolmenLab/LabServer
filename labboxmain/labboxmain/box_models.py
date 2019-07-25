@@ -4,6 +4,7 @@ import logging
 from requests import post
 import datetime
 from dateutil.parser import parse
+import redis
 
 
 db = SQLAlchemy()
@@ -35,6 +36,18 @@ def record_params(setup_state):
 
     bp.vncpw = config.get('vnc_password')
     bp.create_rule = config.get('create_rule')
+
+    bp.gpu_url = config.get('gpu_monitor_url')
+    bp.gpu_query_metrics = config.get('gpu_query_metrics')
+    bp.gpu_query_interval = config.get('gpu_query_interval')
+    bp.gpu_exe_interval = config.get('gpu_exe_interval')
+
+    # setup redis
+    redis_url = config.get('celery_broker_url')
+    query_metrics = ['nvidia_gpu_duty_cycle', 'nvidia_gpu_memory_used_bytes / nvidia_gpu_memory_total_bytes']
+    u = redis_url.rfind(':')
+    head  = redis_url.find('://')
+    bp.r_cli = redis.Redis(host=redis_url[head + 3:u], port=int(redis_url[u + 1:]), db=0)
 
 
 @bp.errorhandler(403)

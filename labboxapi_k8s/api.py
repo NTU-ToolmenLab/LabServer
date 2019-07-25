@@ -114,7 +114,7 @@ def goRedir(node, subpath):
 
 
 # args: name, (image, node, homepath, labnas=True,
-#              inittar=server/ServerBox/all.tar, pull=True, command='')
+#              inittar=server/ServerBox/all.tar, pull=True, command='', gpu='')
 @app.route('/create', methods=['POST'])
 def create():
     template = yaml.load(open('/app/pod.yml'))
@@ -128,6 +128,7 @@ def create():
         template['spec']['containers'][0]['image'] = request.form.get('image')
     if request.form.get('node') and checkNode(request.form.get('node')):
         template['spec']['nodeSelector']['kubernetes.io/hostname'] = request.form.get('node')
+        template['spec']['containers'][0]['env'][0]['value'] = request.form.get('node')
 
     # deal with volume
     noclaim = []
@@ -152,12 +153,17 @@ def create():
     # pull
     if request.form.get('pull'):
         template['spec']['containers'][0]['imagePullPolicy'] = "Always"
+    if request.form.get('gpu'):
+        template['spec']['containers'][0]['env'].append({
+            'name': 'NVIDIA_VISIBLE_DEVICES',
+            'value': request.form['gpu']})
 
     # only run one command
     if request.form.get('command'):
         del template['spec']['containers'][0]['ports']
-        template['spec']['containers'][0]['command'] = ['bash']
-        template['spec']['containers'][0]['args'] = ['-c', request.form.get('command')]
+        template['spec']['containers'][0]['command'] = ['sudo']
+        env = [env['name'] + "=" + str(env['value']) for env in template['spec']['containers'][0]['env']]
+        template['spec']['containers'][0]['args'] = [*env, 'bash', '-c',request.form.get('command')]
         template['spec']['restartPolicy'] = 'Never'
 
     # create pod

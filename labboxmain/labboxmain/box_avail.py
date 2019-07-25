@@ -3,6 +3,7 @@ import flask_login
 import logging
 import time
 import datetime
+import requests
 from .models import User
 from .box_models import db as db, Box, Image, bp, otherAPI
 from labboxmain import celery
@@ -31,6 +32,7 @@ class BoxQueue(db.Model):
         return {'name': self.getName(),
                 'user': self.user,
                 'image': self.image.split(':')[-1],
+                'command': self.command,
                 'queueing': self.queueing,
                 'date': (self.create_date + datetime.timedelta(hours=8)).
                          strftime('%Y/%m/%d %X')}
@@ -42,16 +44,16 @@ class BoxQueue(db.Model):
         print(log)
         return {'node': rep['node'],
                 'start_time': rep['start'],
-                'command': self.command,
                 **log}
 
-    def run(self, node):
-        node = getFreeNode()
+    def run(self, nodegpu):
         now_user = User.query.filter_by(name=self.user).first()
+        node, gpu = nodegpu
 
         now_dict = {
             'name': self.getName(),
             'node': node,
+            'gpu': gpu,
             'image': self.image,
             'command': self.command,
             'pull': True,
@@ -61,6 +63,7 @@ class BoxQueue(db.Model):
         rep = otherAPI('create', **now_dict)
 
         self.queueing = False
+        bp.r_cli.set(str(nodegpu), time.time())
         db.session.commit()
 
 
@@ -100,29 +103,28 @@ def queueAppend():
     return show()
 
 
-@bp.route('/log', methods=['POST'])
-@flask_login.login_required
-def log():
+def getBoxQueue():
     now_user = flask_login.current_user
     data = request.form
     box = BoxQueue.query.filter_by(user=now_user.name,
                                    id=int(data.get('name').split('-')[1])).first()
     if not box:
         abort(403, 'Not your command')
+    return box
 
-    # TODO
+
+@bp.route('/log', methods=['POST'])
+@flask_login.login_required
+# TODO make more pretty
+def log():
+    box = getBoxQueue()
     return jsonify(box.getLog())
 
 
 @bp.route('/queueDelete', methods=['POST'])
 @flask_login.login_required
 def queueDelete():
-    now_user = flask_login.current_user
-    data = request.form
-    box = BoxQueue.query.filter_by(user=now_user.name,
-                                   id=int(data.get('name').split('-')[1])).first()
-    if not box:
-        abort(403, 'Not your queue')
+    box = getBoxQueue()
     otherAPI('delete', name=box.getName(), check=False)
     db.session.delete(box)
     db.session.commit()
@@ -136,6 +138,46 @@ def show():
                            create_images=[i['name'] for i in getImages()])
 
 
-# TODO
-def findFreeNode():
-    box.run('lab304-server3')
+def decisionFunc(value):
+    duty = sum(value[0]) / len(value[0])
+    memory = sum(value[1]) / len(value[1])
+    return duty < 10 and memory < 1
+
+
+def getGPUStatus():
+    gpu_st = {}
+    for query_metric in bp.gpu_query_metrics:
+        params = {
+            'query': query_metric,
+            'start': str(time.time() - bp.gpu_query_interval),
+            'end': str(time.time()),
+            'step': 5
+        }
+        rep = requests.get(bp.gpu_url + 'query_range', params=params).json()
+        metrics = rep['data']['result']
+
+        for met in metrics:
+            id = (met['metric']['node_name'], met['metric']['minor_number'])
+            value = [float(i[1]) for i in met['values']]
+            gpu_st[id] = gpu_st.get(id, []) + [value]
+    return gpu_st
+
+
+def getAvailableGPUs():
+    gpu_st = getGPUStatus()
+    avail_gpu = []
+    for gpu in gpu_st.items():
+        a = bp.r_cli.get(str(gpu[0]))
+        if not a or time.time() - float(a) > bp.gpu_exe_interval \
+                and decisionFunc(gpu[1]):
+            avail_gpu.append(gpu[0])
+    return avail_gpu
+
+
+@celery.task()
+def scheduleGPU():
+    avail_gpus = getAvailableGPUs()
+    boxqueue = BoxQueue.query.filter_by(queueing=True).limit(len(avail_gpus)).all()
+    for i, box in enumerate(boxqueue):
+        logger.debug('[Queue] ' + box.getName() + ' use ' + str(avail_gpus[i]))
+        box.run(avail_gpus[i])

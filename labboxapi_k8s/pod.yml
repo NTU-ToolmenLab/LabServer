@@ -23,8 +23,8 @@ spec:
   - name: test
     image: nvidia/cuda:10.0-cudnn7-devel-ubuntu18.04
     # imagePullPolicy: Always
-    # command: [tail]
-    # args: ['-f', '/dev/null']
+    # command: [sudo]
+    # args: ['bash', '-c', 'echo 123']
     # restartPolicy: Never
     ports:
     - containerPort: 22
@@ -43,6 +43,9 @@ spec:
       mountPath: /dev/shm
     - name: tmp
       mountPath: /home/tmp
+    env:
+    - name: node
+      value: lab304-server2
   nodeSelector:
     kubernetes.io/hostname: lab304-server2
   volumes:
