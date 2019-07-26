@@ -6,7 +6,7 @@ import click
 app, celery = create_app(config)
 
 # Before create box model, it need to create celery first
-from .box import bp as boxbp, db as boxdb
+from .box_queue import bp as boxbp, db as boxdb
 app.register_blueprint(boxbp, url_prefix='/box/')
 boxdb.init_app(app)
 

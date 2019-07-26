@@ -5,25 +5,15 @@ list
 {% endblock %}
 
 {% block body %}
-  <nav class="navbar navbar-light bg-light justify-content-between">
-    <a class="navbar-brand"> {{ current_user.name }} </a>
-     <form class="form-inline">
-         <a href="{{ url_for('labboxmain.routes.Logout')}}" class="btn btn-primary btn-md"/>logout</a>
-     </form>
-  </nav>
-
+{% include 'nav.html' %}
   <div class="container">
     <div class="row justify-content-center">
       <div class="col-lg-7">
-        <div class="alert alert-success" role="alert">
+        <!--div class="alert alert-success" role="alert">
           <h3> Bulletin Board </h3>
           <br>
-          <p><a href="/passwd">Change Your Password</a></p>
-          <p><a href="/drive/">Drive</a></p>
-          <p><a href="/monitor/">Monitor Web</a></p>
-          <p><a href="/help">Help Web</a></p>
           {{ config.bullet|safe }}
-        </div>
+        </div-->
 
         {% for data in container_list %}
           <div class="card my-3">

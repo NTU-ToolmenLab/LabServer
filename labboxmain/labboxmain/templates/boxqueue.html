@@ -1,17 +1,18 @@
 {% extends 'base.html' %}
 
 {% block title %}
-list
+queue
+{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
 {% endblock %}
 
 {% block body %}
-  <nav class="navbar navbar-light bg-light justify-content-between">
-    <a class="navbar-brand"> {{ current_user.name }} </a>
-     <form class="form-inline">
-         <a href="{{ url_for('labboxmain.routes.Logout')}}" class="btn btn-primary btn-md"/>logout</a>
-     </form>
-  </nav>
-
+{% include 'nav.html' %}
   <div class="container">
     <form action="{{ url_for('labboxmain.box_models.queue')}}" method="post">
     <div class="input-group mb-3">
@@ -43,7 +44,7 @@ list
             <button class="btn btn-primary" type="button"
                     data-toggle="collapse" data-target="#{{ data.name }}"
                     aria-expanded="true" aria-controls="collapseExample"
-                    {% if data.user != current_user.name or data.queueing %} disabled {% endif %} />
+                    {% if not data.permit or data.queueing %} disabled {% endif %} />
               Log
             </button>
             {% if data.user == current_user.name%}
@@ -63,7 +64,7 @@ list
               <input type="hidden"   name="name"     value="{{data.name}}"/>
               <div class="btn-group" role="group">
                 <input type="submit" name="method" value="Delete" class="btn btn-outline-danger"/
-                {% if data.user != current_user.name%} disabled {% endif %} />
+                {% if not data.permit %} disabled {% endif %} />
               </div>
             </form>
           </td>

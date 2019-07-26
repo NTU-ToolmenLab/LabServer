@@ -7,7 +7,7 @@ import requests
 from .models import User
 from .box_models import db as db, Box, Image, bp, otherAPI
 from labboxmain import celery
-from .box import otherAPI, getImages
+from .box import otherAPI, getImages, boxPush
 
 
 logger = logging.getLogger('labboxmain')
@@ -73,8 +73,12 @@ class BoxQueue(db.Model):
 def queue():
     now_user = flask_login.current_user
     if request.method == 'GET':
-        queue = [box.getData() for box in BoxQueue.query.all()]
-        return render_template('box_avail.html',
+        queue = []
+        for box in BoxQueue.query.all():
+            q = box.getData()
+            q['permit'] = now_user.groupid == 1 or box.user == now_user.name
+            queue.append(q)
+        return render_template('boxqueue.html',
                                queue=queue,
                                create_images=[i['name'] for i in getImages()])
 
@@ -89,13 +93,11 @@ def queue():
     parent = None
     if Image.query.filter_by(user='user', name=image).first():
         image = bp.images + data.get('image')
-        """
     elif Box.query.filter_by(user=now_user.name, box_name=image).first():
         parent = Box.query.filter_by(user=now_user.name, box_name=image).first()
         image = parent.getBackupname()
-        box.commit(check=False)
-        boxPush(box.id)
-    """
+        parent.commit(check=False)
+        boxPush(parent.id)
     else:
         abort(403, 'No such environment')
 
@@ -110,11 +112,13 @@ def queue():
 def getBoxQueue():
     now_user = flask_login.current_user
     data = request.form
-    print(data)
     if data.get('name', '').count('-') != 1:
         abort(403, 'Wrong Name')
-    box = BoxQueue.query.filter_by(user=now_user.name,
-                                   id=int(data.get('name').split('-')[1])).first()
+    if now_user.groupid != 1:
+        box = BoxQueue.query.filter_by(user=now_user.name,
+                                       id=int(data.get('name').split('-')[1])).first()
+    else:
+        box = BoxQueue.query.filter_by(id=int(data.get('name').split('-')[1])).first()
     if not box:
         abort(403, 'Not your command')
     return box
@@ -125,6 +129,7 @@ def getBoxQueue():
 # TODO make more pretty
 def log():
     box = getBoxQueue()
+    logger.debug('[Queue] ' + ' log ' + box.getName())
     if box.queueing:
         abort(403, 'Not yet creating')
     return jsonify(box.getLog())
@@ -135,7 +140,7 @@ def log():
 def queueDelete():
     box = getBoxQueue()
     now_user = flask_login.current_user
-    logger.debug('[Queue] ' + now_user.name + " delete " + box.getName())
+    logger.debug('[Queue] ' + now_user.name + ' delete ' + box.getName())
     otherAPI('delete', name=box.getName(), check=False)
     db.session.delete(box)
     db.session.commit()
