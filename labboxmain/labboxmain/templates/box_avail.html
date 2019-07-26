@@ -13,7 +13,7 @@ list
   </nav>
 
   <div class="container">
-    <form action="{{ url_for('labboxmain.box_models.queueAppend')}}" method="post">
+    <form action="{{ url_for('labboxmain.box_models.queue')}}" method="post">
     <div class="input-group mb-3">
       <div class="input-group-prepend">
         <span class="input-group-text">Your command</span>
@@ -31,20 +31,24 @@ list
       <div class="input-group-append">
         <button type="submit" class="btn btn-outline-primary"/>Submit Command</button>
       </div>
+      <a class="btn btn-outline-primary" onClick="window.location.href='{{ url_for('labboxmain.box_models.queue') }}'"><i class="fas fa-sync"></i></a>
     </div>
     </form>
-    <table class="table">
+    <table class="table table-striped">
       <tbody>
       {% for data in queue %}
         <tr>
           <th scope="row"> {{ data.name }} </th>
           <td>
-            <form action="{{ url_for('labboxmain.box_models.log')}}" method="post">
-              <input type="hidden"   name="name"     value="{{data.name}}"/>
-              <div class="btn-group" role="group">
-                <input type="submit" name="method" value="Detail" class="btn btn-outline-primary"/>
-              </div>
-            </form>
+            <button class="btn btn-primary" type="button"
+                    data-toggle="collapse" data-target="#{{ data.name }}"
+                    aria-expanded="true" aria-controls="collapseExample"
+                    {% if data.user != current_user.name or data.queueing %} disabled {% endif %} />
+              Log
+            </button>
+            {% if data.user == current_user.name%}
+              {{ data.command }}
+            {% endif %}
           </td>
           <td> {{ data.user }} </td>
           <td> {{ data.image }} </td>
@@ -58,13 +62,71 @@ list
             <form action="{{ url_for('labboxmain.box_models.queueDelete')}}" method="post">
               <input type="hidden"   name="name"     value="{{data.name}}"/>
               <div class="btn-group" role="group">
-                <input type="submit" name="method" value="Delete" class="btn btn-outline-primary"/>
+                <input type="submit" name="method" value="Delete" class="btn btn-outline-danger"/
+                {% if data.user != current_user.name%} disabled {% endif %} />
               </div>
             </form>
           </td>
         </tr>
+        <tr id="{{ data.name }}" class="collapse" id="{{ data.name }}"><td colspan="7">
+          <a class="btn btn-outline-primary" onClick=showLog("{{ data.name }}")><i class="fas fa-sync"></i></a>
+          <table class="table">
+            <thead><tr></tr></thead>
+            <tbody><tr></tr></tbody>
+          </table>
+          <pre><code> No Log Yet </code></pre>
+        </td></tr>
       {% endfor %}
       </tbody>
     </table>
   </div>
+<script>
+const url = "/box/log";
+
+$('.collapse').on('show.bs.collapse', (evt) => {
+    var name = evt.target.id;
+    showLog(name);
+})
+
+function showLog(name) {
+    var http = new XMLHttpRequest();
+    http.open("POST", url, true);
+    http.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    http.send("name=" + name);
+
+    http.onreadystatechange = () => {
+        if (http.status == 200 && http.readyState == 4) {
+            var data = JSON.parse(http.responseText);
+            var ele = document.querySelector("#" + name);
+
+            // Remove all children
+            // https://stackoverflow.com/questions/3955229/remove-all-child-elements-of-a-dom-node-in-javascript
+            var a = ele.querySelector("tbody>tr");
+            var cNode = a.cloneNode(false);
+            a.parentNode.replaceChild(cNode, a);
+            var a = ele.querySelector("thead>tr");
+            var cNode = a.cloneNode(false);
+            a.parentNode.replaceChild(cNode, a);
+
+            // log
+            ele.querySelector("pre>code").innerText = data.log;
+
+            // status
+            Object.keys(data).forEach( (d) => {
+                if (d == "log")
+                    return;
+                var td = document.createElement("td");
+                td.innerText = data[d];
+                ele.querySelector("tbody>tr").appendChild(td);
+
+                var td = document.createElement("th");
+                td.innerText = d;
+                td.setAttribute("scope", "col");
+                ele.querySelector("thead>tr").appendChild(td);
+            });
+        }
+    }
+}
+
+</script>
 {% endblock %}

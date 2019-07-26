@@ -39,9 +39,10 @@ class BoxQueue(db.Model):
 
     def getLog(self):
         rep = otherAPI('search', name=self.getName(), check=False)
-        print(rep)
         log = otherAPI('log', name=self.getName(), check=False)
-        print(log)
+        if log.get('result'):
+            log['running_time(s)'] = log['result'][1] - log['result'][0]
+            del log['result']
         return {'node': rep['node'],
                 'start_time': rep['start'],
                 **log}
@@ -69,10 +70,13 @@ class BoxQueue(db.Model):
 
 @bp.route('/queue', methods=['GET', 'POST'])
 @flask_login.login_required
-def queueAppend():
+def queue():
     now_user = flask_login.current_user
     if request.method == 'GET':
-        return show()
+        queue = [box.getData() for box in BoxQueue.query.all()]
+        return render_template('box_avail.html',
+                               queue=queue,
+                               create_images=[i['name'] for i in getImages()])
 
     data = request.form
     logger.debug('[Queue] ' + now_user.name + ': ' + str(data))
@@ -100,12 +104,15 @@ def queueAppend():
                         command=data['command'])
     db.session.add(boxqueue)
     db.session.commit()
-    return show()
+    return redirect(url_for('labboxmain.box_models.queue'))
 
 
 def getBoxQueue():
     now_user = flask_login.current_user
     data = request.form
+    print(data)
+    if data.get('name', '').count('-') != 1:
+        abort(403, 'Wrong Name')
     box = BoxQueue.query.filter_by(user=now_user.name,
                                    id=int(data.get('name').split('-')[1])).first()
     if not box:
@@ -118,6 +125,8 @@ def getBoxQueue():
 # TODO make more pretty
 def log():
     box = getBoxQueue()
+    if box.queueing:
+        abort(403, 'Not yet creating')
     return jsonify(box.getLog())
 
 
@@ -125,17 +134,12 @@ def log():
 @flask_login.login_required
 def queueDelete():
     box = getBoxQueue()
+    now_user = flask_login.current_user
+    logger.debug('[Queue] ' + now_user.name + " delete " + box.getName())
     otherAPI('delete', name=box.getName(), check=False)
     db.session.delete(box)
     db.session.commit()
-    return show()
-
-
-def show():
-    queue = [box.getData() for box in BoxQueue.query.all()]
-    return render_template('box_avail.html',
-                           queue=queue,
-                           create_images=[i['name'] for i in getImages()])
+    return redirect(url_for('labboxmain.box_models.queue'))
 
 
 def decisionFunc(value):
