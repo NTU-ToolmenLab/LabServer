@@ -48,7 +48,7 @@ config = {
             'schedule': crontab(hour=2, minute=0),
         },
         'queue-run': {
-            'task': 'labboxmain.box_avail.scheduleGPU',
+            'task': 'labboxmain.box_queue.scheduleGPU',
             'schedule': crontab(minute='*'),
         },
     }

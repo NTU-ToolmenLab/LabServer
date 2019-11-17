@@ -151,7 +151,7 @@ def create():
             vol['subPath'] = request.form.get('inittar')
 
     # pull
-    if request.form.get('pull'):
+    if request.form.get('pull').lower() == 'true':
         template['spec']['containers'][0]['imagePullPolicy'] = "Always"
     if request.form.get('gpu'):
         template['spec']['containers'][0]['env'].append({
@@ -164,7 +164,6 @@ def create():
         template['spec']['containers'][0]['command'] = ['sudo']
         env = [env['name'] + "=" + str(env['value']) for env in template['spec']['containers'][0]['env']]
         template['spec']['containers'][0]['args'] = [*env, 'bash', '-c',request.form.get('command')]
-        template['spec']['restartPolicy'] = 'Never'
 
     # create pod
     try:

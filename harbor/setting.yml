@@ -12,6 +12,8 @@ persistence:
     redis:
       existingClaim: nfs-labserver
       subPath: harbor/redis
+  imageChartStorage:
+    disableredirect: true
 
 expose:
   type: clusterIP

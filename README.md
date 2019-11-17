@@ -183,5 +183,18 @@ docker exec -it -u 1000 labserver_nextcloud_1 php occ files_external:import my_s
 cd ..
 ```
 
+## Harbor
+### Login
+* Default User: admin
+* Default Password: Harbor12345
+
+### Add regstries
+* Provider: docker-registry
+* Endpoint: http://harbor-harbor-registry.default.svc.cluster.local:5000
+* SSL: no
+
+### For docker login
+`docker login harbor.default.svc.cluster.local`
+
 ## Contribute
 you can use `git add -p xx` to commit modified changes.

@@ -25,7 +25,7 @@ spec:
     # imagePullPolicy: Always
     # command: [sudo]
     # args: ['bash', '-c', 'echo 123']
-    # restartPolicy: Never
+    restartPolicy: Never
     ports:
     - containerPort: 22
     - containerPort: 5900

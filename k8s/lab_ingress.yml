@@ -64,3 +64,21 @@ spec:
         backend:
           serviceName: nextcloud-nginx
           servicePort: 443
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: nextcloud-dav
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/redirect-regex: https://(.*)/.well-known/(card|cal)dav
+    traefik.ingress.kubernetes.io/redirect-replacement: https://$1/drive/remote.php/dav/
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /.well-known/
+        backend:
+          serviceName: nextcloud-nginx
+          servicePort: 443
+---

@@ -101,6 +101,9 @@ def queue():
     else:
         abort(403, 'No such environment')
 
+    if len(BoxQueue.query.filter_by(user=now_user.name).all()) > 10:
+        abort(403, 'You have more than 10 in queue')
+
     boxqueue = BoxQueue(user=now_user.name,
                         image=image,
                         command=data['command'])
