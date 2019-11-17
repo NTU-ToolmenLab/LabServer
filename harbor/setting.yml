@@ -26,3 +26,8 @@ chartmuseum:
   enabled: false
 clair:
   enabled: false
+
+database:
+  internal:
+    image:
+      tag: v1.8.0

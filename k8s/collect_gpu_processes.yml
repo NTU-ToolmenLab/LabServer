@@ -1,23 +1,23 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: collect-gpu
+  name: gpu-processes
 spec:
   selector:
     matchLabels:
-      name: collect-gpu
+      name: gpu-processes
   template:
     metadata:
       labels:
-        name: collect-gpu
+        name: gpu-processes
     spec:
       containers:
-      - name: collect-gpu
-        image: harbor.default.svc.cluster.local/linnil1/collectgpu
+      - name: gpu-processes
+        image: harbor.default.svc.cluster.local/linnil1/gpu-processes
         volumeMounts:
         - name: volume
           mountPath: /app
-          subPath: collectgpu
+          subPath: collect_gpu_processes
         - name: volume
           mountPath: /app/db.sqlite
           subPath: labboxmain/db.sqlite

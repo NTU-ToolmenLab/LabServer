@@ -46,13 +46,12 @@ if [ $pod_network = "flannel" ]; then
     kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
 elif [ $pod_network = "calico" ]; then
     echo "installing Calico"
-    kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml
-    curl https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml -O
+    wget https://docs.projectcalico.org/v3.10/manifests/calico.yaml
     sed -ie "s~192.168.0.0/16~$pod_network_cidr~g" calico.yaml
-    kubectl apply -f calico.yaml
     sed -ie "/autodetect/a\
 \            - name: IP_AUTODETECTION_METHOD\
-\              value: interface=$interface" tmp
+\              value: interface=$interface" calico.yaml
+    kubectl apply -f calico.yaml
 elif [ $pod_network = "canal" ]; then
     echo "installing Canal"
     kubectl apply -f https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/canal/rbac.yaml

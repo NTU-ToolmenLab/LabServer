@@ -27,20 +27,28 @@ sed -i "s/:443/:$domain_port/g" ../Nextcloud/nginx-k8s.conf
 sed -i "s/{{\s*secretkey\s*}}/$oauth_secretkey/g" ../labboxmain/config.py
 sed -i "s/{{\s*registry_password\s*}}/$oauth_registry_password/g" ../labboxmain/config.py
 
-# build for k8s docker api server
-echo "build container"
+# Create PV
+kubectl create -f pv.yml -f pv_user.yml
+
+# Build images
+echo "Build Images"
 docker build labboxapi-k8s -t harbor.default.svc.cluster.local/linnil1/labboxapi-k8s
 docker tag linnil1/labboxapi-k8s harbor.default.svc.cluster.local/linnil1/labboxapi-k8s
 docker tag linnil1/labboxapi-docker harbor.default.svc.cluster.local/linnil1/labboxapi-docker
-docker tag linnil1/nextcloudfpm:13 harbor.default.svc.cluster.local/linnil1/nextcloudfpm:13
+docker tag linnil1/nextcloudfpm:16 harbor.default.svc.cluster.local/linnil1/nextcloudfpm:16
 docker tag linnil1/labboxmain harbor.default.svc.cluster.local/linnil1/labboxmain
 docker tag linnil1/novnc harbor.default.svc.cluster.local/linnil1/novnc
 docker tag linnil1/collectgpu harbor.default.svc.cluster.local/linnil1/collectgpu
 
-# build for k8s docker api server
+# Build Harbor
 echo "Generate cert for harbor"
 openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -subj "/C=TW/CN=harbor.default.svc.cluster.local" -keyout tls.key -out tls.crt
 sudo mkdir -p /etc/docker/certs.d/harbor.default.svc.cluster.local/
 sudo cp tls.crt /etc/docker/certs.d/harbor.default.svc.cluster.local/ca.crt
 kubectl create secret generic harbor-tls --from-file=tls.key --from-file=tls.crt
+cd ../harbor
 git clone https://github.com/goharbor/harbor-helm
+cd harbor-helm
+git checkout 1.2.0
+helm install harbor -f ../setting.yml .
+cd ../../k8s

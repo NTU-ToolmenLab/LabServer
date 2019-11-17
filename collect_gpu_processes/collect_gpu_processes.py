@@ -103,7 +103,7 @@ def pushInit():
     for i in metrics:
         if type(metrics[i]) is float or \
            type(metrics[i]) is int:
-            g = Gauge('collectgpu_' + i, '',
+            g = Gauge('gpuprocesses_' + i, '',
                       ['id', 'create_time', 'user', 'cmd', 'gpuid'])
             # ID is for find out container
             # user is the username for container
