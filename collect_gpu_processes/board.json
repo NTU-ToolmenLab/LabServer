@@ -16,7 +16,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": 6,
-  "iteration": 1555902687091,
+  "iteration": 1574010190972,
   "links": [],
   "panels": [
     {
@@ -40,7 +40,7 @@
         "label": "Others",
         "threshold": 0
       },
-      "datasource": "prom1",
+      "datasource": "prom",
       "fontSize": "80%",
       "format": "short",
       "gridPos": {
@@ -66,7 +66,7 @@
       "strokeWidth": 1,
       "targets": [
         {
-          "expr": "sum by (user)(collectgpu_gpu_usage)",
+          "expr": "sum by (user)(gpuprocesses_gpu_usage)",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -624,6 +624,7 @@
         "y": 19
       },
       "id": 17,
+      "repeat": null,
       "title": "Per nodes",
       "type": "row"
     },
@@ -632,11 +633,11 @@
       "bars": true,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "prom1",
+      "datasource": "prom",
       "fill": 1,
       "gridPos": {
         "h": 9,
-        "w": 8,
+        "w": 24,
         "x": 0,
         "y": 20
       },
@@ -664,203 +665,7 @@
       "repeatDirection": "h",
       "scopedVars": {
         "node": {
-          "selected": false,
-          "text": "lab304-server1",
-          "value": "lab304-server1"
-        }
-      },
-      "seriesOverrides": [],
-      "stack": true,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "collectgpu_gpu_usage{node_name='$node'}",
-          "format": "time_series",
-          "instant": false,
-          "intervalFactor": 1,
-          "legendFormat": "{{ user }} {{id}} {{node_name}} {{gpuid}}",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "GPU usage $node",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": "200",
-          "min": "0",
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": false
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": true,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "prom1",
-      "fill": 1,
-      "gridPos": {
-        "h": 9,
-        "w": 8,
-        "x": 8,
-        "y": 20
-      },
-      "id": 44,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": false,
-        "total": false,
-        "values": false
-      },
-      "lines": false,
-      "linewidth": 1,
-      "links": [],
-      "maxPerRow": 3,
-      "nullPointMode": "null",
-      "paceLength": 10,
-      "percentage": false,
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "repeat": null,
-      "repeatDirection": "h",
-      "repeatIteration": 1555902687091,
-      "repeatPanelId": 5,
-      "scopedVars": {
-        "node": {
-          "selected": false,
-          "text": "lab304-server2",
-          "value": "lab304-server2"
-        }
-      },
-      "seriesOverrides": [],
-      "stack": true,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "collectgpu_gpu_usage{node_name='$node'}",
-          "format": "time_series",
-          "instant": false,
-          "intervalFactor": 1,
-          "legendFormat": "{{ user }} {{id}} {{node_name}} {{gpuid}}",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "GPU usage $node",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": "200",
-          "min": "0",
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": false
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": true,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "prom1",
-      "fill": 1,
-      "gridPos": {
-        "h": 9,
-        "w": 8,
-        "x": 16,
-        "y": 20
-      },
-      "id": 45,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": false,
-        "total": false,
-        "values": false
-      },
-      "lines": false,
-      "linewidth": 1,
-      "links": [],
-      "maxPerRow": 3,
-      "nullPointMode": "null",
-      "paceLength": 10,
-      "percentage": false,
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "repeat": null,
-      "repeatDirection": "h",
-      "repeatIteration": 1555902687091,
-      "repeatPanelId": 5,
-      "scopedVars": {
-        "node": {
-          "selected": false,
+          "selected": true,
           "text": "lab304-server3",
           "value": "lab304-server3"
         }
@@ -870,7 +675,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "collectgpu_gpu_usage{node_name='$node'}",
+          "expr": "gpuprocesses_gpu_usage{node_name='$node'}",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 1,
@@ -928,7 +733,7 @@
       "fill": 1,
       "gridPos": {
         "h": 9,
-        "w": 8,
+        "w": 24,
         "x": 0,
         "y": 29
       },
@@ -956,201 +761,7 @@
       "repeatDirection": "h",
       "scopedVars": {
         "node": {
-          "selected": false,
-          "text": "lab304-server1",
-          "value": "lab304-server1"
-        }
-      },
-      "seriesOverrides": [],
-      "stack": true,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "collectgpu_memory{node_name='$node'}",
-          "format": "time_series",
-          "intervalFactor": 1,
-          "legendFormat": "{{ user }} {{id}} {{node_name}} {{gpuid}}",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "GPU memory $node",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "mbytes",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": "0",
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": true,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "prom1",
-      "fill": 1,
-      "gridPos": {
-        "h": 9,
-        "w": 8,
-        "x": 8,
-        "y": 29
-      },
-      "id": 46,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": false,
-        "total": false,
-        "values": false
-      },
-      "lines": false,
-      "linewidth": 1,
-      "links": [],
-      "maxPerRow": 6,
-      "nullPointMode": "null",
-      "paceLength": 10,
-      "percentage": false,
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "repeat": null,
-      "repeatDirection": "h",
-      "repeatIteration": 1555902687091,
-      "repeatPanelId": 2,
-      "scopedVars": {
-        "node": {
-          "selected": false,
-          "text": "lab304-server2",
-          "value": "lab304-server2"
-        }
-      },
-      "seriesOverrides": [],
-      "stack": true,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "collectgpu_memory{node_name='$node'}",
-          "format": "time_series",
-          "intervalFactor": 1,
-          "legendFormat": "{{ user }} {{id}} {{node_name}} {{gpuid}}",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "GPU memory $node",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "mbytes",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": "0",
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": true,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "prom1",
-      "fill": 1,
-      "gridPos": {
-        "h": 9,
-        "w": 8,
-        "x": 16,
-        "y": 29
-      },
-      "id": 47,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": false,
-        "total": false,
-        "values": false
-      },
-      "lines": false,
-      "linewidth": 1,
-      "links": [],
-      "maxPerRow": 6,
-      "nullPointMode": "null",
-      "paceLength": 10,
-      "percentage": false,
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "repeat": null,
-      "repeatDirection": "h",
-      "repeatIteration": 1555902687091,
-      "repeatPanelId": 2,
-      "scopedVars": {
-        "node": {
-          "selected": false,
+          "selected": true,
           "text": "lab304-server3",
           "value": "lab304-server3"
         }
@@ -1218,14 +829,11 @@
       {
         "allValue": null,
         "current": {
-          "tags": [],
           "text": "All",
-          "value": [
-            "$__all"
-          ]
+          "value": "$__all"
         },
-        "datasource": "prom1",
-        "definition": "label_values(collectgpu_memory, node_name)",
+        "datasource": "prom",
+        "definition": "label_values(gpuprocesses_memory, node_name)",
         "hide": 0,
         "includeAll": true,
         "label": null,
@@ -1233,27 +841,17 @@
         "name": "node",
         "options": [
           {
-            "selected": true,
+            "selected": false,
             "text": "All",
             "value": "$__all"
           },
           {
-            "selected": false,
-            "text": "lab304-server1",
-            "value": "lab304-server1"
-          },
-          {
-            "selected": false,
-            "text": "lab304-server2",
-            "value": "lab304-server2"
-          },
-          {
-            "selected": false,
+            "selected": true,
             "text": "lab304-server3",
             "value": "lab304-server3"
           }
         ],
-        "query": "label_values(collectgpu_memory, node_name)",
+        "query": "label_values(gpuprocesses_memory, node_name)",
         "refresh": 0,
         "regex": "",
         "skipUrlSync": false,
@@ -1296,7 +894,7 @@
     ]
   },
   "timezone": "",
-  "title": "GPU collection",
+  "title": "Show GPU processes",
   "uid": "sBHF3YgZz",
-  "version": 11
+  "version": 16
 }
