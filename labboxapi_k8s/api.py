@@ -130,7 +130,10 @@ def parsePod(pod):
 @app.route("/create", methods=["POST"])
 def create():
     """
-    Create the Pod
+    Create the Pod.
+
+    The task will not be done when giving out response.
+    Should use "search" to check.
 
     Parameters
     ----------
@@ -272,7 +275,13 @@ def create():
 
 @app.route("/delete", methods=["POST"])
 def delete():
-    """Delete the pod,ingress,service by name"""
+    """
+    Delete the pod,ingress,service by name
+
+    The task will not be done when giving out response.
+    Should use "search" to check.
+    """
+
     name = request.form.get("name")
     getPod(name)
     app.logger.info("Delete " + request.form['name'])
@@ -358,4 +367,4 @@ def goRedir(node, subpath):
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=3476, debug=True)
+    app.run(host="0.0.0.0", port=3476)  # , debug=True)
