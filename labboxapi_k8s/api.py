@@ -9,83 +9,112 @@ v1 = client.CoreV1Api()
 v1beta = client.ExtensionsV1beta1Api()
 
 app = Flask(__name__)
-ns = 'user'
-label = 'UserDocker'
+ns = "user"
+label = "labbox-user"
 
 
-@app.errorhandler(403)
-def forbidden(error=None):
-    message = {
-        'status': 403,
-        'message': error or 'Fail'
-    }
-    resp = jsonify(message)
-    resp.status_code = 403
-    return resp
+@app.errorhandler(Exception)
+def AllError(error):
+    """
+    Catch all error here.
 
+    This function will call if the error cannot handle by my code.
 
-@app.errorhandler(404)
-def not_found(error=None):
-    message = {
-        'status': 404,
-        'message': 'Not Found'
-    }
-    resp = jsonify(message)
-    resp.status_code = 404
-    return resp
-
-
-@app.errorhandler(500)
-def internal_error(error=None):
+    Returns
+    -------
+    json
+        The status code will be 500.
+        There will have a key named "status" and its value is 500.
+        The message will show why this happened.
+    """
     message = {
         'status': 500,
-        'message': 'Internal Error'
+        'message': "Internal Error: " + str(error)
     }
+    app.logger.debug("Error: " + str(error))
     resp = jsonify(message)
     resp.status_code = 500
     return resp
 
 
-def ok():
+@app.errorhandler(400)
+def Error(error):
+    """
+    Handle error here.
+
+    Returns
+    -------
+    json
+        The status code will be 400.
+        There will have a key named "status" and its value is 400.
+        The message will show why this happened.
+    """
+    app.logger.debug("Error: " + str(error))
+    message = {
+        'status': 400,
+        'message': str(error)
+    }
+    resp = jsonify(message)
+    resp.status_code = 400
+    return resp
+
+
+def Ok(data={}):
+    """
+    Handle all return data here.
+
+    Returns
+    -------
+    json
+        The status code will be 200.
+        There will have a "status" key and its value is 200.
+        All the return data will in "data" key.
+    """
     return jsonify({
         'status': 200,
-        'message': 'ok'
+        'message': "OK",
+        'data': data
     })
 
 
 def listDockerServer():
+    """List all available labboxapi_docker"""
     pods = v1.list_pod_for_all_namespaces(watch=False)
     dockerserver = []
     for pod in list(pods.items):
-        if pod.spec.containers[0].name == 'labboxapi-docker':
+        if pod.spec.containers[0].name == "labboxapi-docker" and \
+           pod.status.phase == "Running":
             dockerserver.append(pod)
     pods = [{'name': pod.spec.node_name,
              'ip': pod.status.pod_ip} for pod in dockerserver]
     return pods
 
 
-def checkLabel(name):
+@app.route("/search/node", methods=["POST"])
+def getDockerServer():
+    """Return all available labboxapi_docker's node"""
+    return Ok(listDockerServer())
+
+
+def getPod(name):
+    """Get pod by name."""
     try:
-        rep = v1.read_namespaced_pod(name, ns)
-        if not rep.metadata.labels[label]:
-            abort(404)
+        pod = v1.read_namespaced_pod(name, ns)
+        if pod.metadata.labels[label] != 'true':
+            abort(400, "Not in the same namespace")
+        if pod.metadata.namespace != ns:
+            abort(400, "Not in the same namespace")
     except client.rest.ApiException:
-        abort(404)
-    return rep
-
-
-def checkNode(node):
-    for pod in listDockerServer():
-        if pod['name'] == node:
-            return True
-    abort(404)
+        abort(400, "Pod cannot found")
+    return pod
 
 
 def parsePod(pod):
-    dockerid = ''
+    """Return a json object from pod object"""
+    dockerid = ""
     # container_id has prefix docker://
     if pod.status.container_statuses[0].container_id:
-        dockerid = re.findall(r'\w+$', pod.status.container_statuses[0].container_id)[0]
+        dockerid = re.findall(r"\w+$", pod.status.container_statuses[0].container_id)[0]
     return {
         'name': pod.metadata.name,
         'image': pod.spec.containers[0].image,
@@ -98,97 +127,137 @@ def parsePod(pod):
     }
 
 
-@app.route('/listnode', methods=['POST'])
-def getDockerServer():
-    return jsonify(listDockerServer())
-
-
-@app.route('/<node>/<path:subpath>', methods=['POST'])
-def goRedir(node, subpath):
-    app.logger.info(node)
-    app.logger.info(subpath)
-    for pod in listDockerServer():
-        if pod['name'] == node:
-            return redirect('http://' + pod['ip'] + ':3476/' + subpath, code=307)
-    return not_found()
-
-
-# args: name, (image, node, homepath, labnas=True,
-#              inittar=server/ServerBox/all.tar, pull=True, command='', gpu='')
-@app.route('/create', methods=['POST'])
+@app.route("/create", methods=["POST"])
 def create():
-    template = yaml.load(open('/app/pod.yml'))
-    name = request.form['name']
+    """
+    Create the Pod
+
+    Parameters
+    ----------
+    name: str
+        The pod name.
+    image: str
+        The base image you want to start.
+    pull: bool
+        Whether to pull the image automatically.(true/false)
+        Default: false
+    homepath: str
+        The path you want to mount "homepath" to /home/ubuntu.
+    homepvc: str
+        The PVC for homepath.
+    naspvc: str
+        The PVC mount to /home/nas.
+    command: str
+        Commands to execute.
+    inittar: str
+        To initialize pod environment by extracting tar file.
+        Default: server/ServerBox/all.tar
+    gpu: str
+        It will add NVIDIA_VISIBLE_DEVICES=gpu to pod environment.
+
+    Returns
+    ----------
+    Nothing will return.
+    You should check by "search".
+    """
+    # read and handle error
+    name = request.form.get("name")
+    image = request.form.get("image")
+    node = request.form.get("node")
+    if not name:
+        abort(400, "No Name")
+    if not image:
+        abort(400, "No Image")
+    if not node:
+        abort(400, "No Node")
+    if node not in [pod['name'] for pod in listDockerServer()]:
+        abort(400, "Node Not Found")
+    if not (request.form.get("homepvc") and request.form.get("homepath")):
+        abort(400, "homepvc and homepath required")
+
+    # fill the template
+    app.logger.info("Create " + name)
+    template = yaml.load(open("/app/pod.yml"), Loader=yaml.FullLoader)
     template['metadata']['name'] = name
     template['metadata']['labels']['srvname'] = name
     template['metadata']['namespace'] = ns
-    app.logger.info("Create " + name)
+    template['spec']['containers'][0]['image'] = image
+    template['spec']['nodeSelector']['kubernetes.io/hostname'] = request.form.get("node")
+    template['spec']['containers'][0]['env'][0]['value'] = request.form.get("node")
 
-    if request.form.get('image'):
-        template['spec']['containers'][0]['image'] = request.form.get('image')
-    if request.form.get('node') and checkNode(request.form.get('node')):
-        template['spec']['nodeSelector']['kubernetes.io/hostname'] = request.form.get('node')
-        template['spec']['containers'][0]['env'][0]['value'] = request.form.get('node')
+    # inittar (Make sure it's at first in volumeMounts)
+    if request.form.get("inittar"):
+        template['spec']['initContainers'][0]['volumeMounts'][0]['subPath'] = request.form.get("inittar")
 
-    # deal with volume
-    noclaim = []
-    if not request.form.get('labnas', 'True').lower() == 'true':
-        noclaim.append('labnas')
-    if not request.form.get('homepath'):
-        noclaim.append('homenas')
-    for vol in template['spec']['volumes']:
-        if vol['name'] in noclaim:
-            del vol['persistentVolumeClaim']
+    # deal with home volume
+    template['spec']['volumes'].append({
+        'name': "homenas",
+        'persistentVolumeClaim': {'claimName': request.form.get("homepvc")}})
+    template['spec']['containers'][0]['volumeMounts'].append({
+        'name': "homenas",
+        'subPath': request.form.get("homepath"),
+        'mountPath': "/home/ubuntu"
+    })
+    template['spec']['initContainers'][0]['volumeMounts'].append({
+        'name': "homenas",
+        'subPath': request.form.get("homepath"),
+        'mountPath': "/home/ubuntu"
+    })
 
-    for vol in template['spec']['containers'][0]['volumeMounts']:
-        if vol['name'] == 'homenas' and vol['subPath'] == 'guest' \
-           and request.form.get('homepath'):
-            vol['subPath'] = request.form.get('homepath')
-    for vol in template['spec']['initContainers'][0]['volumeMounts']:
-        if not vol.get('readOnly') and request.form.get('homepath'):
-            vol['subPath'] = request.form.get('homepath')
-        if not vol.get('readOnly') and request.form.get('inittar'):
-            vol['subPath'] = request.form.get('inittar')
+    # deal with nas volume
+    if request.form.get("naspvc"):
+        naspvc = request.form.get("naspvc").split(",")
+        for nas in naspvc:
+            template['spec']['volumes'].append({
+                'name': "labnas-" + nas,
+                'persistentVolumeClaim': {'claimName': nas}})
+            template['spec']['containers'][0]['volumeMounts'].append({
+                'name': "labnas-" + nas,
+                'mountPath': "/home/nas" + ("/" + nas if len(naspvc) > 1 else "")
+            })
 
     # pull
-    if request.form.get('pull').lower() == 'true':
+    if request.form.get("pull").lower() == "true":
         template['spec']['containers'][0]['imagePullPolicy'] = "Always"
-    if request.form.get('gpu'):
+    if request.form.get("gpu"):
         template['spec']['containers'][0]['env'].append({
-            'name': 'NVIDIA_VISIBLE_DEVICES',
+            'name': "NVIDIA_VISIBLE_DEVICES",
             'value': request.form['gpu']})
 
     # only run one command
-    if request.form.get('command'):
+    if request.form.get("command"):
         del template['spec']['containers'][0]['ports']
-        template['spec']['containers'][0]['command'] = ['sudo']
         env = [env['name'] + "=" + str(env['value']) for env in template['spec']['containers'][0]['env']]
-        template['spec']['containers'][0]['args'] = [*env, 'bash', '-c',request.form.get('command')]
+        # template['spec']['containers'][0]['command'] = ["sudo"]
+        # template['spec']['containers'][0]['args'] = [*env, "bash", "-c", request.form.get("command")]
+        # testing
+        template['spec']['containers'][0]['command'] = ["sh"]
+        template['spec']['containers'][0]['args'] = ["-c", request.form.get("command")]
 
     # create pod
     try:
-        rep = v1.read_namespaced_pod(name, ns)
-        return forbidden('Double Creation')
+        pod = v1.read_namespaced_pod(name, ns)
+        abort(400, "Double Creation")
     except client.rest.ApiException:
         v1.create_namespaced_pod(ns, template)
 
     # only run one command
-    if request.form.get('command'):
-        return ok()
+    if request.form.get("command"):
+        return Ok()
 
     # ingress
-    template_ingress = yaml.load(open('/app/pod_ingress.yml'))
+    template_ingress = yaml.load(open("/app/pod_ingress.yml"), Loader=yaml.FullLoader)
     template_ingress['metadata']['name'] = name
     path = template_ingress['spec']['rules'][0]['http']['paths'][0]
-    path['path'] = path['path'].replace('hostname', name)
+    path['path'] = path['path'].replace("hostname", name)
     path['backend']['serviceName'] = name
 
     # service
-    template_service = yaml.load(open('/app/pod_service.yml'))
+    template_service = yaml.load(open("/app/pod_service.yml"), Loader=yaml.FullLoader)
     template_service['metadata']['name'] = name
     template_service['spec']['selector']['srvname'] = name
 
-    # create
+    # create ingress and service
     try:
         v1.create_namespaced_service(ns, template_service)
     except client.rest.ApiException:
@@ -198,13 +267,14 @@ def create():
     except client.rest.ApiException:
         pass
 
-    return ok()
+    return Ok()
 
 
-@app.route('/delete', methods=['POST'])
+@app.route("/delete", methods=["POST"])
 def delete():
-    name = request.form.get('name')
-    checkLabel(name)
+    """Delete the pod,ingress,service by name"""
+    name = request.form.get("name")
+    getPod(name)
     app.logger.info("Delete " + request.form['name'])
     # using exception bcz didn't check
     try:
@@ -219,43 +289,73 @@ def delete():
         v1beta.delete_namespaced_ingress(name, ns)
     except client.rest.ApiException:
         pass
-    return ok()
+    return Ok()
 
 
-@app.route('/search', methods=['POST'])
+@app.route("/search", methods=["POST"])
 def listPod():
-    if request.form.get('name'):
-        rep = checkLabel(request.form.get('name'))
-        pod = parsePod(rep)
+    """
+    Search the pod by name.
+
+    Parameters
+    ----------
+    name: str
+        The pod name. Empty will show all pods.
+    """
+    output = ""
+    if request.form.get("name"):
+        pod = getPod(request.form.get("name"))
+        output = parsePod(pod)
     else:
-        rep = v1.list_namespaced_pod(ns, label_selector=label)
-        pod = [parsePod(pod) for pod in rep.items]
-    return jsonify(pod)
+        pod = v1.list_namespaced_pod(ns, label_selector=label)
+        output = [parsePod(p) for p in pod.items]
+    return Ok(output)
 
 
-@app.route('/log', methods=['POST'])
+@app.route("/log", methods=["POST"])
 def logShow():
-    name = request.form.get('name')
-    rep = checkLabel(name)
-    app.logger.debug("Log " + name)
+    """Return pod log by name."""
+    # find pod
+    name = request.form.get("name")
+    pod = getPod(name)
+    app.logger.info("LOG: " + name)
 
-    log = ''
+    log = ""
     result = {}
-    if rep.status.phase not in ['Pending', 'Unknown']:
+    if pod.status.phase not in ["Pending", "Unknown"]:
         log = v1.read_namespaced_pod_log(name, ns),
         # why tuple
         if isinstance(log, tuple):
             log = log[0]
-        if rep.status.container_statuses[0].state.terminated:
-            result = rep.status.container_statuses[0].state.terminated
+        if pod.status.container_statuses[0].state.terminated:
+            result = pod.status.container_statuses[0].state.terminated
 
-    return jsonify({
+    # phase: Pending Running Succeeded Failed Unknown
+    return Ok({
         'log': log,
-        'result': [result.started_at.timestamp(), result.finished_at.timestamp()]
-                   if result else [],
-        'status': rep.status.phase
+        'result': [result.started_at.timestamp(), result.finished_at.timestamp()] if result else [],
+        'status': pod.status.phase
     })
 
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=3476)  # , debug=True)
+@app.route("/<node>/<path:subpath>", methods=["POST"])
+def goRedir(node, subpath):
+    """
+    Transparent layer to redirect to labboxapi-docker.
+
+    Parameters
+    ----------
+    node: str
+        The node that labboxapi-docker in
+    subpath: str
+        The path send to labboxapi-docker
+    """
+    app.logger.info(node + " -> " + subpath)
+    for dck in listDockerServer():
+        if dck['name'] == node:
+            return redirect("http://" + dck['ip'] + ":3476/" + subpath, code=307)
+    abort(400, "Node not found")
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=3476, debug=True)

@@ -6,9 +6,8 @@ import os
 
 app = Flask(__name__)
 app.secret_key = "super secret string"  # Change this!
-label = "UserDocker"
+label = "labbox-user"
 client = docker.from_env()
-debug = True
 
 
 @app.errorhandler(Exception)
@@ -29,8 +28,7 @@ def AllError(error):
         'status': 500,
         'message': "Internal Error: " + str(error)
     }
-    if debug:
-        print(error)
+    app.logger.warning("AllError: " + str(error))
     resp = jsonify(message)
     resp.status_code = 500
     return resp
@@ -48,8 +46,7 @@ def Error(error):
         There will have a key named "status" and its value is 400.
         The message will show why this happened.
     """
-    if debug:
-        print(error)
+    app.logger.warning("Error: " + str(error))
     message = {
         'status': 400,
         'message': str(error)
@@ -84,9 +81,9 @@ def getContainer(id):
         """
         # TODO
         # for k8s label is in another containers
-        """
         if label not in container.labels:
             abort(400, "Not in the same namespace")
+        """
         return container
     except docker.errors.NotFound:
         abort(400, "Container Not Found")
@@ -358,6 +355,14 @@ def prune():
     """Clean staging images"""
     client.images.prune()
     return Ok()
+
+
+@app.route("/log", methods=["POST"])
+def log():
+    """Log the container by name=ID"""
+    name = request.form.get("name")
+    container = getContainer(name)
+    return Ok(container.logs().decode())
 
 
 if __name__ == "__main__":

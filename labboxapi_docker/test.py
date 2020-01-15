@@ -97,16 +97,17 @@ class TestAPI_cycle(unittest.TestCase):
         self.assertEqual(rep['data']['status'], "running")
 
     def test_container_cycle(self):
+        """
+        # this should run on local mechine
+        mkdir -p /home/nas/test/tmp0
+        mkdir -p /nashome/guest/test/tmp1
+        # os.makedirs("/home/nas/test/tmp0", exist_ok=True)
+        # os.makedirs("/nashome/guest/test/tmp1", exist_ok=True)
+        """
         # Before Create
         print("Create")
         rep = post(self.url + "/search", data={'name': name})
         self.errorCatch(rep)
-
-        # this should run on local mechine
-        # mkdir -p /home/nas/test/tmp0
-        # mkdir -p /nashome/guest/test/tmp1
-        # os.makedirs("/home/nas/test/tmp0", exist_ok=True)
-        # os.makedirs("/nashome/guest/test/tmp1", exist_ok=True)
 
         # Create
         rep = post(self.url + "/create", data={
