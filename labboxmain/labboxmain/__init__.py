@@ -50,15 +50,42 @@ def std_add_user():
 
 @app.cli.command()
 def std_add_image():
-    from labboxmain.box_models import add_image
+    from labboxmain.box_models import Image
     user = input('Username ')
     name = input('Imagename ')
     description = input('description ')
-    add_image(user, name, description)
+    Image.create(user, name, description)
 
 
 @app.cli.command()
-@click.option('--node', default='all', help='Server hostname. `all` for all nodes')
+@click.option('--server', default='all', help='Server hostname. `--server=all` for all nodes')
 def stop(node):
-    from labboxmain.box import stopAll
-    stopAll(node)
+    from labboxmain.box import boxesStop 
+    boxesStop(node)
+
+
+@app.cli.command()
+def run_test():
+    from pprint import pprint
+    from labboxmain.models import db as user_db, User
+    from labboxmain.box import Box, boxCreate, boxDelete, boxRescue, boxStop, boxChangeNode
+    user = User.query.filter_by(name="linnil1").first()
+    for box in Box.query.all()[-3:]:
+        print(box.getStatus())
+
+    print("RUN")
+    boxCreate(user.id, "test", "test123", "lab304-server1", "harbor.default.svc.cluster.local/linnil1/serverbox:learn3.6", pull=True, parent='')
+    box = Box.query.filter_by(box_name="test").first()
+    print(box.getStatus())
+
+    # boxRescue(box.id)
+    boxChangeNode(box.id, "lab304-server2")
+    # boxDelete(box.id)
+    # boxStop(box.id)
+
+    box = Box.query.filter_by(box_name="test").first()
+    print(box.getStatus())
+    """
+    if box:
+        box.delete()
+    """

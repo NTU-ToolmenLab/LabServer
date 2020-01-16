@@ -4,441 +4,487 @@ import logging
 import time
 import re
 from .models import db as user_db, User
-from .box_models import db as db, Box, Image, bp, otherAPI
+from .box_models import db as db, Box, Image, bp, baseAPI
 from labboxmain import celery
 import shutil
 import os
 
 
-logger = logging.getLogger('labboxmain')
+logger = logging.getLogger("labboxmain")
 
 
-@bp.route('/')
+@bp.route("/")
 @flask_login.login_required
 def List():
-    return render_template('boxlist.html',
-                           container_list=getList(),
-                           create_param=getCreate(),
+    """Render available pods on UI"""
+    return render_template("boxlist.html",
+                           container_list=getPods(),
+                           create_param=getCreateParams(),
                            image_list=getImages())
 
 
-@bp.route('/vnctoken', methods=['POST'])
-@flask_login.login_required
-def vncToken():
-    now_user = flask_login.current_user
-    docker_name = request.form.get('token')
-    if not docker_name:
-        abort(403)
-    if now_user.groupid == 1:
-        box = Box.query.filter_by(docker_name=docker_name).first()
-    else:
-        box = Box.query.filter_by(user=now_user.name,
-                                  docker_name=docker_name).first()
-    if not box:
-        abort(403)
-    return bp.vncpw
-
-
-@bp.route('/api', methods=['POST'])
-@flask_login.login_required
-def api():
-    now_user = flask_login.current_user
-    data = request.form
-    logger.debug('[API] ' + now_user.name + ': ' + str(data))
-
-    if not data.get('name'):
-        abort(403, 'What is your environment name')
-    if now_user.groupid == 1:
-        box = Box.query.filter_by(docker_name=data['name']).first()
-    else:
-        box = Box.query.filter_by(user=now_user.name,
-                                  docker_name=data['name']).first()
-    if not box:
-        abort(403, 'Cannot find your environment')
-
-    # OK
-    if data.get('method') == 'Desktop':
-        return redirect('/vnc/?path=vnc/?token=' + box.docker_name)
-
-    elif data.get('method') == 'Jupyter':
-        return redirect('/jupyter/' + box.docker_name)
-
-    elif data.get('method') == 'Restart':
-        box.api('restart')
-
-    elif data.get('method') == 'Delete':
-        box.api('delete', check=False)
-        imageDelete.delay(box.id)
-
-    elif data.get('method') == 'node':
-        if not data.get('node') or data.get('node') not in getNodes():
-            abort(403, 'No such server')
-        box.commit(check=False)
-        box.api('delete', check=False)
-        changeNode.delay(box.id, now_user.id, data['node'])
-
-    elif data.get('method') == 'Stop':
-        boxStop(box)
-
-    elif data.get('method') == 'Rescue':
-        box.api('delete', check=False)
-
-        image = box.image if not box.getImage() else box.getBackupname()
-        rescue.delay(box.id, now_user.id, image)
-
-    elif data.get('method') == 'Sync':
-        if not Box.query.filter_by(user=now_user.name,
-                                   box_name=box.parent).first():
-            abort(403, 'No Parent existed')
-        box.api('delete', check=False)
-        parent_box = Box.query.filter_by(user=now_user.name,
-                                         box_name=box.parent).first()
-        backupname = parent_box.getBackupname()
-        parent = box.parent
-        node = box.node
-        name = box.box_name
-        realname = box.docker_name
-        duplicate.delay(parent_box.id, now_user.id, name, node,
-                        realname, backupname, box.id)
-
-    else:
-        abort(403, 'How can you show this error')
-
-    return redirect(url_for('labboxmain.box_models.List'))
-
-
-@bp.route('/create', methods=['POST'])
-@flask_login.login_required
-def create():
-    now_user = flask_login.current_user
-    data = request.form
-    logger.debug('[API Create] ' + now_user.name + ': ' + str(data))
-
-    if now_user.use_quota >= now_user.quota:
-        abort(403, 'Quota = 0')
-    if not data.get('node') or data.get('node') not in getNodes():
-        abort(403, 'No such server')
-    image = data.get('image')
-    parent = None
-    if Image.query.filter_by(user='user', name=image).first():
-        image = bp.images + data.get('image')
-    elif Box.query.filter_by(user=now_user.name, box_name=image).first():
-        parent = Box.query.filter_by(user=now_user.name, box_name=image).first()
-        image = parent.getBackupname()
-    else:
-        abort(403, 'No such environment')
-
-    realname = now_user.name + '{:.3f}'.format(time.time()).replace('.', '')
-    name = realname
-
-    if data.get('name'):
-        name = now_user.name + '_' + data['name']
-        # https://github.com/tg123/sshpiper/blob/3243906a19e2e63f7a363050843109aa5caf6b91/sshpiperd/upstream/workingdir/workingdir.go#L36
-        if not re.match(r'^[a-z_][-a-z0-9_]{0,31}$', name):
-            abort(403, 'Your name does not follow the rule')
-    if Box.query.filter_by(box_name=name).first():
-        abort(403, 'Already have environment')
-    if Box.query.filter_by(docker_name=realname).first():
-        abort(403, 'Already have environment')
-
-    if parent:
-        logger.debug('[Duplicate] ' + now_user.name + ': ' + name + ' from ' + parent.box_name)
-        duplicate.delay(parent.id,
-                        now_user.id, name, data['node'], realname, image)
-    else:
-        createAPI(now_user.id, name, data['node'], realname, image)
-    return redirect(url_for('labboxmain.box_models.List'))
-
-
-def createAPI(userid, name, node, realname, image, pull=True, parent=''):
-    now_user = User.query.get(userid)
-    now_dict = {
-        'name': realname,
-        'node': node,
-        'image': image,
-        'pull': pull,
-        'labnas': 'True',
-        'homepath': now_user.name}
-
-    now_dict.update(bp.create_rule(now_user))
-
-    rep = otherAPI('create', **now_dict)
-
-    # async, wait for creation
-    box = Box(box_name=name,
-              user=now_user.name,
-              docker_name=now_dict['name'],
-              image=now_dict['image'],
-              parent=parent,
-              node=now_dict['node'],
-              box_text='Creating')
-    db.session.add(box)
-    db.session.commit()
-
-    # user
-    now_user.use_quota += 1
-    user_db.session.commit()
-    boxWaitCreate.delay(box.id, now_user.id)
-
-
-@celery.task()
-def boxWaitCreate(bid, uid):
-    box = Box.query.get(bid)
-    now_user = User.query.filter_by(name=box.user).first()
-    logger.debug('[API Create] wait: ' + box.box_name)
-    for i in range(60 * 10):  # 10 min
-        time.sleep(1)
-        rep = otherAPI('search', name=box.docker_name, check=False)
-        if str(rep['status']).lower() == 'running':
-            break
-    else:
-        logger.error('[API Create] fail: ' + box.box_name)
-        box.box_text = 'Cannot start your environment'
-        db.session.commit()
-        raise TimeoutError
-
-    logger.debug('[API Create] success: ' + box.box_name)
-    box.docker_ip = rep['ip']
-    box.docker_id = rep['id']
-    box.box_text = ''
-    db.session.commit()
-    piperCreate(box.box_name, box.docker_ip)
-
-    # make sure it is running
-    time.sleep(5)
-    box.api('passwd', pw=now_user.password)
-
-
-# Setting up creating options
-def getList():
-    now_user = flask_login.current_user
-    if now_user.groupid == 1:
+# Some function for rendering web
+def getPods():
+    """Get user's pods"""
+    user = flask_login.current_user
+    if user.groupid == 1:  # admin
         boxes_ori = Box.query.all()
     else:
-        boxes_ori = Box.query.filter_by(user=now_user.name).all()
+        boxes_ori = Box.query.filter_by(user=user.name).all()
     boxes = [box.getStatus() for box in boxes_ori]
     return boxes
 
 
-def getCreate():
-    now_user = flask_login.current_user
-    return {'quota': now_user.quota, 'use_quota': now_user.use_quota,
-            'image': [i['name'] for i in getImages()], 'node': getNodes()}
+def getCreateParams():
+    """User create options"""
+    user = flask_login.current_user
+    return {'quota': user.quota,
+            'use_quota': user.use_quota,
+            'image': [i['name'] for i in getImages()],
+            'node': getNodes()}
 
 
 def getImages():
-    images = Image.query.filter_by(user='user').order_by(Image.id.desc()).all()
+    """Available images"""
+    images = Image.query.filter_by(user="user").order_by(Image.id.desc()).all()
     images = [{'name': i.name, 'description': i.description} for i in images]
 
-    now_user = flask_login.current_user
-    box_images = Box.query.filter_by(user=now_user.name).all()
-    images.extend([{'name': i.box_name} for i in box_images])
+    # TODO
+    # user = flask_login.current_user
+    # box_images = Box.query.filter_by(user=user.name).all()
+    # images.extend([{'name': i.box_name} for i in box_images])
     return images
 
 
 def getNodes():
-    if not bp.usek8s:
-        return ['server']
-    req = otherAPI('listnode', check=False)
+    """Return available nodes"""
+    # if not bp.usek8s:
+    req = baseAPI("search/node")
     nodes = [i['name'] for i in req]
     return nodes
+
+
+@bp.route("/vnctoken", methods=["POST"])
+@flask_login.login_required
+def vncToken():
+    """Return vnc password to novnc by token=docker_name"""
+    user = flask_login.current_user
+    docker_name = request.form.get('token')
+    logger.debug("[VNC] " + user.name + " " + str(docker_name))
+    if not docker_name:
+        abort(400, "VNC Token Error")
+    if user.groupid == 1:  # admin
+        box = Box.query.filter_by(docker_name=docker_name).first()
+    else:
+        box = Box.query.filter_by(user=user.name,
+                                  docker_name=docker_name).first()
+    if not box:
+        abort(400, "Environment Not Found")
+    return bp.vncpw
+
+
+@bp.route("/api", methods=["POST"])
+@flask_login.login_required
+def api():
+    """Call pod operations related api"""
+    # validation
+    user = flask_login.current_user
+    data = request.form
+    logger.debug("[API] " + user.name + ": " + str(data))
+
+    name = data.get('name')
+    if not naem:
+        abort(400, "What is your environment name")
+    if user.groupid == 1:  # admin
+        box = Box.query.filter_by(docker_name=name).first()
+    else:
+        box = Box.query.filter_by(user=user.name,
+                                  docker_name=name).first()
+    if not box:
+        abort(400, "Cannot find your environment")
+
+    # Redirect
+    if data.get('method') == "Desktop":
+        return redirect("/vnc/?path=vnc/?token=" + box.docker_name)
+
+    elif data.get('method') == "Jupyter":
+        return redirect("/jupyter/" + box.docker_name)
+
+    # Methods
+    elif data.get('method') == "Restart":
+        box.api("restart")
+
+    elif data.get('method') == "Stop":
+        boxStop(box.id)
+
+    elif data.get('method') == "Delete":
+        boxDelete(box.id)
+
+    elif data.get('method') == "node":
+        node = data.get('node')
+        if not node or node not in getNodes():
+            abort(400, "No such server")
+        if node == box.node:
+            abort(400, "Same server")
+        boxChangeNode(box.id, node)
+
+    elif data.get('method') == "Rescue":
+        if box.node not in getNodes():
+            abort(400, "The server is gone")
+        boxRescue(box.id)
+
+    elif data.get('method') == "Sync":
+        # TODO
+        abort(400, "No Implement")
+
+    else:
+        abort(400, "How can you show this error")
+
+    return redirect(url_for("labboxmain.box_models.List"))
+
+
+@bp.route("/create", methods=["POST"])
+@flask_login.login_required
+def create():
+    """Create the pod from web query"""
+    user = flask_login.current_user
+    data = request.form
+    logger.debug("[API Create] " + user.name + ": " + str(data))
+
+    # Validation
+    if user.use_quota >= user.quota:
+        abort(400, "Quota = 0")
+    if not data.get('node') or data.get('node') not in getNodes():
+        abort(400, "No such server")
+
+    # Validation for name
+    realname = user.name + "{:.3f}".format(time.time()).replace(".", "")
+    name = realname
+    if data.get('name'):
+        name = user.name + "_" + data['name']
+        # https://github.com/tg123/sshpiper/blob/3243906a19e2e63f7a363050843109aa5caf6b91/sshpiperd/upstream/workingdir/workingdir.go#L36
+        if not re.match(r"^[a-z_][-a-z0-9_]{0,31}$", name):
+            abort(400, "Your name does not follow the rule")
+    if Box.query.filter_by(box_name=name).first():
+        abort(400, "Already have the environment")
+    if Box.query.filter_by(docker_name=realname).first():
+        abort(400, "Already have the environment")
+
+    # Validation for image. Will find the possible image name.
+    image = data.get('image')
+    parent = None
+    if Image.query.filter_by(user="user", name=image).first():
+        image = bp.repo_default + data.get('image')
+    elif Box.query.filter_by(user=user.name, box_name=image).first():
+        parent = Box.query.filter_by(user=user.name, box_name=image).first()
+        image = parent.getImageName()
+        # TODO
+        abort(400, "Not implement method")
+    else:
+        abort(400, "No such environment")
+
+    boxCreate(user.id, name, realname, data['node'], image, True, parent)
+    return redirect(url_for("labboxmain.box_models.List"))
+
+
+# Method of pod operations
+# All of this operations takes long time
+# boxStop boxDelete boxChangeNode boxResuce boxCreate
+@celery.task()
+def boxStop(bid):
+    """Commit and Stop the pod"""
+    box = Box.query.get(bid)
+    box.commit()
+    # check=False for double stop
+    box.api("delete", check=False)
+    piperDelete(box.box_name)
+    box.changeStatus("Stopped")
+
+
+@celery.task()
+def boxDelete(bid):
+    """Delete the pod"""
+    box = Box.query.get(bid)
+    # delete
+    box.api("delete", check=False)  # force delete
+    imageDelete(box)
+    piperDelete(box.box_name)
+    podDelete(box)
+
+    # quota
+    box.delete()
+    user = User.query.filter_by(name=box.user).first()
+    # user.use_quota -= 1
+    user.use_quota = Box.query.filter_by(user=user.name).count()
+    user_db.session.commit()
+
+
+@celery.task()
+def boxChangeNode(bid, node):
+    """Copy the pod and Change the node"""
+    # box data
+    box = Box.query.get(bid)
+    user = User.query.filter_by(name=box.user).first()
+    parent = box.parent
+    name = box.box_name
+    docker_name = box.docker_name
+    backupname = box.getImageName()
+
+    # commit and push
+    box.commit()
+    imagePush(box)
+
+    # delete and create
+    boxDelete(bid)
+    boxCreate(user.id, name, docker_name, node, backupname, parent=parent)
+
+
+@celery.task()
+def boxCreate(uid, name, realname, node, image, pull=True, parent=""):
+    """Create all of pod and it's related"""
+    # user
+    user = User.query.get(uid)
+    user.use_quota += 1
+    user_db.session.commit()
+
+    # create
+    box = Box.create(user, name, realname, node, image, pull, parent)
+    podCreate(box)
+    piperCreate(box.box_name, box.docker_ip)
+
+    # make sure it is running
+    time.sleep(5)
+    box.api("passwd", pw=user.password)
+
+
+@celery.task()
+def boxRescue(bid):
+    """Resuce the pod from it's image"""
+    box = Box.query.get(bid)
+    image = box.image if not box.findImage() else box.getImageName()
+    node = box.node
+    name = box.box_name
+    parent = box.parent
+    docker_name = box.docker_name
+
+    # delete(Note: did not delete image)
+    box.api("delete", check=False)  # force delete
+    piperDelete(box.box_name)
+    podDelete(box)
+
+    # quota
+    user = User.query.filter_by(name=box.user).first()
+    user.use_quota = Box.query.filter_by(user=user.name).count()
+    user_db.session.commit()
+    box.delete()
+
+    # create
+    boxCreate(user.id, name, docker_name, node, image,
+              pull=False, parent=parent)
+
+
+# TODO
+@celery.task()
+def duplicate(bid, uid, name, node, docker_name, image, delete_bid=""):
+    if not Box.query.filter_by(user=user.name,
+                               box_name=box.parent).first():
+        abort(400, "No Parent existed")
+    box.api("delete", check=False)
+    parent_box = Box.query.filter_by(user=user.name,
+                                     box_name=box.parent).first()
+    backupname = parent_box.getImageName()
+    parent = box.parent
+    node = box.node
+    name = box.box_name
+    realname = box.docker_name
+    duplicate.delay(parent_box.id, user.id, name, node,
+                    realname, backupname, box.id)
+    box = Box.query.get(bid)
+    logger.debug("[Duplicate] push:" + box.box_name)
+    box.commit(check=False)
+    boxPush(bid)
+    if delete_bid:
+        logger.debug("[Duplicate] podDelete: " + name)
+        podDelete(delete_bid)
+    logger.debug("[Duplicate] create: " + name)
+    createAPI(uid, name, node, docker_name, image, parent=box.box_name)
+
+
+# Components Operations
+# Image, sshpiper, pod, user.quota
+def piperCreate(name, ip):
+    """Create sshpiper path to pod"""
+    logger.debug("[sshpiper] create: " + name)
+    sshfolder = bp.sshpiper + name + "/"
+    sshpip = sshfolder + "sshpiper_upstream"
+    os.makedirs(sshfolder, exist_ok=True)
+    open(sshpip, "w").write("ubuntu@" + ip)
+    os.chmod(sshpip, 0o600)
+
+
+def piperDelete(name):
+    """Remove path for sshpiper to pod"""
+    logger.debug("[sshpiper] delete: " + name)
+    shutil.rmtree(bp.sshpiper + name, ignore_errors=True)
+
+
+def imageDelete(box):
+    """Delete image"""
+    logger.debug("[Delete] image: " + box.getImageName())
+    box.changeStatus("Deleting ENV copy")
+    box.api("delete/image", name=box.getImageName(), check=False)
+
+
+def imagePush(box):
+    """Push the image to registry"""
+    if not bp.registry:
+        return
+
+    logger.debug("[Push] image: " + box.getImageName())
+    box.changeStatus("Backuping")
+    try:
+        baseAPI("push", name=box.getImageName(),
+                node=box.node, **bp.registry)
+    except Exception as e:
+        logger.error("[Push] image error: " + box.getImageName() + str(e))
+        box.changeStatus("Backup Error")
+        raise e
+
+    box.changeStatus("")
+
+
+def podDelete(box):
+    """Wait for pod to delete"""
+    box.changeStatus("Deleting ENV")
+    logger.debug("[Delete] pod wait: " + box.box_name)
+    for i in range(60 * 10):  # 10 min
+        time.sleep(1)
+        rep = box.api("search", check=False)
+        if not rep:
+            break
+    else:
+        logger.error("[Delete] pod fail: " + box.box_name)
+        box.changeStatus("Delete again later or Cannot Delete")
+        abort(400, "Cannot Delete")
+    box.changeStatus("")
+    logger.debug("[Delete] pod OK " + box.box_name)
+
+
+def podCreate(box):
+    """Wait for pod to create"""
+    box.changeStatus("Creating")
+    logger.debug("[Create] pod wait: " + box.box_name)
+    for i in range(60 * 10):  # 10 min
+        time.sleep(1)
+        rep = box.api("search", check=False)
+        if rep and str(rep['status']).lower() == "running":
+            break
+    else:
+        logger.error("[Create] pod fail: " + box.box_name)
+        box.changeStatus("Cannot start your environment")
+        abort(400, "Cannot start your enviroment")
+
+    # Update data after success
+    rep = box.api("search")
+    logger.debug("[API Create] pod success: " + str(rep))
+    box.docker_ip = rep['ip']
+    box.docker_id = rep['id']
+    box.changeStatus("")
+    # db.session.commit()  # already
+
+
+# Cross pods operations
+# * Routine function: run everyday to maintain and check
+# * boxesPasswd
+# * boxesCommit
+# * boxesStop
+def boxesPasswd(user):
+    """Change password for all boxes for specific user"""
+    logger.debug("[Passwd] user: " + str(rep))
+    boxes = Box.query.filter_by(user=user.name).all()
+    for box in boxes:
+        if box.getStatus()['status'].lower() == "running":
+            box.api("passwd", pw=user.password)
+
+
+def boxesCommit(name="", node=""):
+    """
+    Commit for specific user and specific server.
+
+    Parameters
+    ----------
+    name: str
+        default: *
+    node: str
+        default: *
+    """
+    boxes = Box.query
+    if user:
+        boxes = boxes.filter_by(user=user)
+    if node:
+        boxes = boxes.filter_by(node=node)
+    boxes = boxes.all()
+    for box in boxes:
+        if box.getStatus()['status'].lower() == "running":
+            logger.debug("[Commit] " + box.box_name)
+            box.commit(check=False)
+
+
+def boxesStop(name="", node=""):
+    """
+    Stop for specific user and specific server.
+
+    Parameters
+    ----------
+    name: str
+        default: *
+    node: str
+        default: *
+    """
+    # Commit
+    logger.warning("[Waring] Stop " + node)
+    if node != "all":
+        boxes = Box.query.filter_by(node=node).all()
+    else:
+        boxes = Box.query.all()
+
+    for box in boxes:
+        if box.getStatus()['status'] == "running":
+            logger.warning("[Stop] pod " + box.box_name)
+            boxStop(box.id)
 
 
 # Routine
 @celery.task()
 def routineMaintain():
+    """Run daily to maintain and check the problem"""
     # Commit
-    logger.info('[Routine] Commit')
+    logger.info("[Routine] Commit")
+    boxesCommit()
     boxes = Box.query.all()
-    for box in boxes:
-        logger.debug('[Routine] Commit: ' + box.box_name)
-        box.commit(check=False)
 
     # check if it is somewhat kill by kubernetes
-    logger.info('[Routine] check inconsistence')
-    statusTarget = 'Not Consist ID'
+    logger.info("[Routine] check inconsistence")
+    statusTarget = "Not Consist ID"
     for box in boxes:
         if box.getStatus()['status'] == statusTarget:
-            logger.warning('[Routine] inconsistence ID: ' + box.box_name)
-            rep = otherAPI('search', name=box.docker_name, check=False)
+            logger.warning("[Routine] inconsistence ID: " + box.box_name)
+            rep = otherAPI("search", name=box.docker_name, check=False)
             box.docker_ip = rep['ip']
             box.docker_id = rep['id']
             db.session.commit()
 
     # run passwd
-    logger.info('[Routine] passwd')
+    logger.info("[Routine] passwd")
     users = User.query.all()
     for user in users:
         boxsPasswd(user)
 
     # Maintain sshpiper
-    logger.info('[Routine] sshpiper')
+    logger.info("[Routine] sshpiper")
     for name in os.listdir(bp.sshpiper):
         if os.path.isdir(bp.sshpiper + name):
             shutil.rmtree(bp.sshpiper + name)
     for box in boxes:
-        if box.getStatus()['status'] == 'running':
+        if box.getStatus()['status'] == "running":
             piperCreate(box.box_name, box.docker_ip)
-
-
-# Change password for all boxes
-def boxsPasswd(now_user):
-    boxes = Box.query.filter_by(user=now_user.name).all()
-    for box in boxes:
-        if box.getStatus()['status'] == 'running':
-            box.api('passwd', pw=now_user.password)
-
-
-# There are three type of operation is time-consuming
-# * Create (Download Image and start container)
-# * Backup (Upload Image)
-# * Delete (Delete pod in k8s)
-
-# Devices:      piper database k8s Docker Image Registry
-# createAPI       *      *      *    *
-# Delete(API)                   *    *
-# piperDelete     *
-# boxDelete       *      *
-# envDelete       *      *
-# imageDelete     *      *      *
-# commit(API)                               *
-# boxpush                                          *
-# boxStop         *             *    *      *
-# Rescue          = Delete(API) + envDelete + createAPI
-# changeNode      = commit(API) + boxPush + Delete(API) + imageDelete + CreateAPI
-# duplicate+Sync  = commit(API) + boxPush + Delete(API) + envDelete + CreateAPI
-def boxPush(bid):
-    box = Box.query.get(bid)
-    if not bp.registry_user:
-        boxDelete(box)
-        return
-
-    box.box_text = 'Backuping'
-    db.session.commit()
-    try:
-        otherAPI('push', name=box.getBackupname(),
-                         docker_node=box.node,
-                         **bp.registry_user)
-    except Exception as e:
-        box.box_text = 'Backup Error'
-        db.session.commit()
-        raise e
-
-    box.box_text = ''
-    db.session.commit()
-
-
-def boxStop(box):
-    box.commit()
-    box.api('delete', check=False)
-    piperDelete(box.box_name)
-    box.box_text = 'Stopped'
-    db.session.commit()
-
-
-def stopAll(node='all'):
-    # Commit
-    logger.warning('[Waring] Stop ' + node)
-    if node != 'all':
-        boxes = Box.query.filter_by(node=node).all()
-    else:
-        boxes = Box.query.all()
-    for box in boxes:
-        if box.getStatus()['status'] == 'running':
-            logger.debug('[Warning] Stop: ' + box.box_name)
-            boxStop(box)
-
-
-def piperCreate(name, ip):
-    sshfolder = bp.sshpiper + name + '/'
-    sshpip = sshfolder + 'sshpiper_upstream'
-    os.makedirs(sshfolder, exist_ok=True)
-    open(sshpip, 'w').write('ubuntu@' + ip)
-    os.chmod(sshpip, 0o600)
-
-
-def piperDelete(name):
-    shutil.rmtree(bp.sshpiper + name, ignore_errors=True)
-
-
-def boxDelete(box):
-    u = User.query.filter_by(name=box.user).first()
-    piperDelete(box.box_name)
-    db.session.delete(box)
-    db.session.commit()
-
-    # u.use_quota -= 1
-    u.use_quota = Box.query.filter_by(user=u.name).count()
-    user_db.session.commit()
-
-
-def envDelete(bid):
-    box = Box.query.get(bid)
-    box.box_text = 'Deleting ENV'
-    db.session.commit()
-    logger.debug('[API Delete] wait: ' + box.box_name)
-    for i in range(60 * 10):  # 10 min
-        time.sleep(1)
-        rep = otherAPI('search', name=box.docker_name, check=False)
-        if str(rep['status']) == '404':
-            break
-    else:
-        logger.error('[API Delete] fail: ' + box.box_name)
-        box.box_text = 'Delete again later or Cannot Delete'
-        db.session.commit()
-        # do not delte in database if cannot delete it in real world.
-        raise TimeoutError
-
-    logger.debug('[API Delete] success: ' + box.box_name)
-    boxDelete(box)
-
-
-@celery.task()
-def imageDelete(bid):
-    box = Box.query.get(bid)
-    box.box_text = 'Deleting ENV copy'
-    db.session.commit()
-    otherAPI('deleteImage', name=box.getBackupname(), docker_node=box.node, check=False)
-    envDelete(bid)
-
-
-@celery.task()
-def rescue(bid, uid, image):
-    box = Box.query.get(bid)
-    node = box.node
-    name = box.box_name
-    parent = box.parent
-    docker_name = box.docker_name
-    logger.debug('[rescue] envDelete: ' + name)
-    envDelete(bid)
-    logger.debug('[rescue] create: ' + name)
-    createAPI(uid, name, node, docker_name, image, pull=False, parent=parent)
-
-
-@celery.task()
-def changeNode(bid, uid, node):
-    box = Box.query.get(bid)
-    parent = box.parent
-    name = box.box_name
-    docker_name = box.docker_name
-    backupname = box.getBackupname()
-
-    logger.debug('[Changenode] push:' + name)
-    boxPush(bid)
-    logger.debug('[Changenode] envDelete: ' + name)
-    imageDelete(bid)
-    logger.debug('[Changenode] create: ' + name)
-    createAPI(uid, name, node, docker_name, backupname, parent=parent)
-
-
-@celery.task()
-def duplicate(bid, uid, name, node, docker_name, image, delete_bid=''):
-    box = Box.query.get(bid)
-    logger.debug('[Duplicate] push:' + box.box_name)
-    box.commit(check=False)
-    boxPush(bid)
-    if delete_bid:
-        logger.debug('[Duplicate] envDelete: ' + name)
-        envDelete(delete_bid)
-    logger.debug('[Duplicate] create: ' + name)
-    createAPI(uid, name, node, docker_name, image, parent=box.box_name)

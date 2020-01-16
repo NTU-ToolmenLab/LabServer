@@ -11,12 +11,11 @@ from celery import Celery
 def create_app(config={}):
     app = Flask(__name__)
     app.debug = True
-    config['registry_images'] = config.get('registry_url') + '/' +  \
-                                config.get('registry_images') + ':'
-    config['registry_backup'] = config.get('registry_url') + '/' +  \
-                                config.get('registry_backup') + ':'
+    config['registry_repo_default'] = config.get('registry_url') + '/' +  \
+                                      config.get('registry_repo_default') + ':'
+    config['registry_repo_backup'] = config.get('registry_url') + '/' +  \
+                                     config.get('registry_repo_backup') + ':'
     app.config.update(config)
-    app.config.update({'SCHEDULER_API_ENABLED': True})
     app.register_blueprint(bp, url_prefix='')
     db.init_app(app)
     login_manager.init_app(app)

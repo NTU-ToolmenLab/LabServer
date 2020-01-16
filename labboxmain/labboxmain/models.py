@@ -25,8 +25,10 @@ class User(db.Model, flask_login.UserMixin):
     def checkPassword(self, password):
         return passlib.hash.sha512_crypt.verify(password, self.password)
 
-    def setPassword(self, password):
+    def setPassword(self, password, record=True):
         self.password = passlib.hash.sha512_crypt.hash(password)
+        if record:
+            self.passtime = time.time()
         db.session.commit()
 
     # for oauth
@@ -35,11 +37,9 @@ class User(db.Model, flask_login.UserMixin):
 
 
 def setPW(user, newone):
-    from .box import boxsPasswd
-    user.setPassword(newone)
-    user.passtime = time.time()
-    db.session.commit()
-    boxsPasswd(user)
+    user.setPassword(newone, record=True)
+    from .box import boxesPasswd
+    boxesPasswd(user)
 
 
 @login_manager.user_loader
