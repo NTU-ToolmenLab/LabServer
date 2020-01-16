@@ -47,7 +47,7 @@ queue
                     {% if not data.permit or data.queueing %} disabled {% endif %} />
               Log
             </button>
-            {% if data.user == current_user.name%}
+            {% if data.permit %}
               {{ data.command }}
             {% endif %}
           </td>

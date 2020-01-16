@@ -93,7 +93,7 @@ def api():
     logger.debug("[API] " + user.name + ": " + str(data))
 
     name = data.get('name')
-    if not naem:
+    if not name:
         abort(400, "What is your environment name")
     if user.groupid == 1:  # admin
         box = Box.query.filter_by(docker_name=name).first()
@@ -115,10 +115,10 @@ def api():
         box.api("restart")
 
     elif data.get('method') == "Stop":
-        boxStop(box.id)
+        boxStop.delay(box.id)
 
     elif data.get('method') == "Delete":
-        boxDelete(box.id)
+        boxDelete.delay(box.id)
 
     elif data.get('method') == "node":
         node = data.get('node')
@@ -126,12 +126,12 @@ def api():
             abort(400, "No such server")
         if node == box.node:
             abort(400, "Same server")
-        boxChangeNode(box.id, node)
+        boxChangeNode.delay(box.id, node)
 
     elif data.get('method') == "Rescue":
         if box.node not in getNodes():
             abort(400, "The server is gone")
-        boxRescue(box.id)
+        boxRescue.delay(box.id)
 
     elif data.get('method') == "Sync":
         # TODO
@@ -183,7 +183,7 @@ def create():
     else:
         abort(400, "No such environment")
 
-    boxCreate(user.id, name, realname, data['node'], image, True, parent)
+    boxCreate.delay(user.id, name, realname, data['node'], image, True, parent)
     return redirect(url_for("labboxmain.box_models.List"))
 
 
@@ -225,6 +225,7 @@ def boxChangeNode(bid, node):
     # box data
     box = Box.query.get(bid)
     user = User.query.filter_by(name=box.user).first()
+    uid = user.id  # bug?
     parent = box.parent
     name = box.box_name
     docker_name = box.docker_name
@@ -236,7 +237,7 @@ def boxChangeNode(bid, node):
 
     # delete and create
     boxDelete(bid)
-    boxCreate(user.id, name, docker_name, node, backupname, parent=parent)
+    boxCreate(uid, name, docker_name, node, backupname, pull=True, parent=parent)
 
 
 @celery.task()

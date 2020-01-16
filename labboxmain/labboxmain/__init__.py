@@ -69,23 +69,34 @@ def run_test():
     from pprint import pprint
     from labboxmain.models import db as user_db, User
     from labboxmain.box import Box, boxCreate, boxDelete, boxRescue, boxStop, boxChangeNode
+    import time
+    image = "harbor.default.svc.cluster.local/linnil1/serverbox:learn3.6"
     user = User.query.filter_by(name="linnil1").first()
     for box in Box.query.all()[-3:]:
         print(box.getStatus())
 
     print("RUN")
-    boxCreate(user.id, "test", "test123", "lab304-server1", "harbor.default.svc.cluster.local/linnil1/serverbox:learn3.6", pull=True, parent='')
+    boxCreate(user.id, "test", "test123", "lab304-server1", image, pull=True, parent='')
+
     box = Box.query.filter_by(box_name="test").first()
     print(box.getStatus())
 
     # boxRescue(box.id)
-    boxChangeNode(box.id, "lab304-server2")
+    # boxChangeNode(box.id, "lab304-server2")
     # boxDelete(box.id)
     # boxStop(box.id)
 
     box = Box.query.filter_by(box_name="test").first()
     print(box.getStatus())
     """
-    if box:
-        box.delete()
+    from labboxmain.box_queue import BoxQueue
+    box = BoxQueue.create(user, image, "echo 123")
+    box = BoxQueue.find(user, "queue-1")
+    box.run(("lab304-server1", 1))
+    print(box.getData())
+    print(box.getLog())
+    time.sleep(10)
+    print(box.getData())
+    print(box.getLog())
+    box.delete()
     """

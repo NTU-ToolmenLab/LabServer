@@ -28,6 +28,20 @@ def create_rule(user):
     return create_param
 
 
+def gpu_decision_func(value):
+    """
+    The decision function of finding available gpu.
+    Parameters
+    ----------
+    value: array
+        A array of time series array of each metrics.
+        e.g. [A metrics time series, B metrics time series]
+    """
+    duty = sum(value[0]) / len(value[0])
+    memory = sum(value[1]) / len(value[1])
+    return duty < 10 and memory < 1
+
+
 config = {
     # basic
     'bullet': "",
@@ -71,8 +85,11 @@ config = {
     },
 
     # GPU settings
+    # Details see in box_queue.py
+    'queue_quota': 6,
     'gpu_monitor_url': 'http://lab-monitor-prometheus-server.monitor.svc.cluster.local/api/v1/',
     'gpu_query_metrics': ['nvidia_gpu_duty_cycle', 'nvidia_gpu_memory_used_bytes / nvidia_gpu_memory_total_bytes'],
     'gpu_query_interval': 60,
-    'gpu_exe_interval': 120,
+    'gpu_exe_interval': 300,
+    'gpu_decision_func': gpu_decision_func,
 }

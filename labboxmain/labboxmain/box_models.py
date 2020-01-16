@@ -45,10 +45,12 @@ def record_params(setup_state):
         bp.registry = None
 
     # queue & gpu setting
+    bp.queue_quota = config.get('queue_quota')
     bp.gpu_url = config.get('gpu_monitor_url')
     bp.gpu_query_metrics = config.get('gpu_query_metrics')
     bp.gpu_query_interval = config.get('gpu_query_interval')
     bp.gpu_exe_interval = config.get('gpu_exe_interval')
+    bp.gpu_decision_func = config.get('gpu_decision_func')
     query_metrics = ["nvidia_gpu_duty_cycle",
                      "nvidia_gpu_memory_used_bytes / nvidia_gpu_memory_total_bytes"]
 
@@ -56,19 +58,19 @@ def record_params(setup_state):
     redis_url = config.get('celery_broker_url')
     u = redis_url.rfind(':')
     head = redis_url.find("://")
-    bp.r_cli = redis.Redis(host=redis_url[head + 3:u], port=int(redis_url[u + 1:]), db=0)
+    bp.redis = redis.Redis(host=redis_url[head + 3:u], port=int(redis_url[u + 1:]), db=0)
 
 
 @bp.errorhandler(400)
 def errorCatch(e):
     """Return known error"""
-    return render_template("error.html", code=400, text=e.description), 400
+    return render_template("error.html", code=400, text=str(e)), 400
 
 
 @bp.errorhandler(Exception)
 def errorCatchAll(e):
     """Return unknown error"""
-    return render_template("error.html", code=500, text=e.description), 500
+    return render_template("error.html", code=500, text=str(e)), 500
 
 
 def baseAPI(method, node=None, check=True, **kwargs):
@@ -149,10 +151,13 @@ class Box(db.Model):
         status = self.box_text
         if not status:
             rep = self.api("search", check=False)
-            status = rep['status']
-            # TODO: remove this feature
-            if status == "Running" and self.docker_id != rep['id']:
-                status = "Not Consist ID"
+            if not rep:
+                status = "Fail"
+            else:
+                status = rep['status']
+                # TODO: remove this feature
+                if status == "Running" and self.docker_id != rep['id']:
+                    status = "Not Consist ID"
 
         return {'name':     self.box_name,
                 'realname': self.docker_name,

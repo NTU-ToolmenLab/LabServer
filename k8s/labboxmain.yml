@@ -28,8 +28,6 @@ spec:
       containers:
       - name: labboxmain
         image: harbor.default.svc.cluster.local/linnil1/labboxmain
-        # command: [tail]
-        # args: ['-f', '/dev/null']
         env:
         - name: FLASK_APP
           value: labboxmain
