@@ -79,14 +79,29 @@ def Ok(data={}):
 
 def listDockerServer():
     """List all available labboxapi_docker"""
-    pods = v1.list_pod_for_all_namespaces(watch=False)
-    dockerserver = []
-    for pod in list(pods.items):
-        if pod.spec.containers[0].name == "labboxapi-docker" and \
-           pod.status.phase == "Running":
-            dockerserver.append(pod)
-    pods = [{'name': pod.spec.node_name,
-             'ip': pod.status.pod_ip} for pod in dockerserver]
+    allpods = v1.list_pod_for_all_namespaces(label_selector="app=labbox")
+    pods = []
+    for pod in list(allpods.items):
+        # check labboxapi-docker is alive
+        if pod.spec.containers[0].name != "labboxapi-docker" or \
+           pod.status.phase != "Running":
+            continue
+
+        # check node is alive
+        node = pod.spec.node_name
+        node_info = v1.list_node(label_selector="kubernetes.io/hostname=" + node).items
+        if not node_info or not node_info[0].metadata.labels.get("labboxgroup"):
+            continue
+        group = node_info[0].metadata.labels.get("labboxgroup")
+        try:
+            group = [int(g) for g in group.split("-")]
+        except ValueError:
+            continue
+
+        # add to list
+        pods.append({'name': node,
+                     'ip': pod.status.pod_ip,
+                     'group': group})
     return pods
 
 

@@ -76,6 +76,8 @@ def Ok(data={}):
 
 def getContainer(id):
     """Ouery the container by id"""
+    if not id:
+        abort(400, "Container Not Found")
     try:
         container = client.containers.get(id)
         """

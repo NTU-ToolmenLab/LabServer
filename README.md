@@ -115,9 +115,13 @@ If you are admin, go to `your.domain.name/adminpage` to modify.
 
 You can add `help.html` in `labboxmain/labboxmain/templates/`
 
-4. If any emergency happened
+4. Add more node
+Group 0,1,2 can access this node
+`kubectl label nodes lab304-server2 labboxgroup=0-1-2 --overwrite`
+
+5. If any emergency happened
 ```
-kubectl exec -it labboxmain-6599f4b74c-z5jcx flask stop --node=all
+kubectl exec -it labboxmain-6599f4b74c-z5jcx flask stop --server=all
 ```
 
 ### VNC

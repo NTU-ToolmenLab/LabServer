@@ -41,7 +41,7 @@ def getCreateParams():
     return {'quota': user.quota,
             'use_quota': user.use_quota,
             'image': [i['name'] for i in getImages()],
-            'node': getNodes()}
+            'node': getNodes(user)}
 
 
 def getImages():
@@ -56,11 +56,14 @@ def getImages():
     return images
 
 
-def getNodes():
+def getNodes(user=None):
     """Return available nodes"""
     # if not bp.usek8s:
     req = baseAPI("search/node")
-    nodes = [i['name'] for i in req]
+    if user:
+        nodes = [i['name'] for i in req if user.groupid in i['group']]
+    else:
+        nodes = [i['name'] for i in req]
     return nodes
 
 
@@ -122,14 +125,14 @@ def api():
 
     elif data.get('method') == "node":
         node = data.get('node')
-        if not node or node not in getNodes():
+        if not node or node not in getNodes(user):
             abort(400, "No such server")
         if node == box.node:
             abort(400, "Same server")
         boxChangeNode.delay(box.id, node)
 
     elif data.get('method') == "Rescue":
-        if box.node not in getNodes():
+        if box.node not in getNodes(user):
             abort(400, "The server is gone")
         boxRescue.delay(box.id)
 
@@ -154,7 +157,7 @@ def create():
     # Validation
     if user.use_quota >= user.quota:
         abort(400, "Quota = 0")
-    if not data.get('node') or data.get('node') not in getNodes():
+    if not data.get('node') or data.get('node') not in getNodes(user):
         abort(400, "No such server")
 
     # Validation for name
@@ -420,8 +423,8 @@ def boxesCommit(name="", node=""):
         default: *
     """
     boxes = Box.query
-    if user:
-        boxes = boxes.filter_by(user=user)
+    if name:
+        boxes = boxes.filter_by(user=name)
     if node:
         boxes = boxes.filter_by(node=node)
     boxes = boxes.all()
@@ -444,7 +447,7 @@ def boxesStop(name="", node=""):
     """
     # Commit
     logger.warning("[Waring] Stop " + node)
-    if node != "all":
+    if node and node != "all":
         boxes = Box.query.filter_by(node=node).all()
     else:
         boxes = Box.query.all()
