@@ -32,8 +32,7 @@ sudo swapoff -a
 
 echo "install docker-ce kubectl kubelet kubeadm nvidia-docker2"
 sudo apt update && \
-sudo apt install -y docker-ce=5:18.09.6~3-0~ubuntu-bionic nvidia-docker2=2.0.3+docker18.09.6-3 nvidia-container-runtime=2.0.0+docker18.09.6-3\
-                    kubectl=1.15.0-00 kubelet=1.15.0-00 kubeadm=1.15.0-00 kubernetes-cni \
+sudo apt install -y docker-ce=5:18.09.7~3-0~ubuntu-bionic nvidia-docker2=2.0.3+docker18.09.7-3 kubectl=1.17.1-00 kubelet=1.17.1-00 kubeadm=1.17.1-00  kubernetes-cni nvidia-container-runtime=2.0.0+docker18.09.7-3
 
 echo "Hold the version"
 sudo apt-mark hold docker-ce kubectl kubelet kubeadm kubernetes-cni nvidia-docker2 nvidia-container-runtime

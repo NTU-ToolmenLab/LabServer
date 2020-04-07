@@ -59,9 +59,9 @@ def std_add_image():
 
 @app.cli.command()
 @click.option('--server', default='all', help='Server hostname. `--server=all` for all nodes')
-def stop(node):
+def stop(server):
     from labboxmain.box import boxesStop 
-    boxesStop(node)
+    boxesStop(node=server)
 
 
 @app.cli.command()

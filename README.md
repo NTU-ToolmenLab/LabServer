@@ -119,6 +119,9 @@ You can add `help.html` in `labboxmain/labboxmain/templates/`
 Group 0,1,2 can access this node
 `kubectl label nodes lab304-server2 labboxgroup=0-1-2 --overwrite`
 
+And check it:
+`kubectl get nodes --show-labels`
+
 5. If any emergency happened
 ```
 kubectl exec -it labboxmain-6599f4b74c-z5jcx flask stop --server=all

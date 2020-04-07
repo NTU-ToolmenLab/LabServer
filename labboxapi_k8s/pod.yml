@@ -14,7 +14,7 @@ spec:
     volumeMounts:
     - name: homenas
       mountPath: /all.tar
-      subPath: server/ServerBox/all.tar
+      subPath: server/LabDockerFile/all.tar
       readOnly: true
     # - name: homenas
     #   mountPath: /home/ubuntu
@@ -46,6 +46,12 @@ spec:
     env:
     - name: node
       value: lab304-server2
+    resources:
+      requests:
+        memory: "1Mi"
+      limits:
+        memory: "20Gi"
+
 
   nodeSelector:
     kubernetes.io/hostname: lab304-server2

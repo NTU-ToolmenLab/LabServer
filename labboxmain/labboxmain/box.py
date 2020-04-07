@@ -368,7 +368,7 @@ def podDelete(box):
             break
     else:
         logger.error("[Delete] pod fail: " + box.box_name)
-        box.changeStatus("Delete again later or Cannot Delete")
+        box.changeStatus("Delete again later or Contact Admin")
         abort(400, "Cannot Delete")
     box.changeStatus("")
     logger.debug("[Delete] pod OK " + box.box_name)
@@ -404,7 +404,7 @@ def podCreate(box):
 # * boxesStop
 def boxesPasswd(user):
     """Change password for all boxes for specific user"""
-    logger.debug("[Passwd] user: " + str(rep))
+    logger.debug("[Passwd] user: " + user.name)
     boxes = Box.query.filter_by(user=user.name).all()
     for box in boxes:
         if box.getStatus()['status'].lower() == "running":
@@ -451,9 +451,12 @@ def boxesStop(name="", node=""):
         boxes = Box.query.filter_by(node=node).all()
     else:
         boxes = Box.query.all()
+    # TODO: fix this
+    boxes = [box.id for box in boxes]
 
     for box in boxes:
-        if box.getStatus()['status'] == "running":
+        box = Box.query.filter_by(id=box).first()
+        if box.getStatus()['status'].lower() == "running":
             logger.warning("[Stop] pod " + box.box_name)
             boxStop(box.id)
 
@@ -482,7 +485,7 @@ def routineMaintain():
     logger.info("[Routine] passwd")
     users = User.query.all()
     for user in users:
-        boxsPasswd(user)
+        boxesPasswd(user)
 
     # Maintain sshpiper
     logger.info("[Routine] sshpiper")
@@ -490,5 +493,5 @@ def routineMaintain():
         if os.path.isdir(bp.sshpiper + name):
             shutil.rmtree(bp.sshpiper + name)
     for box in boxes:
-        if box.getStatus()['status'] == "running":
+        if box.getStatus()['status'].lower() == "running":
             piperCreate(box.box_name, box.docker_ip)

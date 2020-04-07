@@ -17,7 +17,6 @@ def create_rule(user):
             'homepath': 'sfc/' + user.name,
             'homepvc': "nfs-homenas",
             'naspvc': "",
-            'node': 'lab304-server3'
         })
     elif user.groupid == 3:
         create_param.update({
