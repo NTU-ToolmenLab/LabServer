@@ -46,10 +46,10 @@ if [ $pod_network = "flannel" ]; then
     kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
 elif [ $pod_network = "calico" ]; then
     echo "installing Calico"
-    wget https://docs.projectcalico.org/v3.10/manifests/calico.yaml
+    wget https://docs.projectcalico.org/archive/v3.13/manifests/calico.yaml
     sed -ie "s~192.168.0.0/16~$pod_network_cidr~g" calico.yaml
     sed -ie "/autodetect/a\
-\            - name: IP_AUTODETECTION_METHOD\
+\            - name: IP_AUTODETECTION_METHOD\n\
 \              value: interface=$interface" calico.yaml
     kubectl apply -f calico.yaml
 elif [ $pod_network = "canal" ]; then
@@ -61,9 +61,11 @@ else
     exit 1
 fi
 
+echo "Add kubectl autocompletion"
+echo "source <(kubectl completion bash)" >> ~/.bashrc
 
 echo "Set ufw firewall"
-if ! sudo ufw status | grep -q inactive; then
+if (command -v ufw) && !(sudo ufw status | grep -q inactive); then
     # kube API
     sudo ufw allow 6443/tcp
     # kube etcd
@@ -88,7 +90,5 @@ do
 	sleep 1
 done
 
-echo "Add kubectl autocompletion"
-echo "source <(kubectl completion bash)" >> ~/.bashrc
 
 echo "Done"

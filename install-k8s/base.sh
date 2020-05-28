@@ -10,32 +10,30 @@ sudo apt update && \
 echo "add gpg docker key and stable repository"
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
 sudo add-apt-repository \
-	"deb [arch=amd64] https://download.docker.com/linux/ubuntu \
-	$(lsb_release -cs) \
-	stable"
+   "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+   $(lsb_release -cs) \
+   stable"
 
 echo "add nvidia-docker2 key"
-curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | \
-      sudo apt-key add -
 distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
-curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | \
-      sudo tee /etc/apt/sources.list.d/nvidia-docker.list
+curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
+curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
+sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit
 
-echo "add gpg kubernetes key"
+echo "add kubernetes key and repo"
 curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
-
-echo "add k8s repository"
 echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee -a /etc/apt/sources.list.d/kubernetes.list
 
 echo "disable swap"
 sudo swapoff -a
+sudo sed -i 's/^.*swap/#&/' /etc/fstab 
 
 echo "install docker-ce kubectl kubelet kubeadm nvidia-docker2"
 sudo apt update && \
-sudo apt install -y docker-ce=5:18.09.7~3-0~ubuntu-bionic nvidia-docker2=2.0.3+docker18.09.7-3 kubectl=1.17.1-00 kubelet=1.17.1-00 kubeadm=1.17.1-00  kubernetes-cni nvidia-container-runtime=2.0.0+docker18.09.7-3
+sudo apt install -y docker-ce=5:19.03.8~3-0~ubuntu-bionic kubectl=1.18.3-00 kubelet=1.18.3-00 kubeadm=1.18.3-00  kubernetes-cni nvidia-container-toolkit=1.1.1.1
 
 echo "Hold the version"
-sudo apt-mark hold docker-ce kubectl kubelet kubeadm kubernetes-cni nvidia-docker2 nvidia-container-runtime
+sudo apt-mark hold docker-ce kubectl kubelet kubeadm kubernetes-cni nvidia-container-toolkit
 
 echo "Add docker config"
 sudo groupadd docker
@@ -46,8 +44,15 @@ sudo systemctl restart docker
 # Set parameters and Reload the Docker daemon configuration
 # sudo pkill -SIGHUP dockerd
 
+echo "KUBELET_EXTRA_ARGS=--eviction-hard=memory.available<4Gi,nodefs.available<1%,nodefs.inodesFree<1%,imagefs.available<1%,imagefs.inodesFree<1% \
+                         --kube-reserved=cpu=1,memory=1Gi \
+                         --system-reserved=cpu=1,memory=1Gi \
+                         --kube-reserved-cgroup=systemd \
+                         --system-reserved-cgroup=systemd" | sudo tee /etc/default/kubelet
+sudo systemctl restart kubelet
+
 echo "Set ufw firewall"
-if ! sudo ufw status | grep -q inactive; then
+if (command -v ufw) && !(sudo ufw status | grep -q inactive); then
     # kube services
     sudo ufw allow 30000:32676/tcp
     # API
@@ -55,6 +60,7 @@ if ! sudo ufw status | grep -q inactive; then
     # calico
     sudo ufw allow 179,5473/tcp
     sudo ufw allow 4789/udp
+fi
 
 echo "Set hostDNS by kubeDNS"
 sudo ln -fs /run/systemd/resolve/resolv.conf /etc/resolv.conf
