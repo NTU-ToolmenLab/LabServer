@@ -7,10 +7,7 @@ Nextcloud/db/
 Nextcloud/log/
 Nextcloud/nextcloud*/
 certs/
-OauthServer/db.sqlite
-OauthServer/oauthserver/templates/help.html
 registry_data/
-sshpiper/
 novnc/build/
 Portus/db
 Portus/registry
@@ -19,7 +16,7 @@ harbor/jobservice
 harbor/redis
 harbor/registry
 harbor/tls.*
-db.sqlite*
+harbor/*.crt
 
 # log
 log
@@ -30,3 +27,7 @@ celerybeat-schedule
 novnc/websockify/
 novnc/noVNC/
 harbor/harbor-helm
+
+install-k8s/calico.yaml
+install-k8s/k8s-install-worker-tmp.sh
+

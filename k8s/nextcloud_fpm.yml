@@ -29,6 +29,7 @@ spec:
       containers:
       - name: nextcloud-fpm
         image: harbor.default.svc.cluster.local/linnil1/nextcloudfpm:16
+        imagePullPolicy: Always
         ports:
         - containerPort: 9000
           protocol: TCP

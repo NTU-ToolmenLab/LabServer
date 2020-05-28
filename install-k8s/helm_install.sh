@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-version="v3.0.0"
+version="v3.2.1"
 
 wget https://get.helm.sh/helm-"$version"-linux-amd64.tar.gz
 tar -zxvf helm-"$version"-linux-amd64.tar.gz
@@ -11,3 +11,4 @@ rm helm-"$version"-linux-amd64.tar.gz
 rm -rf linux-amd64
 
 helm repo add stable  https://kubernetes-charts.storage.googleapis.com
+

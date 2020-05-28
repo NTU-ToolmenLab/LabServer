@@ -40,6 +40,14 @@ docker tag linnil1/labboxmain harbor.default.svc.cluster.local/linnil1/labboxmai
 docker tag linnil1/novnc harbor.default.svc.cluster.local/linnil1/novnc
 docker tag linnil1/collectgpu harbor.default.svc.cluster.local/linnil1/collectgpu
 
+# push
+docker push harbor.default.svc.cluster.local/linnil1/nextcloudfpm:16
+docker push harbor.default.svc.cluster.local/linnil1/labboxmain
+docker push harbor.default.svc.cluster.local/linnil1/novnc
+docker push harbor.default.svc.cluster.local/linnil1/labboxapi-k8s
+docker push harbor.default.svc.cluster.local/linnil1/labboxapi-docker
+docker push harbor.default.svc.cluster.local/linnil1/collectgpu
+
 # Build Harbor
 echo "Generate cert for harbor"
 openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -subj "/C=TW/CN=harbor.default.svc.cluster.local" -keyout tls.key -out tls.crt
