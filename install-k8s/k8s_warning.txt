@@ -1,0 +1,20 @@
+set up DNS correctly
+
+kubectl -n kube-system edit configmaps coredns
+`forward . /etc/resolv.conf` to `forward . /etc/resolv_k8s.conf`
+
+
+kubectl -n kube-system edit deployments.app coredns
+```
+volumeMounts:
+- mountPath: /etc/resolv_k8s.conf
+  name: resolv-k8s
+  readOnly: true
+
+volumes:
+- name: resolv-k8s
+  hostPath:
+    path: /etc/resolv_k8s.conf
+    type: ""
+```
+

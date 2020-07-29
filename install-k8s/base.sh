@@ -45,8 +45,8 @@ sudo systemctl restart docker
 # sudo pkill -SIGHUP dockerd
 
 echo "KUBELET_EXTRA_ARGS=--eviction-hard=memory.available<4Gi,nodefs.available<1%,nodefs.inodesFree<1%,imagefs.available<1%,imagefs.inodesFree<1% \
-                         --kube-reserved=cpu=1,memory=1Gi \
-                         --system-reserved=cpu=1,memory=1Gi \
+                         --kube-reserved=memory=1Gi \
+                         --system-reserved=memory=1Gi \
                          --kube-reserved-cgroup=systemd \
                          --system-reserved-cgroup=systemd" | sudo tee /etc/default/kubelet
 sudo systemctl restart kubelet
@@ -62,6 +62,10 @@ if (command -v ufw) && !(sudo ufw status | grep -q inactive); then
     sudo ufw allow 4789/udp
 fi
 
-echo "Set hostDNS by kubeDNS"
-sudo ln -fs /run/systemd/resolve/resolv.conf /etc/resolv.conf
-echo "nameserver 10.96.0.10" | sudo tee --append  /etc/resolv.conf
+echo "nameserver 192.168.23.1" > /etc/resolv_k8s.conf
+echo "Warning!! To below manually"
+cat k8s_warning.txt
+
+# echo "Set hostDNS by kubeDNS"
+# sudo ln -fs /run/systemd/resolve/resolv.conf /etc/resolv.conf
+# echo "nameserver 10.96.0.10" | sudo tee --append  /etc/resolv.conf

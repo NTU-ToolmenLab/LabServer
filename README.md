@@ -146,8 +146,9 @@ xmlHttp.send("token=" + tokenname);
 ```
 
 ### Nextcloud Enable Oauth
-* Go to web https://my.domain.ntu.edu.tw:443/oauth/client (If you are admin)
-* Add client
+Go to oauth setting web https://my.domain.ntu.edu.tw:443/oauth/client (If you are admin)
+
+Add client
 ``` json
 {
     "client_id": "",
@@ -162,10 +163,11 @@ xmlHttp.send("token=" + tokenname);
 }
 ```
 
-* Go to web https://my.domain.ntu.edu.tw:443/drive/settings/admin/sociallogin
-* Modify code in `Nextcloud//custom_apps/sociallogin/lib/Controller/LoginController.php` to make login with their name `$uid = $profileId;`
+Modify code in Nextcloud/nextcloud/custom_apps/sociallogin/lib/Service/ProviderService.php to make login with their name `$uid = $profileId;`
 
-* Add client configuration (Custom Oauth2)
+Go to setting web https://my.domain.ntu.edu.tw:443/drive/settings/admin/sociallogin
+
+Add client configuration (Custom Oauth2)
 ``` init
 Internal_name: testapp
 API_Base_URL:  https://my.domain.ntu.edu.tw:443
@@ -175,9 +177,11 @@ Profile_url:   https://my.domain.ntu.edu.tw:443/oauth/profile
 Clinet_id:
 Clinet_Secret:
 Scope:         profile
+Groups claim (optional): groups
+Group mapping: fill it
 ```
 
-You can substitude `testapp` to any you want.
+You can substitude `testapp` to any you want(Should be consistent between oauth client and server).
 
 
 ### Nextcloud set external storage by Python

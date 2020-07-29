@@ -13,7 +13,7 @@ spec:
   accessModes:
   - ReadWriteMany
   capacity:
-    storage: 10Ti
+    storage: 30Ti
   nfs:
     server: {{ HOMENAS_IP }}
     path: {{ HOMENAS_PATH }}
@@ -29,7 +29,7 @@ spec:
     - ReadWriteMany
   resources:
     requests:
-      storage: 10Ti
+      storage: 30Ti
 ---
 apiVersion: v1
 kind: PersistentVolume
