@@ -32,4 +32,4 @@ spec:
           protocol: TCP
         env:
         - name: domain
-          value: my.domain.ntu.edu.tw
+          value: {{ domain }}

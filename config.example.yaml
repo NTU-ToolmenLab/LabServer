@@ -1,0 +1,19 @@
+domain: "mydomain.ntu.edu.tw"
+domain_url: "https://mydomain.ntu.edu.tw:443"
+nextcloud:
+    db_root_password: mysql_password_write_here
+    db_password: mysql_password_write_here
+nfs:
+    # the directory of this repo
+    server_ip: 192.168.1.1
+    server_path: /volume1/nas_server
+    # the directory to store /home/ubuntu of everybody
+    home_ip: 192.168.1.2
+    home_path: /volume1/nas_home
+    # the directory to put share nas
+    nas_shares:
+      - name: nfs-labnas
+        nas_ip: 192.168.1.3
+        nas_path: /volume1/nas-data
+
+external_ip: 192.168.1.4

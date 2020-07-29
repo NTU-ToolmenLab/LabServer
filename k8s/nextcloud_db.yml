@@ -32,9 +32,9 @@ spec:
           protocol: TCP
         env:
         - name: MYSQL_ROOT_PASSWORD
-          value: {{ mysql_root_password }}
+          value: {{ nextcloud.db_root_password }}
         - name: MYSQL_PASSWORD
-          value: {{ mysql_password }}
+          value: {{ nextcloud.db_password }}
         - name: MYSQL_DATABASE
           value: nextcloud
         - name: MYSQL_USER

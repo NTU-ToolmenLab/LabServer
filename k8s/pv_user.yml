@@ -15,8 +15,8 @@ spec:
   capacity:
     storage: 30Ti
   nfs:
-    server: {{ HOMENAS_IP }}
-    path: {{ HOMENAS_PATH }}
+    server: {{ nfs.home_ip }}
+    path: {{ nfs.home_path }}
 ---
 kind: PersistentVolumeClaim
 apiVersion: v1
@@ -30,31 +30,34 @@ spec:
   resources:
     requests:
       storage: 30Ti
+{% for nas in nfs.nas_shares %}
 ---
+
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: nfs-labnas
+  name: {{ nas.name }}
 spec:
-  storageClassName: nfs-labnas
+  storageClassName: {{ nas.name }}
   persistentVolumeReclaimPolicy: Delete
   accessModes:
   - ReadWriteMany
   capacity:
-    storage: 10Ti
+    storage: 30Ti
   nfs:
-    server: {{ LABNAS_IP }}
-    path: {{ LABNAS_PATH }}
+    server: {{ nas.nas_ip }}
+    path: {{ nas.nas_path }}
 ---
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: nfs-labnas
+  name: {{ nas.name }}
   namespace: user
 spec:
-  storageClassName: nfs-labnas
+  storageClassName: {{ nas.name }}
   accessModes:
     - ReadWriteMany
   resources:
     requests:
-      storage: 10Ti
+      storage: 30Ti
+{% endfor %}
