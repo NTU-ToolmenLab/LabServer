@@ -1,31 +1,24 @@
-# build oauth
-echo "BUILD OauthServer"
-docker build OauthServer -t linnil1/oauthserver
-docker run -it --rm -v $PWD/OauthServer:/app/OauthServer linnil1/oauthserver flask initdb
-docker run -it --rm -v $PWD/OauthServer:/app/OauthServer linnil1/oauthserver flask std_add_user
+set -xe
 
-# Control docker to start or stop
-echo "BUILD labboxapi-docker"
-docker build labboxapi_docker -t linnil1/labboxapi-docker
-
-## VNC
-echo "BUILD VNC"
-cd novnc
-git clone https://github.com/novnc/websockify
-git clone https://github.com/novnc/noVNC.git
-docker run -it --rm -v $PWD/noVNC:/project node:8.11-alpine sh -c ' \
-  cd /project && npm install . && ./utils/use_require.js --with-app --as commonjs'
-sudo mv noVNC/build ./
-sudo cp build/vnc.html build/index.html
-cat token_plugin.py >> websockify/websockify/token_plugins.py
-docker build . -t linnil1/novnc
-cd ..
-
-## nextcloud
 echo "BUILD Nextcloud"
 mkdir -p Nextcloud/nextcloud
-docker build Nextcloud/ -t linnil1/nextcloudfpm:15
+docker build Nextcloud/ -t linnil1/nextcloudfpm:19
+docker tag linnil1/nextcloudfpm:19 harbor.default.svc.cluster.local/linnil1/nextcloudfpm:19
 
-## collect_gpu
-echo "BUILD gpu_collect"
-docker build collectgpu/ -t linnil1/collectgpu
+echo "Replace the configuration"
+docker run --rm -it -v "$PWD:/app" dcagatay/j2cli Nextcloud/nginx-k8s.conf config.yaml -o Nextcloud/nginx-k8s.conf
+docker run --rm -it -v "$PWD:/app" dcagatay/j2cli k8s/nextcloud_collabora.yml config.yaml -o k8s/nextcloud_collabora.yml
+docker run --rm -it -v "$PWD:/app" dcagatay/j2cli k8s/nextcloud_db.yml config.yaml -o k8s/nextcloud_db.yml
+docker run --rm -it -v "$PWD:/app" dcagatay/j2cli k8s/pv.yml config.yaml -o k8s/pv.yml
+docker run --rm -it -v "$PWD:/app" dcagatay/j2cli k8s/pv_user.yml config.yaml -o k8s/pv_user.yml
+docker run --rm -it -v "$PWD:/app" dcagatay/j2cli k8s/traefik.yml config.yaml -o k8s/traefik.yml
+
+echo "Setup Harbor"
+cd harbor/certs
+cp tls.crt ca.crt
+kubectl create secret generic harbor-tls --from-file=tls.key --from-file=tls.crt  --from-file=ca.crt
+cd ..
+git clone https://github.com/goharbor/harbor-helm
+cd harbor-helm
+git checkout 1.2.0
+cd ../..

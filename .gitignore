@@ -1,34 +1,22 @@
-__pycache__/
-env
 *.swp
 config.yaml
 
 # data
 Nextcloud/db/
 Nextcloud/log/
-Nextcloud/nextcloud*/
+Nextcloud/nextcloud/
 certs/
-registry_data/
-novnc/build/
-Portus/db
-Portus/registry
 harbor/database
 harbor/jobservice
 harbor/redis
 harbor/registry
-harbor/tls.*
-harbor/*.crt
 
-# log
-log
-*.log
-celerybeat-schedule
-
-# github
-novnc/websockify/
-novnc/noVNC/
+# github repo
 harbor/harbor-helm
+labbox
 
+# temp data
 install-k8s/calico.yaml
 install-k8s/k8s-install-worker-tmp.sh
+kube_log
 

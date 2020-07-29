@@ -35,10 +35,14 @@ sudo apt install -y docker-ce=5:19.03.8~3-0~ubuntu-bionic kubectl=1.18.3-00 kube
 echo "Hold the version"
 sudo apt-mark hold docker-ce kubectl kubelet kubeadm kubernetes-cni nvidia-container-toolkit
 
+echo  "Add harbor certification"
+sudo mkdir -p /etc/docker/certs.d/harbor.default.svc.cluster.local/
+sudo mv ~/tls.crt /etc/docker/certs.d/harbor.default.svc.cluster.local/ca.crt
+
 echo "Add docker config"
 sudo groupadd docker
 sudo usermod -aG docker $USER
-sudo cp daemon.json /etc/docker/daemon.json
+sudo mv ~/daemon.json /etc/docker/daemon.json
 sudo systemctl restart docker
 
 # Set parameters and Reload the Docker daemon configuration
@@ -62,10 +66,10 @@ if (command -v ufw) && !(sudo ufw status | grep -q inactive); then
     sudo ufw allow 4789/udp
 fi
 
-echo "nameserver 192.168.23.1" > /etc/resolv_k8s.conf
 echo "Warning!! To below manually"
 cat k8s_warning.txt
 
+# echo "nameserver 192.168.23.1" > /etc/resolv_k8s.conf
 # echo "Set hostDNS by kubeDNS"
 # sudo ln -fs /run/systemd/resolve/resolv.conf /etc/resolv.conf
 # echo "nameserver 10.96.0.10" | sudo tee --append  /etc/resolv.conf

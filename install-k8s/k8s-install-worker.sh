@@ -3,7 +3,7 @@ set -e
 
 echo "creating worker installation script"
 
-nodes=( "server1" "server2" "server5" )
+nodes=$*
 node_num=${#nodes[*]}
 
 token=$(sudo kubeadm token create)
@@ -25,6 +25,7 @@ do
     # need to set remote server do not need password to execute sudo
     logfile=kube_log/"${nodes[$i]}_$(date +'%Y-%m-%d_%H-%M-%S').log"
     scp daemon.json ${nodes[$i]}:~/ >> $logfile
+    scp tls.crt ${nodes[$i]}:~/ >> $logfile
 	scp k8s-install-worker-tmp.sh ${nodes[$i]}:~/ >> $logfile
     # bug: no sync when installing
 	ssh -t ${nodes[$i]} "bash k8s-install-worker-tmp.sh" | tee --append $logfile 2>&1
@@ -52,4 +53,4 @@ done
 
 echo "Done"
 
-# rm -f k8s-install-worker-tmp.sh
+rm -f k8s-install-worker-tmp.sh

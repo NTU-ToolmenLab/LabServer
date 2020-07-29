@@ -1,30 +1,70 @@
-# LabServer With K8S
+# LabServer with k8s
 
-The advantage of this labserver is that user can access GPU resources
-with prebuild docker images(which contain pytorch, keras and caffe2),
-they can also choose which server to start their containers.
+This repo integrate all the serivce related to toolmen.
 
-After starting containers, they access it by ssh(sshpiper) or vnc(noVNC) or juniper notebook we provided,
-the vnc is a graphical user interface that can run in any browser without install anything.
-
-With the help of Docker and Kubernetes, this system should be safe, secure and reliable.
-
-Moreover, this repo provide more applications like Nextcloud(Drive), Grafana(Monitor), Prometheus(Monitor)
-to make life easier.
+Service that integrated:
+* Installation of all
+* Nextcloud(like google drive)
+* traefik(load balancer)
+* network policy(`k8s/policy.yml`: cannot access internal ip from user's instance)
+* Certification
+* harbor(docker registry)
+* [labbox](https://github.com/NTU-ToolmenLab/labbox): The main service for Toolmen lab.
 
 ## Related repo
-[Dockerfile](https://github.com/armorsun/Lab304-server)
-[Monitor](https://github.com/linnil1/LabServer_monitor)
+[Dockerfile](https://github.com/NTU-ToolmenLab/LabDockerFile)
+[Monitor](https://github.com/NTU-ToolmenLab/LabServer_monitor)
+[labbox](https://github.com/NTU-ToolmenLab/labbox)
 
-## How to Build
 
-### Clone from Github
+### Use with dockercompsoe
+**It has not been maintained now.**
+
+## How to Use with k8s
+
+### 0. Make sure
+* ssh
+* git
+* nvidia-driver
+* You have nameserver: [10.96.0.10, 8.8.8.8] in local(Use netplan)
+
+### 1. Clone from Github
 ```
 git clone https://github.com/linnil1/LabServer
 cd LabServer
 ```
 
-### Create encrypt file for web used
+### 2. Install k8s and build k8s cluster
+Install k8s for master machine
+```
+cd install-k8s/
+./k8s-install-master.sh
+./helm_install.sh
+cd ..
+```
+
+Install k8s for worker machine.
+
+(Note: Worker servers can be logined via sshkey from master)
+
+```
+cd install-k8s/
+./k8s-install-slave.sh server1 server2
+cd ..
+```
+
+### 3. Setting and Init Setup
+Set your own secret data, e.g. ip, path, nas configuration
+
+Rename and change the setting in `config.example.yaml` to `config.yaml`
+
+`./setup.sh` will
+
+* Replace the variable 
+* Build image from dockerfile for nextcloud
+* Setup harbor setting
+
+### 4. Set Certification
 1. Use Lets Encrypt it!
 **You should open port 80 and 443 for verification**
 
@@ -50,100 +90,42 @@ openssl req -new -x509 -nodes -sha1 -days 365 -key privkey.pem -out fullchain.pe
 cd ..
 ```
 
-### build dockerfile
-`bash setup.sh`
+Finally, restart the pods with new certification
+`./renewcert.sh`
 
-### build with k8s
-You can initize your new server with this note
-https://hackmd.io/V40UgNo3S4mp4cUtT3yY-g#
 
-And you need to add nameserver 10.96.0.10 to network setting(ex. netplan)
+### 5. Start
+`./start_service.sh`
 
+### 6. Setup harbor
+#### Login
+* Default User: admin
+* Default Password: Harbor12345
+
+#### Add regstries
+* Provider: docker-registry
+* Endpoint: http://harbor-harbor-registry.default.svc.cluster.local:5000
+* SSL: no
+
+#### Test
 ```
-nameservers:
-    addresses: [10.96.0.10, 8.8.8.8]
-```
-
-Then install
-* docker
-* nvidia-docker
-* kubernetes
-```
-cd install
-./k8s-install-master.sh
-```
-
-Add more servers as slave.
-
-Change the `nodes` in `k8s-install-worker.sh`,
-and you should make sure that `ssh server` can work without entering password.
-```
-./k8s-install-worker.sh
+docker login harbor.default.svc.cluster.local
+docker push harbor.default.svc.cluster.local/linnil1/nextcloudfpm:19
 ```
 
-The next step: setup all services and deployments.
-
-see `k8s/README.md`
-
-### build with dockercompsoe
-
-see `README-dockercompose.md`.
-
-**It has been not maintained now.**
+## Finally, Install labbox(Main interface)
+```
+git clone https://github.com/NTU-ToolmenLab/labbox.git
+cd labbox
+```
+and follow the guide in https://github.com/NTU-ToolmenLab/labbox
 
 
-## Some note of this system
+
+## Some note
 
 ### Network Policy
 https://hackmd.io/dZEPlsD0S22ZKBPe53iFXg
-
-### Labboxmain
-This app has two features:
-1. Oauth Server
-2. A interface that can create or delete your containers.
-3. Run with API `labboxapi_k8s` and `labboxapi_docker`
-
-1.  Run this code to add more users.
-```
-docker run -it --rm -v $PWD/labboxmain:/app/ linnil1/labboxmain flask std-add-user
-```
-2. Configure it
-Edit labboxmain/config.py
-
-3. Add it by web (After init)
-If you are admin, go to `your.domain.name/adminpage` to modify.
-
-You can add `help.html` in `labboxmain/labboxmain/templates/`
-
-4. Add more node
-Group 0,1,2 can access this node
-`kubectl label nodes lab304-server2 labboxgroup=0-1-2 --overwrite`
-
-And check it:
-`kubectl get nodes --show-labels`
-
-5. If any emergency happened
-```
-kubectl exec -it labboxmain-6599f4b74c-z5jcx flask stop --server=all
-```
-
-### VNC
-If you want to do more fancy things, like auto login for vnc password.
-you can add `novnc/noVNC/app/ui.js` with
-```
-var xmlHttp = new XMLHttpRequest();
-xmlHttp.onreadystatechange = function() {
-    if (xmlHttp.readyState == 4 && xmlHttp.status == 200) {
-        password = xmlHttp.responseText;
-        // do somethings
-    }
-}
-var tokenname = window.location.search;
-tokenname = tokenname.substr(17);
-xmlHttp.open("POST", "https://my.domain.ntu.edu.tw:443/box/vnctoken, true);  // true for asynchronous
-xmlHttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-xmlHttp.send("token=" + tokenname);
-```
 
 ### Nextcloud Enable Oauth
 Go to oauth setting web https://my.domain.ntu.edu.tw:443/oauth/client (If you are admin)
@@ -182,30 +164,3 @@ Group mapping: fill it
 ```
 
 You can substitude `testapp` to any you want(Should be consistent between oauth client and server).
-
-
-### Nextcloud set external storage by Python
-``` shell
-cd Nextcloud
-pip3 install requests
-vim adduser.py
-python3 adduser.py
-docker exec -it -u 1000 labserver_nextcloud_1 php occ files_external:import my_storages.json
-cd ..
-```
-
-## Harbor
-### Login
-* Default User: admin
-* Default Password: Harbor12345
-
-### Add regstries
-* Provider: docker-registry
-* Endpoint: http://harbor-harbor-registry.default.svc.cluster.local:5000
-* SSL: no
-
-### For docker login
-`docker login harbor.default.svc.cluster.local`
-
-## Contribute
-you can use `git add -p xx` to commit modified changes.

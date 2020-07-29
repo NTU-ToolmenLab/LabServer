@@ -17,7 +17,14 @@ else
     exit
 fi
 
+echo "Create harbor certificaton"
+mkdir -p ../harbor/certs
+openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -subj "/C=TW/CN=harbor.default.svc.cluster.local" -keyout ../harbor/certs/tls.key -out ../harbor/certs/tls.crt
+cp ../harbor/certs/tls.crt .
+
 echo "Run basic config"
+cp tls.crt ~/
+cp daemon.json ~/
 bash base.sh
 
 echo "initialize the master node"
